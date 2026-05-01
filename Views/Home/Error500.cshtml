@@ -1,0 +1,145 @@
+@model UniMap360.Models.ErrorViewModel
+@{
+    ViewData["Title"] = "Lỗi hệ thống (500)";
+}
+
+<style>
+    .error-page-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+    }
+
+    .error-bg-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(247, 182, 56, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .error-content {
+        position: relative;
+        z-index: 1;
+        max-width: 650px;
+    }
+
+    .error-code {
+        font-size: 10rem;
+        font-weight: 900;
+        color: var(--secondary-color);
+        line-height: 1;
+        letter-spacing: -5px;
+        margin-bottom: 0;
+        background: linear-gradient(135deg, #f7b638 0%, #ff8c00 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 20px 40px rgba(247, 182, 56, 0.15);
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    .error-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        letter-spacing: -0.5px;
+    }
+
+    .error-desc {
+        font-size: 1.1rem;
+        color: #64748b;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .btn-cinematic {
+        background: var(--primary-color);
+        color: white;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 10px 20px rgba(120, 1, 21, 0.2);
+        border: none;
+        text-decoration: none;
+        margin: 0 5px;
+    }
+
+    .btn-cinematic.outline {
+        background: transparent;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+        box-shadow: none;
+    }
+
+    .btn-cinematic:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px rgba(120, 1, 21, 0.3);
+        color: white;
+        background: #5a000e;
+    }
+
+    .btn-cinematic.outline:hover {
+        background: rgba(120, 1, 21, 0.05);
+        color: var(--primary-color);
+    }
+
+    .error-trace {
+        margin-top: 2rem;
+        padding: 15px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        font-family: monospace;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    @@keyframes pulse-glow {
+        0% { filter: drop-shadow(0 0 15px rgba(247, 182, 56, 0.2)); }
+        50% { filter: drop-shadow(0 0 30px rgba(247, 182, 56, 0.5)); }
+        100% { filter: drop-shadow(0 0 15px rgba(247, 182, 56, 0.2)); }
+    }
+</style>
+
+<div class="error-page-container">
+    <div class="error-bg-glow"></div>
+    <div class="error-content">
+        <h1 class="error-code">500</h1>
+        <h2 class="error-title">Máy chủ đang "khởi động lại nhân phẩm"</h2>
+        <p class="error-desc">Đã có lỗi không mong muốn xảy ra từ phía hệ thống. Đội ngũ kỹ thuật của UniMap360 đã nhận được thông báo và đang tiến hành sửa chữa. Xin lỗi vì sự bất tiện này!</p>
+        
+        <div>
+            <button onclick="window.location.reload()" class="btn-cinematic outline">
+                <i class="fas fa-redo"></i> Tải lại trang
+            </button>
+            <a href="/" class="btn-cinematic">
+                <i class="fas fa-home"></i> Trở về Trang chủ
+            </a>
+        </div>
+
+        @if (Model?.ShowRequestId ?? false)
+        {
+            <div class="error-trace">
+                Mã theo dõi sự cố: <strong>@Model.RequestId</strong>
+            </div>
+        }
+    </div>
+</div>

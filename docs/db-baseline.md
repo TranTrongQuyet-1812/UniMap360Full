@@ -1,0 +1,127 @@
+# Baseline Schema DB
+ 
+## Tables and Rowcounts
+TableName                                                                                                                        RowCounts           
+-------------------------------------------------------------------------------------------------------------------------------- --------------------
+CaiDatUngDung                                                                                                                                       1
+CuocTroChuyen                                                                                                                                       2
+DanhGia                                                                                                                                             0
+DanhMuc                                                                                                                                             6
+DiaDiem                                                                                                                                          1672
+HoSoChuTro                                                                                                                                          5
+HoSoNhaTuyenDung                                                                                                                                    5
+HoSoSinhVien                                                                                                                                        1
+HoSoUngTuyen                                                                                                                                        4
+LichXemPhong                                                                                                                                        6
+NhatKyHeThong                                                                                                                                       2
+NhatKyKiemToanQuanTri                                                                                                                               9
+PhongTro                                                                                                                                         1036
+sysdiagrams                                                                                                                                         1
+TaiKhoan                                                                                                                                           12
+TepDaPhuongTien                                                                                                                                  3626
+ThanhVienCuocTroChuyen                                                                                                                              4
+ThongBao                                                                                                                                           25
+TinNhan                                                                                                                                            12
+ViecLam                                                                                                                                           629
+YeuThich                                                                                                                                            0
+ 
+## Views
+name                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------
+TaiKhoan                                                                                                                        
+NhatKyKiemToanQuanTri                                                                                                           
+CaiDatUngDung                                                                                                                   
+DanhMuc                                                                                                                         
+ThanhVienCuocTroChuyen                                                                                                          
+CuocTroChuyen                                                                                                                   
+HoSoNhaTuyenDung                                                                                                                
+YeuThich                                                                                                                        
+HoSoChuTro                                                                                                                      
+HoSoUngTuyen                                                                                                                    
+ViecLam                                                                                                                         
+DiaDiem                                                                                                                         
+TepDaPhuongTien                                                                                                                 
+v_GlobalMapFeed                                                                                                                 
+TinNhan                                                                                                                         
+ThongBao                                                                                                                        
+DanhGia                                                                                                                         
+PhongTro                                                                                                                        
+LichXemPhong                                                                                                                    
+HoSoSinhVien                                                                                                                    
+NhatKyHeThong                                                                                                                   
+NguonDuLieuBanDoTongHop                                                                                                         
+DanhSachBangVietHoa                                                                                                             
+ 
+## Stored Procedures
+name                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------
+sp_GetItemsInRadius                                                                                                             
+sp_upgraddiagrams                                                                                                               
+sp_helpdiagrams                                                                                                                 
+sp_helpdiagramdefinition                                                                                                        
+sp_creatediagram                                                                                                                
+sp_renamediagram                                                                                                                
+sp_alterdiagram                                                                                                                 
+sp_dropdiagram                                                                                                                  
+sp_XuLyLichXemPhong_Host                                                                                                        
+sp_XuLyHoSoUngTuyen_NhaTuyenDung                                                                                                
+ 
+## Triggers
+name                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------
+tr_HoSoUngTuyen_LogTrangThai                                                                                                    
+tr_LichXemPhong_LogTrangThai                                                                                                    
+ 
+## Indexes
+TableName                                                                                                                        IndexName                                                                                                                        TypeDesc                                                    
+-------------------------------------------------------------------------------------------------------------------------------- -------------------------------------------------------------------------------------------------------------------------------- ------------------------------------------------------------
+CaiDatUngDung                                                                                                                    PK__AppSetti__C41E02887A674710                                                                                                   CLUSTERED                                                   
+CuocTroChuyen                                                                                                                    PK__Conversa__C050D897A462E0E6                                                                                                   CLUSTERED                                                   
+CuocTroChuyen                                                                                                                    IX_Conversations_LastMessageAt                                                                                                   NONCLUSTERED                                                
+DanhGia                                                                                                                          PK__Reviews__74BC79AED58AC342                                                                                                    CLUSTERED                                                   
+DanhGia                                                                                                                          UX_Review_Student_Target                                                                                                         NONCLUSTERED                                                
+DanhMuc                                                                                                                          PK__Categori__19093A2BDDF69318                                                                                                   CLUSTERED                                                   
+DiaDiem                                                                                                                          PK__Location__E7FEA477EB75A2EB                                                                                                   CLUSTERED                                                   
+DiaDiem                                                                                                                          IX_Location_ProvinceName                                                                                                         NONCLUSTERED                                                
+DiaDiem                                                                                                                          IX_Location_Province_District                                                                                                    NONCLUSTERED                                                
+DiaDiem                                                                                                                          IX_Location_Province_District_Ward                                                                                               NONCLUSTERED                                                
+DiaDiem                                                                                                                          IX_Location_Coordinates                                                                                                          SPATIAL                                                     
+HoSoChuTro                                                                                                                       PK__HostProf__08D4870C1C96941A                                                                                                   CLUSTERED                                                   
+HoSoChuTro                                                                                                                       UQ__HostProf__349DA5872FA1B78E                                                                                                   NONCLUSTERED                                                
+HoSoChuTro                                                                                                                       UQ__HostProf__43A2A4E318986B23                                                                                                   NONCLUSTERED                                                
+HoSoNhaTuyenDung                                                                                                                 PK__Employer__CA445241A56217E2                                                                                                   CLUSTERED                                                   
+HoSoNhaTuyenDung                                                                                                                 UQ__Employer__12945A283244F9D8                                                                                                   NONCLUSTERED                                                
+HoSoNhaTuyenDung                                                                                                                 UQ__Employer__349DA5873BEA2C13                                                                                                   NONCLUSTERED                                                
+HoSoSinhVien                                                                                                                     PK__StudentP__32C52A794FD1EECD                                                                                                   CLUSTERED                                                   
+HoSoSinhVien                                                                                                                     UQ__StudentP__349DA5878BAB1FB5                                                                                                   NONCLUSTERED                                                
+HoSoUngTuyen                                                                                                                     PK__JobAppli__C93A4F79386D360F                                                                                                   CLUSTERED                                                   
+HoSoUngTuyen                                                                                                                     IX_JobApplications_Job_Status                                                                                                    NONCLUSTERED                                                
+HoSoUngTuyen                                                                                                                     IX_HoSoUngTuyen_Student_Status_Application                                                                                       NONCLUSTERED                                                
+LichXemPhong                                                                                                                     PK__RoomView__8ECDFCA2B64C1DC2                                                                                                   CLUSTERED                                                   
+LichXemPhong                                                                                                                     IX_RoomViewingAppointments_Host_Status_Scheduled                                                                                 NONCLUSTERED                                                
+LichXemPhong                                                                                                                     IX_RoomViewingAppointments_Student_Status_Created                                                                                NONCLUSTERED                                                
+LichXemPhong                                                                                                                     IX_RoomViewingAppointments_Room_Scheduled                                                                                        NONCLUSTERED                                                
+NhatKyHeThong                                                                                                                    PK__SystemLo__5E5499A8F128D87E                                                                                                   CLUSTERED                                                   
+NhatKyHeThong                                                                                                                    IX_NhatKyHeThong_Account_Time                                                                                                    NONCLUSTERED                                                
+NhatKyKiemToanQuanTri                                                                                                            PK__AdminAud__A17F23B8068A855D                                                                                                   CLUSTERED                                                   
+NhatKyKiemToanQuanTri                                                                                                            IX_AdminAuditLogs_Admin_Time                                                                                                     NONCLUSTERED                                                
+NhatKyKiemToanQuanTri                                                                                                            IX_AdminAuditLogs_Target                                                                                                         NONCLUSTERED                                                
+PhongTro                                                                                                                         PK__Rooms__32863919FD107879                                                                                                      CLUSTERED                                                   
+sysdiagrams                                                                                                                      PK__sysdiagr__C2B05B619C96A9EF                                                                                                   CLUSTERED                                                   
+sysdiagrams                                                                                                                      UK_principal_name                                                                                                                NONCLUSTERED                                                
+TaiKhoan                                                                                                                         PK__Accounts__349DA586BB50D4BF                                                                                                   CLUSTERED                                                   
+TaiKhoan                                                                                                                         UQ__Accounts__A9D10534AFCE04F2                                                                                                   NONCLUSTERED                                                
+TaiKhoan                                                                                                                         IX_Accounts_Role_Lock                                                                                                            NONCLUSTERED                                                
+TepDaPhuongTien                                                                                                                  PK__Media__B2C2B5AFFB52BE37                                                                                                      CLUSTERED                                                   
+ThanhVienCuocTroChuyen                                                                                                           PK_ConversationParticipants                                                                                                      CLUSTERED                                                   
+ThanhVienCuocTroChuyen                                                                                                           IX_ConversationParticipants_Account_Archived_Conversation                                                                        NONCLUSTERED                                                
+ThanhVienCuocTroChuyen                                                                                                           IX_ConversationParticipants_Conversation                                                                                         NONCLUSTERED                                                
+ThongBao                                                                                                                         PK__Notifica__20CF2E325C70FE15                                                                                                   CLUSTERED                                                   
+ThongBao                                                                                                                         IX_Notifications_Recipient_Read_Time                                                                                             NONCLUSTERED                                                
+ThongBao                                                                                                                         IX_Notifications_Target                                                                                                          NONCLUSTERED                                                
+TinNhan                                                                                                                          PK__Messages__C87C037CC32BA1A8                                                                                                   CLUSTERED                                                   
+TinNhan                                                                                                                          IX_Messages_Conversation_Message                                                                                                 NONCLUSTERED                                                
+TinNhan                                                                                                                          IX_Messages_Conversation_Created                                                                                                 NONCLUSTERED                                                
+TinNhan                                                                                                                          IX_Messages_Sender_Created                                                                                                       NONCLUSTERED                                                
+ViecLam                                                                                                                          PK__Jobs__056690E28D5FE568                                                                                                       CLUSTERED                                                   
+YeuThich                                                                                                                         PK__Favorite__CE74FAF5C4EA72F9                                                                                                   CLUSTERED                                                   

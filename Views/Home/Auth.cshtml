@@ -1,0 +1,1029 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewData["Title"] = "Đăng nhập Hệ thống";
+}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    /* Styling nội bộ chuyên biệt cho Trang Auth để tránh trùng lặp */
+    .auth-page-wrapper {
+        min-height: calc(100vh - var(--app-nav-height, 70px));
+        background-color: var(--color-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 1100px;
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-float);
+        overflow: hidden;
+        display: flex;
+        flex-direction: row;
+        min-height: 600px;
+    }
+
+    /* Mảng Trái: Hình nền */
+    .auth-hero {
+        flex: 0 0 50%;
+        max-width: 50%;
+        background: linear-gradient(135deg, rgba(128, 0, 0, 0.85) 0%, rgba(178, 34, 34, 0.95) 100%), url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+    }
+
+    .auth-hero h2 {
+        font-weight: 800;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+
+    .auth-hero p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        line-height: 1.6;
+    }
+
+    .auth-decorative-circle {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 50%;
+        top: -50px;
+        left: -50px;
+    }
+
+    /* Mảng Phải: Form nhập liệu */
+    .auth-form-wrapper {
+        flex: 0 0 50%;
+        max-width: 50%;
+        padding: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+    }
+
+    .auth-toggle-box {
+        display: flex;
+        background: var(--color-bg);
+        border-radius: 30px;
+        padding: 5px;
+        margin-bottom: 40px;
+    }
+
+    .auth-toggle-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-weight: bold;
+        color: var(--color-text);
+        transition: all 0.3s ease;
+    }
+
+    .auth-toggle-btn.active {
+        background: var(--color-primary);
+        color: white;
+        box-shadow: 0 4px 10px rgba(128,0,0,0.2);
+    }
+
+    .form-section {
+        display: none;
+        animation: fadeIn 0.4s ease forwards;
+    }
+
+    .form-section.active {
+        display: block;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateX(10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Các Input controls chuẩn chỉ */
+    .auth-input-group {
+        margin-bottom: 25px;
+        position: relative;
+    }
+
+    .auth-input-group i {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: 20px;
+        color: var(--color-border-dark);
+        font-size: 1.1rem;
+    }
+
+    .auth-input {
+        width: 100%;
+        padding: 15px 20px 15px 50px;
+        border: 2px solid var(--color-border);
+        border-radius: 12px;
+        outline: none;
+        transition: all 0.3s;
+        font-weight: 500;
+        background: #fcfcfc;
+    }
+
+    .auth-input:focus {
+        border-color: var(--color-primary);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(128,0,0,0.05);
+    }
+
+    .auth-input.with-toggle {
+        padding-right: 48px;
+    }
+
+    .auth-password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 1px solid var(--color-border);
+        background: #ffffff;
+        color: #8b0000;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+    }
+
+    .auth-password-toggle i {
+        position: static;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin: 0;
+        font-size: 0.95rem;
+        color: inherit;
+    }
+
+    .auth-password-toggle:hover {
+        color: #ffffff;
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 10px rgba(128, 0, 0, 0.25);
+    }
+
+    .auth-password-toggle:focus-visible {
+        outline: 2px solid rgba(128, 0, 0, 0.35);
+        outline-offset: 2px;
+    }
+
+    .auth-submit-btn {
+        width: 100%;
+        padding: 16px;
+        background: var(--color-primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+
+    .auth-submit-btn:hover {
+        background: #6a0000;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(128,0,0,0.15);
+    }
+
+    .auth-submit-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .auth-feedback {
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+
+    .auth-feedback.error {
+        background: #fff1f2;
+        color: #9f1239;
+        border: 1px solid #fecdd3;
+    }
+
+    .auth-feedback.success {
+        background: #ecfdf3;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .social-login {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 30px;
+        gap: 15px;
+    }
+
+    .social-circle {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-text);
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .social-circle:hover {
+        background: var(--color-bg);
+        color: var(--color-primary);
+    }
+
+    /* Bộ chọn vai trò Đăng ký */
+    .role-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .role-option {
+        flex: 1;
+        position: relative;
+    }
+    
+    .role-option input {
+        display: none;
+    }
+    
+    .role-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        border: 2px solid var(--color-border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-text);
+        text-align: center;
+    }
+    
+    .role-label i {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+        color: var(--color-border-dark);
+    }
+    
+    .role-option input:checked + .role-label {
+        border-color: var(--color-primary);
+        background: rgba(128,0,0,0.05);
+        color: var(--color-primary);
+    }
+    
+    .role-option input:checked + .role-label i {
+        color: var(--color-primary);
+    }
+
+    /* Responsive cho màn hình nhỏ */
+    @@media (max-width: 900px) {
+        .auth-page-wrapper {
+            padding: 16px;
+        }
+        .auth-container {
+            flex-direction: column;
+            min-height: auto;
+            display: block; /* Tắt flex để các khối tự do xếp dọc theo nội dung */
+        }
+        .auth-hero, .auth-form-wrapper {
+            width: 100%;
+            max-width: 100%;
+            flex: none; /* Không cho phép flex tự động co giãn chiều cao */
+        }
+        .auth-hero {
+            padding: 40px 20px;
+            text-align: center;
+            min-height: auto;
+        }
+        .auth-decorative-circle {
+            display: none; /* Ẩn đi cho đỡ rối mắt trên mobile */
+        }
+        .auth-form-wrapper {
+            padding: 30px 20px;
+        }
+        .auth-toggle-box {
+            margin-bottom: 25px;
+        }
+    }
+</style>
+
+<div class="auth-page-wrapper">
+    <div class="container d-flex justify-content-center">
+        <div class="auth-container">
+            
+            <!-- Nửa Trái: Cover Banner -->
+            <div class="auth-hero">
+                <div class="auth-decorative-circle"></div>
+                <div style="z-index: 1;">
+                    <div class="mb-4 d-inline-block">
+                        <img src="https://res.cloudinary.com/dreyjycrh/image/upload/v1776439376/LogoSQL.png" alt="UniMap360 Logo" style="width: 100%; max-width: 250px; height: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));" />
+                    </div>
+                    <h2>Khởi đầu hành trình tại UniMap360!</h2>
+                    <p>Khám phá bản đồ trọ và việc làm thông minh dành riêng cho giới trẻ. Nhanh chóng, tiện lợi và hoàn toàn miễn phí. Gia nhập cộng đồng ngay hôm nay.</p>
+                </div>
+            </div>
+
+            <!-- Nửa Phải: Forms -->
+            <div class="auth-form-wrapper">
+                
+                <!-- Thanh công tắc (Toggle) -->
+                <div class="auth-toggle-box">
+                    <button class="auth-toggle-btn active" id="btn-show-login" data-auth-target="login">Đăng nhập</button>
+                    <button class="auth-toggle-btn" id="btn-show-register" data-auth-target="register">Đăng ký mới</button>
+                </div>
+
+                <!-- FORM ĐĂNG NHẬP -->
+                <div id="form-login" class="form-section active">
+                    <div class="mb-4">
+                        <h3 class="fw-bold">Mừng bạn trở lại!</h3>
+                        <p class="text-muted">Đăng nhập để xem các phòng trọ đã lưu và quản lý tin.</p>
+                    </div>
+                    <div id="loginFeedback" class="auth-feedback" hidden></div>
+
+                    <!-- Form đăng nhập được submit qua API bằng JavaScript -->
+                    <form action="#" method="POST" id="loginForm">
+                        <div class="auth-input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" name="Email" class="auth-input" placeholder="Nhập địa chỉ Email" required>
+                        </div>
+                        <div class="auth-input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="login-password" name="Password" class="auth-input with-toggle" placeholder="Nhập mật khẩu" required>
+                            <button type="button" class="auth-password-toggle" data-target="login-password" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-4 text-muted" style="font-size: 0.9rem;">
+                            <label class="d-flex align-items-center" style="cursor: pointer;">
+                                <input type="checkbox" class="me-2" style="accent-color: var(--color-primary);"> Ghi nhớ tài khoản
+                            </label>
+                            <a href="#" class="auth-forgot-password" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">Quên mật khẩu?</a>
+                        </div>
+
+                        <button type="submit" class="auth-submit-btn">Đăng Nhập Ngay</button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <span class="text-muted" style="font-size: 0.9rem; position: relative;">
+                            &mdash; Hoặc đăng nhập nhanh bằng &mdash;
+                        </span>
+                        <div class="social-login">
+                            <a href="#" class="social-circle" id="btn-google-login" title="Đăng nhập bằng Google"><i class="fab fa-google"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORM ĐĂNG KÝ -->
+                <div id="form-register" class="form-section">
+                    <div class="mb-4">
+                        <h3 class="fw-bold">Tạo tài khoản mới</h3>
+                        <p class="text-muted">Chỉ mất 30 giây để trở thành cư dân UniMap360.</p>
+                    </div>
+                    <div id="registerFeedback" class="auth-feedback" hidden></div>
+
+                    <!-- Form đăng ký được submit qua API bằng JavaScript -->
+                    <form action="#" method="POST" id="registerForm">
+                        
+                        <div class="mb-2 text-center" style="font-size: 0.95rem; font-weight: bold; color: var(--color-text);">Bạn là ai?</div>
+                        <div class="role-selector">
+                            <label class="role-option">
+                                <input type="radio" name="Role" value="Student" checked>
+                                <div class="role-label"><i class="fas fa-search"></i>Người tìm kiếm</div>
+                            </label>
+                            <label class="role-option">
+                                <input type="radio" name="Role" value="Host">
+                                <div class="role-label"><i class="fas fa-home"></i>Chủ trọ</div>
+                            </label>
+                            <label class="role-option">
+                                <input type="radio" name="Role" value="Employer">
+                                <div class="role-label"><i class="fas fa-building"></i>Nhà tuyển dụng</div>
+                            </label>
+                        </div>
+
+                        <div class="auth-input-group" style="margin-bottom: 20px;">
+                            <i class="fas fa-user"></i>
+                            <input type="text" name="FullName" class="auth-input" placeholder="Họ và Tên của bạn" required>
+                        </div>
+                        <div class="auth-input-group" style="margin-bottom: 20px;">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" name="Email" class="auth-input" placeholder="Địa chỉ Email" required>
+                        </div>
+                        <div class="auth-input-group" style="margin-bottom: 20px;">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="register-password" name="Password" class="auth-input with-toggle" placeholder="Tạo mật khẩu" required>
+                            <button type="button" class="auth-password-toggle" data-target="register-password" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="auth-input-group" style="margin-bottom: 20px;">
+                            <i class="fas fa-check-circle"></i>
+                            <input type="password" id="register-confirm-password" name="ConfirmPassword" class="auth-input with-toggle" placeholder="Xác nhận lại mật khẩu" required>
+                            <button type="button" class="auth-password-toggle" data-target="register-confirm-password" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <button type="submit" class="auth-submit-btn">Tiến Hành Đăng Ký</button>
+                        
+                        <p class="text-center mt-3 text-muted" style="font-size: 0.85rem;">
+                            Bằng việc đăng ký, bạn đồng ý với <a href="#" style="color: var(--color-primary);">Điều khoản sử dụng</a> của chúng tôi.
+                        </p>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chọn Role cho Google Sign-In -->
+<div id="googleRoleModal" class="modal fade" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" style="color: var(--color-primary);"><i class="fab fa-google me-2"></i>Hoàn tất đăng ký</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center pt-2">
+                <p class="text-muted mb-4">Chào mừng bạn mới! Vui lòng chọn vai trò để hoàn tất việc đăng ký tài khoản với Google.</p>
+                
+                <div class="auth-role-group mb-4" style="justify-content: center; gap: 10px;">
+                    <label class="auth-role-option">
+                        <input type="radio" name="GoogleRole" value="Student" checked>
+                        <span><i class="fas fa-user-graduate"></i> Sinh viên</span>
+                    </label>
+                    <label class="auth-role-option">
+                        <input type="radio" name="GoogleRole" value="Host">
+                        <span><i class="fas fa-home"></i> Chủ trọ</span>
+                    </label>
+                    <label class="auth-role-option">
+                        <input type="radio" name="GoogleRole" value="Employer">
+                        <span><i class="fas fa-briefcase"></i> Tuyển dụng</span>
+                    </label>
+                </div>
+
+                <button id="btnCompleteGoogleLogin" class="auth-btn w-100 mb-2">Hoàn tất <i class="fas fa-arrow-right ms-2"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quên Mật Khẩu -->
+<div id="forgotPasswordModal" class="modal fade" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" style="color: var(--color-primary);"><i class="fas fa-key me-2"></i>Quên mật khẩu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <!-- Bước 1: Nhập Email -->
+                <div id="fpStep1" class="px-3 pb-3">
+                    <p class="text-muted mb-4 text-center">Nhập email của bạn để nhận mã xác thực (OTP).</p>
+                    <div class="auth-input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="fpEmail" class="auth-input" placeholder="Nhập địa chỉ Email" required />
+                    </div>
+                    <button id="btnFpSendOtp" class="auth-submit-btn w-100 mt-3" style="border-radius: 12px; font-size: 1rem; padding: 14px;">Nhận mã OTP</button>
+                </div>
+                
+                <!-- Bước 2: Nhập OTP và Mật khẩu mới -->
+                <div id="fpStep2" class="px-3 pb-3" style="display: none;">
+                    <p class="text-muted mb-4 text-center" id="fpOtpMessage">Mã xác thực đã được gửi.</p>
+                    <div class="auth-input-group mb-3">
+                        <i class="fas fa-shield-alt"></i>
+                        <input type="text" id="fpOtp" class="auth-input" placeholder="Nhập mã OTP (6 số)" maxlength="6" required style="letter-spacing: 2px; text-align: center; font-weight: bold; font-size: 1.2rem;" />
+                    </div>
+                    <div class="auth-input-group mb-4">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="fpNewPassword" class="auth-input with-toggle" placeholder="Nhập mật khẩu mới" required />
+                        <button type="button" class="auth-password-toggle" data-target="fpNewPassword" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <button id="btnFpResetPassword" class="auth-submit-btn w-100 mb-3" style="border-radius: 12px; font-size: 1rem; padding: 14px;">Đặt lại mật khẩu</button>
+                    <button id="btnFpBack" class="btn btn-light w-100 fw-bold" style="border-radius: 12px; color: #555; padding: 12px;"><i class="fas fa-arrow-left me-2"></i> Quay lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const STORAGE_KEY_TOKEN = 'unimap360.accessToken';
+        const STORAGE_KEY_ACCOUNT = 'unimap360.account';
+        const AUTH_COOKIE_TOKEN = 'unimap360.accessToken';
+
+        function setTokenCookie(token, rememberMe) {
+            if (!token) return;
+
+            const attrs = ['path=/', 'SameSite=Lax'];
+            if (window.location.protocol === 'https:') attrs.push('Secure');
+            if (rememberMe) attrs.push('Max-Age=' + (60 * 60 * 24 * 7));
+
+            document.cookie = AUTH_COOKIE_TOKEN + '=' + encodeURIComponent(token) + '; ' + attrs.join('; ');
+        }
+
+        function toggleAuth(type) {
+            // Reset active classes
+            document.getElementById('btn-show-login').classList.remove('active');
+            document.getElementById('btn-show-register').classList.remove('active');
+            document.getElementById('form-login').classList.remove('active');
+            document.getElementById('form-register').classList.remove('active');
+
+            // Apply new state
+            if (type === 'login') {
+                document.getElementById('btn-show-login').classList.add('active');
+                document.getElementById('form-login').classList.add('active');
+            } else {
+                document.getElementById('btn-show-register').classList.add('active');
+                document.getElementById('form-register').classList.add('active');
+            }
+        }
+
+        function showFeedback(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.hidden = false;
+            el.classList.remove('error', 'success');
+            el.classList.add(type);
+            el.textContent = message;
+        }
+
+        function clearFeedback(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.hidden = true;
+            el.classList.remove('error', 'success');
+            el.textContent = '';
+        }
+
+        function setSubmitting(form, isSubmitting) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+            submitBtn.disabled = isSubmitting;
+            if (isSubmitting) {
+                submitBtn.dataset.originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Đang xử lý...';
+            } else if (submitBtn.dataset.originalText) {
+                submitBtn.textContent = submitBtn.dataset.originalText;
+            }
+        }
+
+        async function readResponsePayload(response) {
+            const raw = await response.text();
+            if (!raw) return null;
+            try {
+                const json = JSON.parse(raw);
+                if (json && json.success === true && json.data !== undefined) {
+                    return json.data;
+                }
+                return json;
+            } catch {
+                return raw;
+            }
+        }
+
+        function extractErrorMessage(payload, fallbackMessage) {
+            if (!payload) return fallbackMessage;
+            if (typeof payload === 'string') return payload;
+            if (payload.error && typeof payload.error.message === 'string') return payload.error.message;
+            if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
+            if (typeof payload.title === 'string' && payload.title.trim()) return payload.title;
+            return fallbackMessage;
+        }
+
+        async function postJson(url, data) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const payload = await readResponsePayload(response);
+            if (!response.ok) {
+                throw new Error(extractErrorMessage(payload, 'Có lỗi xảy ra, vui lòng thử lại.'));
+            }
+            return payload || {};
+        }
+
+        function saveAuthSession(authData, rememberMe) {
+            const token = authData.accessToken;
+            if (!token) return;
+
+            setTokenCookie(token, rememberMe);
+
+            const accountData = JSON.stringify({
+                accountId: authData.accountId,
+                email: authData.email,
+                role: authData.role
+            });
+
+            if (rememberMe) {
+                localStorage.setItem(STORAGE_KEY_TOKEN, token);
+                localStorage.setItem(STORAGE_KEY_ACCOUNT, accountData);
+                sessionStorage.removeItem(STORAGE_KEY_TOKEN);
+                sessionStorage.removeItem(STORAGE_KEY_ACCOUNT);
+                return;
+            }
+
+            sessionStorage.setItem(STORAGE_KEY_TOKEN, token);
+            sessionStorage.setItem(STORAGE_KEY_ACCOUNT, accountData);
+            localStorage.removeItem(STORAGE_KEY_TOKEN);
+            localStorage.removeItem(STORAGE_KEY_ACCOUNT);
+        }
+
+        function notifyAuthChanged(authData) {
+            const account = {
+                accountId: authData.accountId,
+                email: authData.email,
+                role: authData.role
+            };
+
+            window.dispatchEvent(new CustomEvent('unimap360:auth-changed', {
+                detail: { account }
+            }));
+        }
+
+        function wirePasswordToggles() {
+            const toggleButtons = document.querySelectorAll('.auth-password-toggle');
+            toggleButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    const input = targetId ? document.getElementById(targetId) : null;
+                    const icon = button.querySelector('i');
+                    if (!input || !icon) return;
+
+                    const isHidden = input.type === 'password';
+                    input.type = isHidden ? 'text' : 'password';
+                    icon.classList.toggle('fa-eye', !isHidden);
+                    icon.classList.toggle('fa-eye-slash', isHidden);
+                    const label = isHidden ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
+                    button.setAttribute('aria-label', label);
+                    button.setAttribute('title', label);
+                });
+            });
+        }
+
+        function redirectByRole(role) {
+            const normalized = (role || '').toLowerCase();
+            if (normalized === 'admin') {
+                window.location.href = '/Admin';
+                return;
+            }
+            if (normalized === 'host' || normalized === 'employer') {
+                window.location.href = '/Home/Listing';
+                return;
+            }
+            window.location.href = '/';
+        }
+
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            clearFeedback('loginFeedback');
+
+            const form = event.currentTarget;
+            const formData = new FormData(form);
+            const email = (formData.get('Email') || '').toString().trim();
+            const password = (formData.get('Password') || '').toString();
+            const rememberMe = !!form.querySelector('input[type="checkbox"]:checked');
+
+            if (!email || !password) {
+                showFeedback('loginFeedback', 'Vui lòng nhập đầy đủ email và mật khẩu.', 'error');
+                return;
+            }
+
+            setSubmitting(form, true);
+            try {
+                const authData = await postJson('/api/auth/login', { email, password });
+                saveAuthSession(authData, rememberMe);
+                notifyAuthChanged(authData);
+                showFeedback('loginFeedback', 'Đăng nhập thành công. Đang chuyển trang...', 'success');
+                setTimeout(() => redirectByRole(authData.role), 400);
+            } catch (error) {
+                showFeedback('loginFeedback', error.message || 'Đăng nhập thất bại.', 'error');
+            } finally {
+                setSubmitting(form, false);
+            }
+        }
+
+        async function handleRegisterSubmit(event) {
+            event.preventDefault();
+            clearFeedback('registerFeedback');
+
+            const form = event.currentTarget;
+            const formData = new FormData(form);
+            const role = (formData.get('Role') || 'Student').toString();
+            const email = (formData.get('Email') || '').toString().trim();
+            const password = (formData.get('Password') || '').toString();
+            const confirmPassword = (formData.get('ConfirmPassword') || '').toString();
+
+            if (!email || !password) {
+                showFeedback('registerFeedback', 'Vui lòng nhập đầy đủ email và mật khẩu.', 'error');
+                return;
+            }
+
+            if (!email.toLowerCase().endsWith('@@gmail.com')) {
+                showFeedback('registerFeedback', 'Xin lỗi, hiện tại chúng tôi chỉ hỗ trợ đăng ký bằng tài khoản @@gmail.com.', 'error');
+                return;
+            }
+
+            if (password.length < 8) {
+                showFeedback('registerFeedback', 'Mật khẩu cần có ít nhất 8 ký tự.', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showFeedback('registerFeedback', 'Mật khẩu xác nhận không khớp.', 'error');
+                return;
+            }
+
+            setSubmitting(form, true);
+            try {
+                await postJson('/api/auth/register', { email, password, role });
+                showFeedback('registerFeedback', 'Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.', 'success');
+
+                const loginEmailInput = document.querySelector('#loginForm input[name="Email"]');
+                if (loginEmailInput) loginEmailInput.value = email;
+
+                setTimeout(() => toggleAuth('login'), 600);
+            } catch (error) {
+                showFeedback('registerFeedback', error.message || 'Đăng ký thất bại.', 'error');
+            } finally {
+                setSubmitting(form, false);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+
+            if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
+            if (registerForm) registerForm.addEventListener('submit', handleRegisterSubmit);
+            wirePasswordToggles();
+
+            // Bind auth toggle buttons (removed inline onclick)
+            document.querySelectorAll('.auth-toggle-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const target = this.getAttribute('data-auth-target');
+                    if (target) toggleAuth(target);
+                });
+            });
+        });
+    </script>
+    
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Khởi tạo Google Sign-In từ cấu hình bảo mật
+            var googleClientId = '@Configuration["OAuth:GoogleClientId"]';
+            
+            window.onload = function () {
+                if(googleClientId && googleClientId.length > 0) {
+                    google.accounts.id.initialize({
+                        client_id: googleClientId,
+                        callback: handleGoogleCredentialResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true
+                    });
+                } else {
+                    console.error("Google Client ID chưa được cấu hình trong secrets.ini");
+                }
+            };
+
+            async function handleGoogleCredentialResponse(response) {
+                if (!response.credential) return;
+                
+                showToast('Đang kết nối tới máy chủ...', 'info');
+                
+                try {
+                    const res = await fetch('/api/auth/google', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ credential: response.credential })
+                    });
+                    
+                    if (res.ok) {
+                        const payload = await res.json();
+                        const isSuccess = payload.success || payload.Success;
+                        const data = payload.data || payload.Data;
+
+                        if (isSuccess && data) {
+                            if (data.requireRole) {
+                                window.pendingGoogleCredential = response.credential;
+                                const roleModal = new bootstrap.Modal(document.getElementById('googleRoleModal'));
+                                roleModal.show();
+                            } else if (data.accessToken) {
+                                saveAuthSession(data, true);
+                                notifyAuthChanged(data);
+                                showToast('Đăng nhập Google thành công! Đang chuyển hướng...', 'success');
+                                setTimeout(() => redirectByRole(data.role), 1000);
+                            }
+                        } else {
+                            const msg = (payload.error?.message || payload.Error?.Message) || 'Dữ liệu xác thực không hợp lệ';
+                            showToast(msg, 'error');
+                        }
+                    } else {
+                        showToast('Xác thực thất bại. Vui lòng thử lại.', 'error');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
+                }
+            }
+
+            document.getElementById('btn-google-login').addEventListener('click', function (e) {
+                e.preventDefault();
+                if(!googleClientId) {
+                    showToast('Tính năng đăng nhập Google chưa được cấu hình!', 'error');
+                    return;
+                }
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        showToast('Vui lòng cho phép popup đăng nhập Google', 'warning');
+                    }
+                });
+            });
+
+            // Xử lý nút hoàn tất đăng ký với Google Role
+            const btnCompleteGoogleLogin = document.getElementById('btnCompleteGoogleLogin');
+            if (btnCompleteGoogleLogin) {
+                btnCompleteGoogleLogin.addEventListener('click', async function() {
+                    if (!window.pendingGoogleCredential) return;
+                    
+                    const selectedRoleObj = document.querySelector('input[name="GoogleRole"]:checked');
+                    if (!selectedRoleObj) {
+                        showToast('Vui lòng chọn một vai trò.', 'warning');
+                        return;
+                    }
+                    
+                    const selectedRole = selectedRoleObj.value;
+                    const btn = this;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+                    btn.disabled = true;
+
+                    try {
+                        const res = await postJson('/api/auth/google', { credential: window.pendingGoogleCredential, role: selectedRole });
+                        if (res && res.accessToken) {
+                            saveAuthSession(res, true);
+                            notifyAuthChanged(res);
+                            const roleModalElement = document.getElementById('googleRoleModal');
+                            const roleModal = bootstrap.Modal.getInstance(roleModalElement) || new bootstrap.Modal(roleModalElement);
+                            roleModal.hide();
+                            
+                            showToast('Tạo tài khoản Google thành công! Đang chuyển hướng...', 'success');
+                            setTimeout(() => redirectByRole(res.role), 1000);
+                        } else {
+                            showToast('Có lỗi xảy ra, vui lòng thử lại.', 'error');
+                            btn.innerHTML = 'Hoàn tất <i class="fas fa-arrow-right ms-2"></i>';
+                            btn.disabled = false;
+                        }
+                    } catch (err) {
+                        showToast(err.message || 'Lỗi kết nối. Vui lòng thử lại.', 'error');
+                        btn.innerHTML = 'Hoàn tất <i class="fas fa-arrow-right ms-2"></i>';
+                        btn.disabled = false;
+                    }
+                });
+            }
+
+            // XỬ LÝ QUÊN MẬT KHẨU
+            const forgotPasswordLinks = document.querySelectorAll('.auth-forgot-password');
+            const fpModalElement = document.getElementById('forgotPasswordModal');
+            let fpModal;
+            if (fpModalElement) {
+                fpModal = new bootstrap.Modal(fpModalElement);
+            }
+
+            forgotPasswordLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (fpModal) {
+                        document.getElementById('fpStep1').style.display = 'block';
+                        document.getElementById('fpStep2').style.display = 'none';
+                        document.getElementById('fpEmail').value = document.querySelector('input[name="Email"]').value || '';
+                        fpModal.show();
+                    }
+                });
+            });
+
+            const btnFpSendOtp = document.getElementById('btnFpSendOtp');
+            if (btnFpSendOtp) {
+                btnFpSendOtp.addEventListener('click', async function() {
+                    const email = document.getElementById('fpEmail').value.trim();
+                    if (!email) { showToast('Vui lòng nhập Email', 'warning'); return; }
+                    
+                    btnFpSendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+                    btnFpSendOtp.disabled = true;
+
+                    try {
+                        const res = await postJson('/api/auth/forgot-password', { email });
+                        // Trong môi trường DEV, Backend trả về trực tiếp OTP trong payload.otp
+                        if (res && res.message) {
+                            document.getElementById('fpStep1').style.display = 'none';
+                            document.getElementById('fpStep2').style.display = 'block';
+                            
+                            // Hiển thị thông báo (Thực tế không hiện mã OTP nữa)
+                            if (window.Swal) {
+                                Swal.fire({
+                                    title: 'Đã gửi mã xác thực',
+                                    text: 'Vui lòng kiểm tra hòm thư Email của bạn để lấy mã OTP.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Đóng',
+                                    confirmButtonColor: '#780115'
+                                });
+                            } else {
+                                showToast('Mã OTP đã được gửi đến Email của bạn.', 'success');
+                            }
+                            document.getElementById('fpOtpMessage').innerHTML = `Vui lòng nhập mã xác thực gồm 6 chữ số đã được gửi tới hòm thư của bạn.`;
+                        }
+                    } catch (err) {
+                        showToast(err.message || 'Lỗi gửi yêu cầu', 'error');
+                    } finally {
+                        btnFpSendOtp.innerHTML = 'Nhận mã OTP';
+                        btnFpSendOtp.disabled = false;
+                    }
+                });
+            }
+
+            const btnFpBack = document.getElementById('btnFpBack');
+            if (btnFpBack) {
+                btnFpBack.addEventListener('click', () => {
+                    document.getElementById('fpStep1').style.display = 'block';
+                    document.getElementById('fpStep2').style.display = 'none';
+                });
+            }
+
+            const btnFpResetPassword = document.getElementById('btnFpResetPassword');
+            if (btnFpResetPassword) {
+                btnFpResetPassword.addEventListener('click', async function() {
+                    const email = document.getElementById('fpEmail').value.trim();
+                    const otp = document.getElementById('fpOtp').value.trim();
+                    const newPassword = document.getElementById('fpNewPassword').value;
+
+                    if (!otp || !newPassword) { showToast('Vui lòng nhập đủ mã OTP và Mật khẩu mới', 'warning'); return; }
+                    if (newPassword.length < 6) { showToast('Mật khẩu mới phải có ít nhất 6 ký tự', 'warning'); return; }
+
+                    btnFpResetPassword.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+                    btnFpResetPassword.disabled = true;
+
+                    try {
+                        const res = await postJson('/api/auth/reset-password', { email, otp, newPassword });
+                        if (res && res.message) {
+                            showToast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+                            fpModal.hide();
+                            // Chuyển form về trạng thái đăng nhập
+                            const loginTab = document.querySelector('.auth-tab[data-target="loginForm"]');
+                            if(loginTab) loginTab.click();
+                        }
+                    } catch (err) {
+                        showToast(err.message || 'Lỗi kết nối', 'error');
+                    } finally {
+                        btnFpResetPassword.innerHTML = 'Đặt lại mật khẩu';
+                        btnFpResetPassword.disabled = false;
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,116 @@
+@{
+    ViewData["Title"] = "UniMap360 - Bản đồ thông minh";
+    ViewData["IsMapPage"] = true;
+}
+
+<link rel="stylesheet" href="~/css/map.css" asp-append-version="true" />
+
+<div id="unimap-container" class="position-relative w-100 h-100">
+    <!-- Map is now the foundational layer -->
+    <div id="map-container" class="position-absolute w-100 h-100" style="top: 0; left: 0; z-index: 1;">
+        <div id="map"></div>
+    </div>
+
+    <!-- Floating Panel (Replaces Sidebar) -->
+    <div id="floating-panel" class="d-flex flex-column" style="z-index: 1000;">
+        
+        <!-- Header -->
+        <div class="panel-header" id="panel-drag-handle" style="cursor: pointer;">
+            <!-- Nút vuốt/chỉ báo mở rộng -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 d-flex align-items-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-maroon">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    UniMap360
+                </h5>
+                <button class="btn btn-sm text-muted border-0 shadow-none d-md-none" id="btn-toggle-panel">
+                    <i class="fas fa-chevron-up transition-all" id="panel-toggle-icon"></i>
+                </button>
+            </div>
+
+            <div class="search-box position-relative mb-3">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="Tìm phòng trọ, việc làm gần bạn...">
+            </div>
+
+            <!-- Chips -->
+            <div class="filter-chips">
+                <span class="badge chip active">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5" /></svg>
+                    Tất cả
+                </span>
+                <span class="badge chip chip-room">
+                    <i class="fas fa-home" style="font-size: 12px;"></i> Phòng Trọ
+                </span>
+                <span class="badge chip chip-job">
+                    <i class="fas fa-briefcase" style="font-size: 12px;"></i> Việc Làm
+                </span>
+            </div>
+        </div>
+
+        <!-- Scrollable List -->
+        <div class="panel-list flex-grow-1 overflow-auto d-flex flex-column" id="items-list">
+            <!-- Rendered by map.js -->
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/map.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const panel = document.getElementById('floating-panel');
+            const header = document.getElementById('panel-drag-handle');
+            const icon = document.getElementById('panel-toggle-icon');
+            const searchInput = panel.querySelector('.search-input');
+
+            // Hàm mở rộng/thu gọn panel
+            function togglePanel(expand) {
+                if (window.innerWidth >= 768) {
+                    panel.classList.remove('expanded');
+                    panel.style.height = ''; // Xóa inline style nếu có
+                    return;
+                }
+                
+                if (expand === undefined) {
+                    panel.classList.toggle('expanded');
+                } else if (expand) {
+                    panel.classList.add('expanded');
+                } else {
+                    panel.classList.remove('expanded');
+                }
+
+                // Cập nhật icon dựa trên trạng thái
+                if (panel.classList.contains('expanded')) {
+                    icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                } else {
+                    icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                }
+            }
+
+            // Xử lý khi resize màn hình để reset trạng thái
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768) {
+                    panel.classList.remove('expanded');
+                    panel.style.height = '';
+                    icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                }
+            });
+
+            // Click vào header để toggle
+            header.addEventListener('click', function(e) {
+                // Không toggle nếu user click vào ô search hoặc các thẻ filter
+                if(e.target.closest('.search-box') || e.target.closest('.filter-chips')) return;
+                togglePanel();
+            });
+
+            // Tự động mở rộng khi nhấn vào ô tìm kiếm
+            searchInput.addEventListener('focus', function() {
+                togglePanel(true);
+            });
+        });
+    </script>
+}

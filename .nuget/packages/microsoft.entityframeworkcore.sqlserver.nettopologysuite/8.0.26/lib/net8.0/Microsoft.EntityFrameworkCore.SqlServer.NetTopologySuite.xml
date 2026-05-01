@@ -1,0 +1,692 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Design.Internal.SqlServerNetTopologySuiteDesignTimeServices">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Design.Internal.SqlServerNetTopologySuiteDesignTimeServices.ConfigureDesignTimeServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal.SqlServerNetTopologySuiteOptionsExtension">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal.SqlServerNetTopologySuiteOptionsExtension.ApplyServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal.SqlServerNetTopologySuiteOptionsExtension.Info">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal.SqlServerNetTopologySuiteOptionsExtension.Validate(Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Internal.SqlServerNTSStrings">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Internal.SqlServerNTSStrings.NTSServicesMissing">
+            <summary>
+                UseNetTopologySuite requires AddEntityFrameworkSqlServerNetTopologySuite to be called on the internal service provider used.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryCollectionMemberTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryCollectionMemberTranslator.#ctor(Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryCollectionMemberTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MemberInfo,System.Type,Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryCollectionMethodTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryCollectionMethodTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryCollectionMethodTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MethodInfo,System.Collections.Generic.IReadOnlyList{Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression},Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryMemberTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryMemberTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryMemberTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MemberInfo,System.Type,Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryMethodTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryMethodTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerGeometryMethodTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MethodInfo,System.Collections.Generic.IReadOnlyList{Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression},Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerLineStringMemberTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerLineStringMemberTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerLineStringMemberTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MemberInfo,System.Type,Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerLineStringMethodTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerLineStringMethodTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerLineStringMethodTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MethodInfo,System.Collections.Generic.IReadOnlyList{Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression},Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerMultiLineStringMemberTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerMultiLineStringMemberTranslator.#ctor(Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerMultiLineStringMemberTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MemberInfo,System.Type,Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteAggregateMethodCallTranslatorPlugin">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteAggregateMethodCallTranslatorPlugin.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteAggregateMethodCallTranslatorPlugin.Translators">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteAggregateMethodTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteAggregateMethodTranslator.#ctor(Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory,Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteAggregateMethodTranslator.Translate(System.Reflection.MethodInfo,Microsoft.EntityFrameworkCore.Query.EnumerableExpression,System.Collections.Generic.IReadOnlyList{Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression},Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteDbFunctionsMethodCallTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteDbFunctionsMethodCallTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteDbFunctionsMethodCallTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MethodInfo,System.Collections.Generic.IReadOnlyList{Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression},Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteEvaluatableExpressionFilterPlugin">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteEvaluatableExpressionFilterPlugin.IsEvaluatableExpression(System.Linq.Expressions.Expression)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteMemberTranslatorPlugin">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteMemberTranslatorPlugin.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteMemberTranslatorPlugin.Translators">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteMethodCallTranslatorPlugin">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteMethodCallTranslatorPlugin.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerNetTopologySuiteMethodCallTranslatorPlugin.Translators">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPointMemberTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPointMemberTranslator.#ctor(Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPointMemberTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MemberInfo,System.Type,Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPolygonMemberTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPolygonMemberTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPolygonMemberTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MemberInfo,System.Type,Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPolygonMethodTranslator">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPolygonMethodTranslator.#ctor(Microsoft.EntityFrameworkCore.Storage.IRelationalTypeMappingSource,Microsoft.EntityFrameworkCore.Query.ISqlExpressionFactory)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Query.Internal.SqlServerPolygonMethodTranslator.Translate(Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression,System.Reflection.MethodInfo,System.Collections.Generic.IReadOnlyList{Microsoft.EntityFrameworkCore.Query.SqlExpressions.SqlExpression},Microsoft.EntityFrameworkCore.Diagnostics.IDiagnosticsLogger{Microsoft.EntityFrameworkCore.DbLoggerCategory.Query})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Scaffolding.Internal.SqlServerNetTopologySuiteCodeGeneratorPlugin">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Scaffolding.Internal.SqlServerNetTopologySuiteCodeGeneratorPlugin.GenerateProviderOptions">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.#ctor(NetTopologySuite.NtsGeometryServices,System.String)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.#ctor(Microsoft.EntityFrameworkCore.Storage.RelationalTypeMapping.RelationalTypeMappingParameters,Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter{`0,System.Data.SqlTypes.SqlBytes})">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.Clone(Microsoft.EntityFrameworkCore.Storage.RelationalTypeMapping.RelationalTypeMappingParameters)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.GenerateNonNullSqlLiteral(System.Object)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.GetDataReaderMethod">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.AsText(System.Object)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.GetSrid(System.Object)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.WktReaderType">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerGeometryTypeMapping`1.ConfigureParameter(System.Data.Common.DbParameter)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerNetTopologySuiteTypeMappingSourcePlugin">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerNetTopologySuiteTypeMappingSourcePlugin.#ctor(NetTopologySuite.NtsGeometryServices)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerNetTopologySuiteTypeMappingSourcePlugin.FindMapping(Microsoft.EntityFrameworkCore.Storage.RelationalTypeMappingInfo@)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Storage.Json.SqlServerJsonGeometryWktReaderWriter">
+            <summary>
+                Reads and writes JSON using the well-known-text format for <see cref="T:NetTopologySuite.Geometries.Geometry" /> values.
+            </summary>
+        </member>
+        <member name="P:Microsoft.EntityFrameworkCore.SqlServer.Storage.Json.SqlServerJsonGeometryWktReaderWriter.Instance">
+            <summary>
+                The singleton instance of this stateless reader/writer.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Json.SqlServerJsonGeometryWktReaderWriter.FromJsonTyped(Microsoft.EntityFrameworkCore.Storage.Json.Utf8JsonReaderManager@,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.Json.SqlServerJsonGeometryWktReaderWriter.ToJsonTyped(System.Text.Json.Utf8JsonWriter,NetTopologySuite.Geometries.Geometry)">
+            <inheritdoc />
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServer.Storage.ValueConversion.Internal.GeometryValueConverter`1">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServer.Storage.ValueConversion.Internal.GeometryValueConverter`1.#ctor(NetTopologySuite.IO.SqlServerBytesReader,NetTopologySuite.IO.SqlServerBytesWriter)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServerNetTopologySuiteDbContextOptionsBuilderExtensions">
+            <summary>
+                NetTopologySuite specific extension methods for <see cref="T:Microsoft.EntityFrameworkCore.Infrastructure.SqlServerDbContextOptionsBuilder" />.
+            </summary>
+            <remarks>
+                See <see href="https://aka.ms/efcore-docs-spatial">Spatial data</see>, and
+                <see href="https://aka.ms/efcore-docs-sqlserver">Accessing SQL Server and Azure SQL databases with EF Core</see>
+                for more information and examples.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServerNetTopologySuiteDbContextOptionsBuilderExtensions.UseNetTopologySuite(Microsoft.EntityFrameworkCore.Infrastructure.SqlServerDbContextOptionsBuilder)">
+            <summary>
+                Use NetTopologySuite to access SQL Server spatial data.
+            </summary>
+            <param name="optionsBuilder">The build being used to configure SQL Server.</param>
+            <returns>The options builder so that further configuration can be chained.</returns>
+        </member>
+        <member name="T:Microsoft.EntityFrameworkCore.SqlServerNetTopologySuiteDbFunctionsExtensions">
+            <summary>
+                Contains extension methods on <see cref="T:Microsoft.EntityFrameworkCore.DbFunctions" /> for the Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite library.
+            </summary>
+        </member>
+        <member name="M:Microsoft.EntityFrameworkCore.SqlServerNetTopologySuiteDbFunctionsExtensions.CurveToLine(Microsoft.EntityFrameworkCore.DbFunctions,NetTopologySuite.Geometries.Geometry)">
+            <summary>
+                Maps to the SQL Server <c>STCurveToLine</c> function which returns a polygonal approximation of an instance that contains circular arc
+                segments.
+            </summary>
+            <param name="_">The <see cref="T:Microsoft.EntityFrameworkCore.DbFunctions" /> instance.</param>
+            <param name="geometry">The instance containing circular arc segments.</param>
+            <returns>The polygonal approximation.</returns>
+        </member>
+        <member name="T:Microsoft.Extensions.DependencyInjection.SqlServerNetTopologySuiteServiceCollectionExtensions">
+            <summary>
+                EntityFrameworkCore.SqlServer.NetTopologySuite extension methods for <see cref="T:Microsoft.Extensions.DependencyInjection.IServiceCollection" />.
+            </summary>
+            <remarks>
+                See <see href="https://aka.ms/efcore-docs-spatial">Spatial data</see>, and
+                <see href="https://aka.ms/efcore-docs-sqlserver">Accessing SQL Server and Azure SQL databases with EF Core</see>
+                for more information and examples.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Extensions.DependencyInjection.SqlServerNetTopologySuiteServiceCollectionExtensions.AddEntityFrameworkSqlServerNetTopologySuite(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+                Adds the services required for NetTopologySuite support in the SQL Server provider for Entity Framework.
+            </summary>
+            <param name="serviceCollection">The <see cref="T:Microsoft.Extensions.DependencyInjection.IServiceCollection" /> to add services to.</param>
+            <returns>The same service collection so that multiple calls can be chained.</returns>
+        </member>
+        <member name="M:System.Linq.Expressions.ExpressionVisitorExtensions.Visit(System.Linq.Expressions.ExpressionVisitor,System.Collections.Generic.IReadOnlyList{System.Linq.Expressions.Expression})">
+            <summary>
+                Dispatches the list of expressions to one of the more specialized visit methods in this class.
+            </summary>
+            <param name="visitor">The expression visitor.</param>
+            <param name="nodes">The expressions to visit.</param>
+            <returns>
+                The modified expression list, if any of the elements were modified; otherwise, returns the original expression list.
+            </returns>
+        </member>
+        <member name="M:System.Linq.Expressions.ExpressionVisitorExtensions.VisitAndConvert``1(System.Linq.Expressions.ExpressionVisitor,System.Collections.Generic.IReadOnlyList{``0},System.String)">
+            <summary>
+                Visits an expression, casting the result back to the original expression type.
+            </summary>
+            <typeparam name="T">The type of the expression.</typeparam>
+            <param name="visitor">The expression visitor.</param>
+            <param name="nodes">The expression to visit.</param>
+            <param name="callerName">The name of the calling method; used to report to report a better error message.</param>
+            <returns>
+                The modified expression, if it or any subexpression was modified; otherwise, returns the original expression.
+            </returns>
+            <exception cref="T:System.InvalidOperationException">The visit method for this node returned a different type.</exception>
+        </member>
+        <member name="M:System.Linq.Expressions.ExpressionVisitorExtensions.Visit``1(System.Linq.Expressions.ExpressionVisitor,System.Collections.Generic.IReadOnlyList{``0},System.Func{``0,``0})">
+            <summary>
+                Visits all nodes in the collection using a specified element visitor.
+            </summary>
+            <typeparam name="T">The type of the nodes.</typeparam>
+            <param name="visitor">The expression visitor.</param>
+            <param name="nodes">The nodes to visit.</param>
+            <param name="elementVisitor">
+                A delegate that visits a single element,
+                optionally replacing it with a new element.
+            </param>
+            <returns>
+                The modified node list, if any of the elements were modified;
+                otherwise, returns the original node list.
+            </returns>
+        </member>
+        <member name="M:System.SharedTypeExtensions.DisplayName(System.Type,System.Boolean,System.Boolean)">
+            <summary>
+                This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+                the same compatibility standards as public APIs. It may be changed or removed without notice in
+                any release. You should only use it directly in your code with extreme caution and knowing that
+                doing so can result in application failures when updating to a new Entity Framework Core release.
+            </summary>
+        </member>
+    </members>
+</doc>

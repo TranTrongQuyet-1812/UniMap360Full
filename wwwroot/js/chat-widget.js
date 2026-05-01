@@ -1,0 +1,503 @@
+(function () {
+    const POLL_CONVERSATIONS_MS = 2500;
+    const POLL_MESSAGES_MS = 1800;
+
+    const state = {
+        initialized: false,
+        open: false,
+        loadingConversations: false,
+        activeConversationId: null,
+        conversations: [],
+        messages: [],
+        conversationPollTimer: null,
+        messagePollTimer: null,
+        viewMode: "list"
+    };
+
+    function getToken() {
+        return window.UniMap360AuthStore?.getStoredToken?.() || null;
+    }
+
+    function getAccount() {
+        return window.UniMap360AuthStore?.getStoredAccount?.() || null;
+    }
+
+    function withNoCacheUrl(url) {
+        const separator = url.includes("?") ? "&" : "?";
+        return `${url}${separator}_chatTs=${Date.now()}`;
+    }
+
+    async function fetchJson(url, options) {
+        const requestOptions = Object.assign({}, options || {});
+        const method = (requestOptions.method || "GET").toUpperCase();
+        const headers = Object.assign({}, requestOptions.headers || {});
+        let finalUrl = url;
+
+        if (method === "GET") {
+            finalUrl = withNoCacheUrl(url);
+            requestOptions.cache = "no-store";
+            headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            headers["Pragma"] = "no-cache";
+            headers["Expires"] = "0";
+        }
+
+        requestOptions.headers = headers;
+
+        const response = await fetch(finalUrl, requestOptions);
+        const contentType = response.headers.get("content-type") || "";
+        let payload = null;
+        if (contentType.includes("application/json")) {
+            payload = await response.json();
+            if (payload && typeof payload === 'object' && 'success' in payload) {
+                payload = payload.success ? payload.data : (payload.error || payload);
+            }
+        }
+        return { response, payload };
+    }
+
+    function escapeHtml(value) {
+        return (value || "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+    }
+
+    function formatTime(isoString) {
+        if (!isoString) return "";
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toLocaleString("vi-VN", {
+            hour12: false,
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    function truncate(text, max) {
+        const value = text || "";
+        if (value.length <= max) return value;
+        return value.slice(0, max - 1) + "...";
+    }
+
+    function ensureWidget() {
+        if (state.initialized) return;
+
+        const wrapper = document.createElement("div");
+        wrapper.id = "um-chat-widget-root";
+        wrapper.innerHTML = `
+            <button id="um-chat-launcher" class="um-chat-launcher" type="button" title="Trò chuyện">
+                <i class="fas fa-comments"></i>
+                <span id="um-chat-launcher-badge" class="um-chat-launcher-badge"></span>
+            </button>
+            <section id="um-chat-panel" class="um-chat-panel" aria-label="Chat panel">
+                <div class="um-chat-header">
+                    <strong><i class="fas fa-comments me-2"></i>Trò chuyện</strong>
+                    <button id="um-chat-close-btn" class="um-chat-close-btn" type="button" aria-label="Close chat">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="um-chat-body">
+                    <aside class="um-chat-sidebar">
+                        <div id="um-chat-list" class="um-chat-list"></div>
+                    </aside>
+                    <section class="um-chat-thread">
+                        <div id="um-chat-thread-header" class="um-chat-thread-header">
+                            <button id="um-chat-back-btn" class="um-chat-back-btn" type="button" aria-label="Back to conversations">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <span id="um-chat-thread-title">Tin nhắn</span>
+                        </div>
+                        <div id="um-chat-thread-messages" class="um-chat-thread-messages">
+                            <div class="um-chat-empty"> </div>
+                        </div>
+                        <div class="um-chat-thread-input-wrap">
+                            <textarea id="um-chat-message-input" placeholder="Nhập tin nhắn..."></textarea>
+                            <button id="um-chat-send-btn" type="button">Gửi</button>
+                        </div>
+                    </section>
+                </div>
+            </section>
+        `;
+
+        document.body.appendChild(wrapper);
+
+        const launcher = document.getElementById("um-chat-launcher");
+        const closeButton = document.getElementById("um-chat-close-btn");
+        const sendButton = document.getElementById("um-chat-send-btn");
+        const messageInput = document.getElementById("um-chat-message-input");
+        const backButton = document.getElementById("um-chat-back-btn");
+
+        launcher?.addEventListener("click", togglePanel);
+        closeButton?.addEventListener("click", togglePanel);
+        sendButton?.addEventListener("click", onSendMessage);
+        backButton?.addEventListener("click", showListView);
+        messageInput?.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                onSendMessage();
+            }
+        });
+
+        state.initialized = true;
+    }
+
+    function setPanelOpen(open) {
+        state.open = !!open;
+        const panel = document.getElementById("um-chat-panel");
+        if (panel) panel.classList.toggle("open", state.open);
+
+        if (state.open) {
+            showListView();
+            loadConversations(true);
+            startPolling();
+        } else {
+            stopMessagePolling();
+        }
+    }
+
+    function applyViewMode() {
+        const panel = document.getElementById("um-chat-panel");
+        if (!panel) return;
+        panel.classList.toggle("list-mode", state.viewMode === "list");
+        panel.classList.toggle("thread-mode", state.viewMode === "thread");
+    }
+
+    function showListView() {
+        state.viewMode = "list";
+        applyViewMode();
+        stopMessagePolling();
+    }
+
+    function showThreadView() {
+        state.viewMode = "thread";
+        applyViewMode();
+        startMessagePolling();
+    }
+
+    function togglePanel() {
+        setPanelOpen(!state.open);
+    }
+
+    async function loadConversations(forceRefresh) {
+        if (state.loadingConversations && !forceRefresh) return;
+
+        const token = getToken();
+        const account = getAccount();
+        if (!token || !account) {
+            renderUnauthenticated();
+            updateLauncherBadge(0);
+            return;
+        }
+
+        state.loadingConversations = true;
+        try {
+            const { response, payload } = await fetchJson("/api/chat/conversations?limit=80", {
+                headers: { Authorization: "Bearer " + token }
+            });
+
+            if (!response.ok) {
+                renderConversationError(payload?.message || "Không tải được danh sách chat.");
+                return;
+            }
+
+            state.conversations = Array.isArray(payload?.items) ? payload.items : [];
+            renderConversationList();
+            updateLauncherBadge(payload?.totalUnread || 0);
+
+            if (!state.activeConversationId && state.conversations.length > 0) {
+                await openConversation(state.conversations[0].conversationId);
+            }
+        } catch {
+            renderConversationError("Không kết nối được hệ thống chat.");
+        } finally {
+            state.loadingConversations = false;
+        }
+    }
+
+    function renderConversationError(message) {
+        const listEl = document.getElementById("um-chat-list");
+        if (!listEl) return;
+        listEl.innerHTML = `<div class="um-chat-empty">${escapeHtml(message)}</div>`;
+    }
+
+    function renderUnauthenticated() {
+        const listEl = document.getElementById("um-chat-list");
+        const threadHeader = document.getElementById("um-chat-thread-title");
+        const messagesEl = document.getElementById("um-chat-thread-messages");
+        if (listEl) listEl.innerHTML = '<div class="um-chat-empty">Đăng nhập để sử dụng chat.</div>';
+        if (threadHeader) threadHeader.textContent = "Tin nhắn";
+        if (messagesEl) messagesEl.innerHTML = '<div class="um-chat-empty">Đăng nhập để nhận và gửi tin nhắn.</div>';
+    }
+
+    function renderConversationList() {
+        const listEl = document.getElementById("um-chat-list");
+        if (!listEl) return;
+
+        if (state.conversations.length === 0) {
+            listEl.innerHTML = '<div class="um-chat-empty">Chưa có cuộc trò chuyện nào.</div>';
+            return;
+        }
+
+        const html = state.conversations.map(function (conversation) {
+            const isActive = conversation.conversationId === state.activeConversationId;
+            const preview = conversation.lastMessage?.content || "Chưa có tin nhắn.";
+            const time = conversation.lastMessage?.createdAt ? formatTime(conversation.lastMessage.createdAt) : "";
+            const unread = Number(conversation.unreadCount || 0);
+            return `
+                <button class="um-chat-list-item ${isActive ? "active" : ""}" type="button" data-conversation-id="${conversation.conversationId}">
+                    <div class="um-chat-item-title">${escapeHtml(conversation.title || "Cuộc trò chuyện")}</div>
+                    <div class="um-chat-item-preview">${escapeHtml(truncate(preview, 80))}</div>
+                    <div class="um-chat-item-meta">
+                        <span class="um-chat-item-time">${escapeHtml(time)}</span>
+                        ${unread > 0 ? `<span class="um-chat-item-unread">${unread}</span>` : ""}
+                    </div>
+                </button>
+            `;
+        }).join("");
+
+        listEl.innerHTML = html;
+        listEl.querySelectorAll("[data-conversation-id]").forEach(function (button) {
+            button.addEventListener("click", async function () {
+                const conversationId = Number(button.getAttribute("data-conversation-id"));
+                if (conversationId > 0) await openConversation(conversationId);
+            });
+        });
+    }
+
+    async function openConversation(conversationId) {
+        state.activeConversationId = conversationId;
+        renderConversationList();
+
+        const conversation = state.conversations.find(x => x.conversationId === conversationId);
+        const threadHeader = document.getElementById("um-chat-thread-title");
+        if (threadHeader) threadHeader.textContent = conversation?.title || "Tin nhắn";
+
+        showThreadView();
+        await loadMessages();
+        await markConversationRead();
+        await loadConversations(true);
+    }
+
+    async function loadMessages() {
+        const token = getToken();
+        if (!token || !state.activeConversationId) return;
+
+        const messagesEl = document.getElementById("um-chat-thread-messages");
+        if (!messagesEl) return;
+
+        try {
+            const { response, payload } = await fetchJson(`/api/chat/conversations/${state.activeConversationId}/messages?take=80`, {
+                headers: { Authorization: "Bearer " + token }
+            });
+
+            if (!response.ok) {
+                messagesEl.innerHTML = '<div class="um-chat-empty">Không tải được tin nhắn.</div>';
+                return;
+            }
+
+            state.messages = Array.isArray(payload?.items) ? payload.items : [];
+            renderMessages();
+        } catch {
+            messagesEl.innerHTML = '<div class="um-chat-empty">Lỗi kết nối khi tải tin nhắn.</div>';
+        }
+    }
+
+    function renderMessages() {
+        const messagesEl = document.getElementById("um-chat-thread-messages");
+        const account = getAccount();
+        if (!messagesEl || !account) return;
+
+        if (state.messages.length === 0) {
+            messagesEl.innerHTML = '<div class="um-chat-empty">Chưa có tin nhắn. Bạn có thể gửi lời chào đầu tiên.</div>';
+            return;
+        }
+
+        const html = state.messages.map(function (message) {
+            const mine = Number(message.senderAccountId) === Number(account.accountId);
+            return `
+                <div class="um-chat-bubble ${mine ? "mine" : "other"}">
+                    <div>${escapeHtml(message.content || "")}</div>
+                    <div class="um-chat-bubble-time">${escapeHtml(formatTime(message.createdAt))}</div>
+                </div>
+            `;
+        }).join("");
+
+        messagesEl.innerHTML = html;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function onSendMessage() {
+        if (!state.activeConversationId) return;
+
+        const token = getToken();
+        if (!token) return;
+
+        const inputEl = document.getElementById("um-chat-message-input");
+        const sendBtn = document.getElementById("um-chat-send-btn");
+        const content = (inputEl?.value || "").trim();
+        if (!content) return;
+
+        if (sendBtn) sendBtn.disabled = true;
+        try {
+            const { response, payload } = await fetchJson(`/api/chat/conversations/${state.activeConversationId}/messages`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({ content: content })
+            });
+
+            if (!response.ok) {
+                window.alert(payload?.message || "Không gửi được tin nhắn.");
+                return;
+            }
+
+            if (inputEl) inputEl.value = "";
+            await loadMessages();
+            await markConversationRead();
+            await loadConversations(true);
+        } catch {
+            window.alert("Không kết nối được hệ thống chat.");
+        } finally {
+            if (sendBtn) sendBtn.disabled = false;
+        }
+    }
+
+    async function markConversationRead() {
+        const token = getToken();
+        if (!token || !state.activeConversationId) return;
+
+        const lastMessage = state.messages[state.messages.length - 1];
+        const lastReadMessageId = lastMessage?.messageId || null;
+
+        try {
+            await fetch(`/api/chat/conversations/${state.activeConversationId}/read`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({ lastReadMessageId: lastReadMessageId })
+            });
+        } catch {
+            // ignore
+        }
+    }
+
+    async function openDirectChat(targetAccountId, preferredName) {
+        const token = getToken();
+        const account = getAccount();
+        if (!token || !account) {
+            window.location.href = "/Home/Auth";
+            return;
+        }
+
+        const normalizedTargetId = Number(targetAccountId || 0);
+        if (!normalizedTargetId) throw new Error("Tài khoản đích không hợp lệ.");
+        if (normalizedTargetId === Number(account.accountId)) throw new Error("Không thể tự nhắn tin với chính mình.");
+
+        setPanelOpen(true);
+
+        const { response, payload } = await fetchJson("/api/chat/conversations/direct", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token
+            },
+            body: JSON.stringify({ targetAccountId: normalizedTargetId })
+        });
+
+        if (!response.ok) {
+            throw new Error(payload?.message || "Không mở được đoạn chat.");
+        }
+
+        await loadConversations(true);
+        const conversationId = Number(payload?.conversationId || 0);
+        if (conversationId > 0) {
+            await openConversation(conversationId);
+            return;
+        }
+
+        if (preferredName) {
+            const threadHeader = document.getElementById("um-chat-thread-title");
+            if (threadHeader) threadHeader.textContent = preferredName;
+        }
+        showThreadView();
+    }
+
+    function updateLauncherBadge(totalUnread) {
+        const badge = document.getElementById("um-chat-launcher-badge");
+        if (!badge) return;
+
+        const count = Number(totalUnread || 0);
+        if (count <= 0) {
+            badge.style.display = "none";
+            badge.textContent = "";
+            return;
+        }
+
+        badge.style.display = "inline-flex";
+        badge.textContent = count > 99 ? "99+" : String(count);
+    }
+
+    function startPolling() {
+        stopConversationPolling();
+        state.conversationPollTimer = window.setInterval(function () {
+            loadConversations(false);
+        }, POLL_CONVERSATIONS_MS);
+    }
+
+    function stopConversationPolling() {
+        if (state.conversationPollTimer) {
+            window.clearInterval(state.conversationPollTimer);
+            state.conversationPollTimer = null;
+        }
+    }
+
+    function startMessagePolling() {
+        stopMessagePolling();
+        state.messagePollTimer = window.setInterval(async function () {
+            if (!state.activeConversationId || !state.open) return;
+            await loadMessages();
+            await markConversationRead();
+            await loadConversations(false);
+        }, POLL_MESSAGES_MS);
+    }
+
+    function stopMessagePolling() {
+        if (state.messagePollTimer) {
+            window.clearInterval(state.messagePollTimer);
+            state.messagePollTimer = null;
+        }
+    }
+
+    function boot() {
+        ensureWidget();
+        applyViewMode();
+        loadConversations(true);
+        startPolling();
+
+        window.UniMap360ChatWidget = {
+            openPanel: function () {
+                setPanelOpen(true);
+            },
+            openDirectChat: openDirectChat
+        };
+
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") {
+                loadConversations(true);
+                if (state.open && state.activeConversationId) {
+                    loadMessages();
+                    markConversationRead();
+                }
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", boot);
+})();

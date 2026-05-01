@@ -1,0 +1,506 @@
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+}
+
+<style>
+    .profile-page-wrapper {
+        min-height: calc(100vh - var(--app-nav-height, 70px));
+        background-color: var(--color-bg);
+        padding: 50px 0;
+    }
+    .profile-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .profile-header h2 {
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+    
+    .profile-avatar-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 20px;
+    }
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+        box-shadow: var(--shadow-float);
+        background: #f0f0f0;
+        transition: opacity 0.3s ease;
+    }
+    .avatar-upload-btn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: var(--color-primary);
+        color: #fff;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: var(--shadow-card);
+        transition: transform 0.2s, background-color 0.2s;
+    }
+    .avatar-upload-btn:hover {
+        transform: scale(1.1);
+        background: var(--color-primary-dark);
+    }
+    .avatar-loading-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.7);
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--color-primary);
+    }
+
+    .profile-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: var(--shadow-card);
+        padding: 40px;
+        max-width: 600px;
+        margin: 0 auto;
+        border: 1px solid var(--color-border);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #333;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--color-border);
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        outline: none;
+    }
+    .form-group input:focus {
+        border-color: var(--color-primary);
+    }
+    .form-group input:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+    }
+
+    .btn-save-profile {
+        width: 100%;
+        padding: 14px;
+        background: var(--color-primary);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+    .btn-save-profile:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+    .btn-save-profile:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        opacity: 0.7;
+    }
+
+    /* Role Badges */
+    .role-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 20px;
+    }
+    .role-student { background: #e3f2fd; color: #1565c0; }
+    .role-host { background: #e8f5e9; color: #2e7d32; }
+    .role-employer { background: #fff3e0; color: #ef6c00; }
+
+
+    /* Responsive cho Profile */
+    @@media (max-width: 767.98px) {
+        .profile-page-wrapper {
+            padding: 30px 10px;
+        }
+        .profile-card {
+            padding: 24px 16px;
+            border-radius: 12px;
+        }
+        .profile-header h2 {
+            font-size: 1.75rem;
+        }
+        .profile-avatar-container {
+            width: 100px;
+            height: 100px;
+        }
+        .btn-save-profile {
+            padding: 12px;
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<div class="profile-page-wrapper">
+    <div class="container">
+        <div class="profile-header">
+            <h2>Hồ sơ cá nhân</h2>
+            <div class="profile-avatar-container">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Avatar" class="profile-avatar" id="userAvatar" style="background: #e4e6eb;">
+                <div class="avatar-loading-overlay" id="avatarLoading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="avatar-upload-btn" title="Cập nhật ảnh đại diện" onclick="document.getElementById('avatarUploadInput').click()">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <input type="file" id="avatarUploadInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;">
+            </div>
+            <div id="roleBadgeContainer">
+                <!-- Role badge will be injected here -->
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <form id="profileForm">
+                <!-- Common Field -->
+                <div class="form-group">
+                    <label>Email đăng nhập</label>
+                    <input type="email" id="inputEmail" disabled>
+                </div>
+
+                <!-- Dynamic Fields (Injected by JS) -->
+                <div id="dynamicFields"></div>
+
+                <button type="submit" class="btn-save-profile" id="btnSaveProfile" disabled>
+                    <span>Lưu thay đổi</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+<script>
+    let initialProfileData = {};
+    let currentRole = '';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = window.UniMap360AuthStore 
+            ? window.UniMap360AuthStore.getStoredToken() 
+            : (localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken'));
+            
+        if (!token) {
+            window.location.href = '/Home/Auth';
+            return;
+        }
+
+        try {
+            // Fetch detailed profile data
+            const res = await fetch('/api/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!res.ok) {
+                if (res.status === 401) {
+                    throw new Error("UNAUTHORIZED");
+                }
+                const errText = await res.text();
+                throw new Error(errText || "Lỗi máy chủ");
+            }
+
+            const data = await res.json();
+            currentRole = data.role;
+            
+            // Render Avatar
+            const avatarImg = document.getElementById('userAvatar');
+            if (data.avatarUrl) {
+                avatarImg.src = data.avatarUrl;
+            } else {
+                avatarImg.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.email)}`;
+            }
+
+            // Render Email
+            document.getElementById('inputEmail').value = data.email;
+
+            // Render Role Badge
+            const badgeContainer = document.getElementById('roleBadgeContainer');
+            let roleClass = 'role-student';
+            let roleText = 'Sinh viên';
+            if (data.role === 'Host') { roleClass = 'role-host'; roleText = 'Chủ trọ'; }
+            if (data.role === 'Employer') { roleClass = 'role-employer'; roleText = 'Nhà tuyển dụng'; }
+            badgeContainer.innerHTML = `<span class="role-badge ${roleClass}">${roleText}</span>`;
+
+            // Save initial data and Render Form
+            initialProfileData = data.profile || {};
+            renderFormFields(data.role, initialProfileData);
+
+            // Sync fullName to auth store
+            if (window.UniMap360AuthStore && initialProfileData) {
+                const account = window.UniMap360AuthStore.getStoredAccount();
+                if (account) {
+                    const nameToSave = initialProfileData.fullName || initialProfileData.companyName;
+                    if (nameToSave && account.fullName !== nameToSave) {
+                        account.fullName = nameToSave;
+                        window.UniMap360AuthStore.saveAccount(account);
+                        window.dispatchEvent(new Event('unimap360-auth-changed'));
+                    }
+                }
+            }
+
+            // Add input listeners to check for changes
+            attachChangeListeners();
+
+        } catch (err) {
+            console.error("Profile Load Error:", err);
+            if (err.message === "UNAUTHORIZED") {
+                if (window.UniMap360AuthStore) {
+                    window.UniMap360AuthStore.clearStoredAuth();
+                }
+                window.location.href = '/Home/Auth';
+            } else {
+                showToast("Không thể tải thông tin hồ sơ: " + err.message, "error");
+            }
+        }
+    });
+
+    function renderFormFields(role, profileData) {
+        const container = document.getElementById('dynamicFields');
+        let html = '';
+
+        if (role === 'Student' || !role) {
+            html = `
+                <div class="form-group">
+                    <label>Họ và Tên</label>
+                    <input type="text" id="inputFullName" value="${profileData.fullName || ''}" placeholder="Nhập họ tên của bạn" required>
+                </div>
+                <div class="form-group">
+                    <label>Trường Đại học / Cao đẳng</label>
+                    <input type="text" id="inputUniversity" value="${profileData.university || ''}" placeholder="Ví dụ: Đại học Bách Khoa">
+                </div>
+                <div class="form-group">
+                    <label>Chuyên ngành</label>
+                    <input type="text" id="inputMajor" value="${profileData.major || ''}" placeholder="Ví dụ: Khoa học máy tính">
+                </div>
+            `;
+        } else if (role === 'Host') {
+            html = `
+                <div class="form-group">
+                    <label>Họ và Tên (Chủ trọ)</label>
+                    <input type="text" id="inputFullName" value="${profileData.fullName || ''}" placeholder="Nhập họ tên" required>
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại liên hệ</label>
+                    <input type="tel" id="inputPhone" value="${profileData.phone || ''}" placeholder="09xxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>Số CMND/CCCD</label>
+                    <input type="text" id="inputIdCard" value="${profileData.idcard || ''}" placeholder="Cần thiết để xác minh">
+                </div>
+            `;
+        } else if (role === 'Employer') {
+            html = `
+                <div class="form-group">
+                    <label>Tên Công ty / Doanh nghiệp</label>
+                    <input type="text" id="inputCompanyName" value="${profileData.companyName || ''}" placeholder="Nhập tên công ty" required>
+                </div>
+                <div class="form-group">
+                    <label>Mã số thuế</label>
+                    <input type="text" id="inputTaxCode" value="${profileData.taxCode || ''}" placeholder="Mã số thuế">
+                </div>
+                <div class="form-group">
+                    <label>Website (Không bắt buộc)</label>
+                    <input type="url" id="inputWebsite" value="${profileData.website || ''}" placeholder="https://...">
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    function attachChangeListeners() {
+        const inputs = document.querySelectorAll('#dynamicFields input');
+        inputs.forEach(input => {
+            input.addEventListener('input', checkFormChanges);
+        });
+    }
+
+    function checkFormChanges() {
+        let hasChanged = false;
+        if (currentRole === 'Student' || !currentRole) {
+            if ((document.getElementById('inputFullName').value !== (initialProfileData.fullName || '')) ||
+                (document.getElementById('inputUniversity').value !== (initialProfileData.university || '')) ||
+                (document.getElementById('inputMajor').value !== (initialProfileData.major || ''))) {
+                hasChanged = true;
+            }
+        } else if (currentRole === 'Host') {
+            if ((document.getElementById('inputFullName').value !== (initialProfileData.fullName || '')) ||
+                (document.getElementById('inputPhone').value !== (initialProfileData.phone || '')) ||
+                (document.getElementById('inputIdCard').value !== (initialProfileData.idcard || ''))) {
+                hasChanged = true;
+            }
+        } else if (currentRole === 'Employer') {
+            if ((document.getElementById('inputCompanyName').value !== (initialProfileData.companyName || '')) ||
+                (document.getElementById('inputTaxCode').value !== (initialProfileData.taxCode || '')) ||
+                (document.getElementById('inputWebsite').value !== (initialProfileData.website || ''))) {
+                hasChanged = true;
+            }
+        }
+
+        document.getElementById('btnSaveProfile').disabled = !hasChanged;
+    }
+
+    // Handle profile info update
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const token = window.UniMap360AuthStore ? window.UniMap360AuthStore.getStoredToken() : localStorage.getItem('unimap360.accessToken');
+        const btnSave = document.getElementById('btnSaveProfile');
+        
+        // Prepare payload
+        let payload = {};
+        if (currentRole === 'Student' || !currentRole) {
+            payload = {
+                fullName: document.getElementById('inputFullName').value,
+                university: document.getElementById('inputUniversity').value,
+                major: document.getElementById('inputMajor').value
+            };
+        } else if (currentRole === 'Host') {
+            payload = {
+                fullName: document.getElementById('inputFullName').value,
+                phone: document.getElementById('inputPhone').value,
+                idcard: document.getElementById('inputIdCard').value
+            };
+        } else if (currentRole === 'Employer') {
+            payload = {
+                companyName: document.getElementById('inputCompanyName').value,
+                taxCode: document.getElementById('inputTaxCode').value,
+                website: document.getElementById('inputWebsite').value
+            };
+        }
+
+        try {
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Đang lưu...</span>';
+
+            const res = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(errText || "Cập nhật thất bại");
+            }
+
+            // Update initial state so button stays disabled
+            initialProfileData = { ...initialProfileData, ...payload };
+            btnSave.innerHTML = '<span>Lưu thay đổi</span>';
+            showToast("Đã lưu thông tin hồ sơ thành công!", "success");
+
+            // Update local account name if needed
+            if (window.UniMap360AuthStore) {
+                const account = window.UniMap360AuthStore.getStoredAccount();
+                if (account) {
+                    account.fullName = payload.fullName || payload.companyName;
+                    window.UniMap360AuthStore.saveAccount(account);
+                    // Cập nhật lại UI navbar nếu cần (tùy vào luồng hiện tại)
+                    // Trigger custom event để navbar cập nhật
+                    window.dispatchEvent(new Event('unimap360-auth-changed'));
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<span>Lưu thay đổi</span>';
+            showToast(err.message || "Lỗi khi lưu dữ liệu.", "error");
+        }
+    });
+
+    // Handle avatar upload
+    document.getElementById('avatarUploadInput').addEventListener('change', async function() {
+        if (!this.files || this.files.length === 0) return;
+
+        const file = this.files[0];
+        const token = window.UniMap360AuthStore ? window.UniMap360AuthStore.getStoredToken() : localStorage.getItem('unimap360.accessToken');
+        const loadingOverlay = document.getElementById('avatarLoading');
+        
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            loadingOverlay.style.display = 'flex';
+            
+            const res = await fetch('/api/profile/avatar', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(data.message || data || "Tải ảnh lên thất bại");
+            }
+
+            // Update UI with new avatar
+            document.getElementById('userAvatar').src = data.avatarUrl;
+            showToast("Đã cập nhật ảnh đại diện!", "success");
+
+            // Update auth store to reflect new avatar across the site
+            if (window.UniMap360AuthStore) {
+                const account = window.UniMap360AuthStore.getStoredAccount();
+                if (account) {
+                    account.avatarUrl = data.avatarUrl;
+                    window.UniMap360AuthStore.saveAccount(account);
+                    
+                    // Trigger navbar update
+                    window.dispatchEvent(new Event('unimap360-auth-changed'));
+                }
+            }
+            
+        } catch (err) {
+            console.error(err);
+            showToast(err.message, "error");
+        } finally {
+            loadingOverlay.style.display = 'none';
+            this.value = ''; // Reset input
+        }
+    });
+
+
+</script>
+}

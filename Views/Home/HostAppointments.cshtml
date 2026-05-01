@@ -1,0 +1,496 @@
+@{
+    ViewData["Title"] = "Yêu cầu xem phòng";
+}
+
+<style>
+    .host-appointments-page {
+        min-height: calc(100vh - var(--app-nav-height, 70px));
+        background: var(--color-bg);
+        padding: 32px 0;
+    }
+
+    .host-appointments-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 16px;
+    }
+
+    .host-appointments-header h2 {
+        margin: 0;
+        font-weight: 800;
+    }
+
+    .host-appointments-header p {
+        margin: 4px 0 0;
+        color: var(--color-text-muted);
+    }
+
+    .host-appointments-toolbar {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-card);
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 220px 1fr auto;
+        gap: 10px;
+        margin-bottom: 8px;
+        transition: box-shadow var(--motion-base) var(--ease-cinematic), border-color var(--motion-base) var(--ease-cinematic);
+    }
+    .host-appointments-toolbar:focus-within {
+        border-color: var(--color-border-dark);
+        box-shadow: var(--shadow-float);
+    }
+
+    .host-appointments-toolbar .form-select,
+    .host-appointments-toolbar .form-control {
+        border-color: var(--color-border);
+    }
+
+    .realtime-status {
+        margin: 0 2px 12px;
+        font-size: 0.88rem;
+        color: var(--color-text-muted);
+    }
+
+    .realtime-status.is-error {
+        color: #dc3545;
+    }
+
+    .realtime-status.is-syncing {
+        color: #0d6efd;
+    }
+
+    .host-appointments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .appointment-card {
+        background: #fff;
+        border: 1px solid var(--color-border);
+        border-radius: 14px;
+        box-shadow: var(--shadow-card);
+        padding: 16px;
+        transition: transform var(--motion-fast) var(--ease-cinematic), box-shadow var(--motion-base) var(--ease-cinematic);
+    }
+    .appointment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-float);
+    }
+
+    .appointment-card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .appointment-title {
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: 2px;
+    }
+
+    .appointment-sub {
+        color: var(--color-text-muted);
+        font-size: 0.92rem;
+    }
+
+    .appointment-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 16px;
+        margin: 10px 0 12px;
+    }
+
+    .appointment-grid .label {
+        color: var(--color-text-muted);
+        font-size: 0.82rem;
+    }
+
+    .appointment-grid .value {
+        font-weight: 600;
+    }
+
+    .appointment-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .empty-box {
+        background: #fff;
+        border: 1px dashed var(--color-border-dark);
+        border-radius: 14px;
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--color-text-muted);
+    }
+
+    .toast-msg {
+        position: fixed;
+        top: 90px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 600;
+        z-index: 5600;
+        opacity: 0;
+        transform: translateX(30px);
+        transition: all .3s ease;
+    }
+
+    .toast-msg.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .toast-msg.success {
+        background: #198754;
+    }
+
+    .toast-msg.error {
+        background: #dc3545;
+    }
+
+    @@media (max-width: 992px) {
+        .host-appointments-toolbar {
+            grid-template-columns: 1fr;
+        }
+
+        .appointment-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="host-appointments-page">
+    <div class="container">
+        <div class="host-appointments-header">
+            <div>
+                <h2>Yêu cầu xem phòng</h2>
+                <p>Xem danh sách yêu cầu và xử lý đồng ý / từ chối ngay tại đây.</p>
+            </div>
+        </div>
+
+        <div class="host-appointments-toolbar">
+            <select id="statusFilter" class="form-select">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Pending">Đang chờ</option>
+                <option value="Confirmed">Đã xác nhận</option>
+                <option value="Rejected">Đã từ chối</option>
+                <option value="Rescheduled">Đề xuất giờ mới</option>
+            </select>
+            <input id="searchInput" type="text" class="form-control" placeholder="Tìm theo tên phòng / tên người gửi..." />
+            <button id="reloadBtn" type="button" class="btn btn-outline-secondary">Tải lại</button>
+        </div>
+
+        <div id="realtimeStatus" class="realtime-status">Đang chuẩn bị đồng bộ realtime...</div>
+
+        <div id="listWrap" class="host-appointments-list">
+            <div class="empty-box"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-msg" id="toastMsg"></div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const listWrap = document.getElementById('listWrap');
+            const statusFilter = document.getElementById('statusFilter');
+            const searchInput = document.getElementById('searchInput');
+            const reloadBtn = document.getElementById('reloadBtn');
+            const realtimeStatus = document.getElementById('realtimeStatus');
+            const toast = document.getElementById('toastMsg');
+
+            let allItems = [];
+            let isLoading = false;
+            let autoRefreshTimer = null;
+            let lastDataSignature = '';
+            const autoRefreshMs = 15000;
+
+
+
+            function setRealtimeStatus(message, tone) {
+                if (!realtimeStatus) return;
+                realtimeStatus.textContent = message;
+                realtimeStatus.classList.remove('is-error', 'is-syncing');
+                if (tone === 'error') realtimeStatus.classList.add('is-error');
+                if (tone === 'syncing') realtimeStatus.classList.add('is-syncing');
+            }
+
+            function formatClock(value) {
+                const date = value instanceof Date ? value : new Date(value);
+                if (Number.isNaN(date.getTime())) return '--:--:--';
+                return date.toLocaleTimeString('vi-VN');
+            }
+
+            function decodeJwt(token) {
+                try {
+                    const payload = token.split('.')[1];
+                    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+                    const json = decodeURIComponent(atob(base64).split('').map(function (c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+                    return JSON.parse(json);
+                } catch {
+                    return null;
+                }
+            }
+
+            function isHostToken(token) {
+                const payload = decodeJwt(token);
+                if (!payload) return false;
+                const roleRaw = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role || '';
+                return roleRaw.toString().toLowerCase() === 'host';
+            }
+
+            function formatDateTime(value) {
+                if (!value) return 'Chưa xác định';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 'Chưa xác định';
+                return date.toLocaleString('vi-VN');
+            }
+
+            function statusBadge(status) {
+                const normalized = (status || '').toLowerCase();
+                if (normalized === 'confirmed') return '<span class="badge bg-success-subtle text-success">Đã xác nhận</span>';
+                if (normalized === 'rejected') return '<span class="badge bg-danger-subtle text-danger">Đã từ chối</span>';
+                if (normalized === 'rescheduled') return '<span class="badge bg-warning-subtle text-warning-emphasis">Đề xuất giờ mới</span>';
+                return '<span class="badge bg-secondary-subtle text-secondary-emphasis">Đang chờ</span>';
+            }
+
+            function canHandle(status) {
+                const normalized = (status || '').toLowerCase();
+                return normalized === 'pending' || normalized === 'rescheduled';
+            }
+
+            function escapeHtml(input) {
+                return (input || '').toString()
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            function buildDataSignature(items) {
+                if (!Array.isArray(items)) return '';
+                return JSON.stringify(items.map(function (item) {
+                    return [item.appointmentId, item.status, item.hostResponse, item.suggestedAt, item.createdAt];
+                }));
+            }
+
+            function render() {
+                const keyword = (searchInput.value || '').trim().toLowerCase();
+                const selectedStatus = statusFilter.value;
+
+                const filtered = allItems.filter(function (item) {
+                    if (selectedStatus && item.status !== selectedStatus) return false;
+                    if (!keyword) return true;
+
+                    const roomTitle = (item.roomTitle || '').toLowerCase();
+                    const studentName = (item.studentName || '').toLowerCase();
+                    const studentId = (item.studentId || '').toString().toLowerCase();
+                    return roomTitle.includes(keyword) || studentName.includes(keyword) || studentId.includes(keyword);
+                });
+
+                if (!filtered.length) {
+                    listWrap.innerHTML = '<div class="empty-box"><i class="fas fa-inbox me-2"></i>Không có yêu cầu nào phù hợp.</div>';
+                    return;
+                }
+
+                listWrap.innerHTML = filtered.map(function (item) {
+                    const actionButtons = canHandle(item.status)
+                        ? `
+                            <button class="btn btn-success btn-sm js-action-btn" data-action="accept" data-id="${item.appointmentId}">
+                                <i class="fas fa-check me-1"></i>Đồng ý
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm js-action-btn" data-action="reject" data-id="${item.appointmentId}">
+                                <i class="fas fa-xmark me-1"></i>Từ chối
+                            </button>
+                          `
+                        : '<span class="small text-muted">Yêu cầu đã được xử lý.</span>';
+
+                    return `
+                        <div class="appointment-card">
+                            <div class="appointment-card-top">
+                                <div>
+                                    <div class="appointment-title">${escapeHtml(item.roomTitle || 'Phòng trọ')}</div>
+                                    <div class="appointment-sub">Người gửi: ${escapeHtml(item.studentName || 'Không rõ')} (ID: ${item.studentId ?? '-'})</div>
+                                </div>
+                                ${statusBadge(item.status)}
+                            </div>
+                            <div class="appointment-grid">
+                                <div>
+                                    <div class="label">Thời gian hẹn</div>
+                                    <div class="value">${formatDateTime(item.scheduledAt)}</div>
+                                </div>
+                                <div>
+                                    <div class="label">Gửi lúc</div>
+                                    <div class="value">${formatDateTime(item.createdAt)}</div>
+                                </div>
+                                <div>
+                                    <div class="label">Số điện thoại</div>
+                                    <div class="value">${escapeHtml(item.contactPhone || 'Chưa cập nhật')}</div>
+                                </div>
+                                <div>
+                                    <div class="label">Ghi chú của người gửi</div>
+                                    <div class="value">${escapeHtml(item.studentNote || 'Không có')}</div>
+                                </div>
+                                <div>
+                                    <div class="label">Phản hồi của chủ trọ</div>
+                                    <div class="value">${escapeHtml(item.hostResponse || 'Chưa phản hồi')}</div>
+                                </div>
+                                <div>
+                                    <div class="label">Giờ đề xuất mới</div>
+                                    <div class="value">${formatDateTime(item.suggestedAt)}</div>
+                                </div>
+                            </div>
+                            <div class="appointment-actions">${actionButtons}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                listWrap.querySelectorAll('.js-action-btn').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        const appointmentId = Number(button.dataset.id);
+                        const action = button.dataset.action;
+                        handleAction(appointmentId, action, button);
+                    });
+                });
+            }
+
+            async function loadData(options) {
+                const opts = options || {};
+                const silent = opts.silent === true;
+                if (isLoading) return;
+
+                const token = getToken();
+                if (!token || !isHostToken(token)) {
+                    listWrap.innerHTML = '<div class="empty-box"><i class="fas fa-lock me-2"></i>Trang này chỉ dành cho tài khoản Chủ trọ đã đăng nhập.</div>';
+                    setRealtimeStatus('Trang này chỉ dành cho tài khoản Chủ trọ đã đăng nhập.', 'error');
+                    return;
+                }
+
+                isLoading = true;
+                reloadBtn.disabled = true;
+
+                if (!silent) {
+                    listWrap.innerHTML = '<div class="empty-box"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...</div>';
+                } else {
+                    setRealtimeStatus('Đang tự động đồng bộ...', 'syncing');
+                }
+
+                try {
+                    const response = await fetch('/api/host/room-appointments?limit=200', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    let data = await response.json();
+                    if (data && data.success === true && data.data !== undefined) {
+                        data = data.data;
+                    }
+                    if (!response.ok) {
+                        throw new Error(data?.message || 'Không tải được danh sách yêu cầu.');
+                    }
+
+                    const items = Array.isArray(data.items) ? data.items : [];
+                    const signature = buildDataSignature(items);
+                    const hasChanged = signature !== lastDataSignature;
+
+                    allItems = items;
+                    if (hasChanged || !silent) {
+                        render();
+                    }
+
+                    lastDataSignature = signature;
+                    setRealtimeStatus(`Tự động cập nhật mỗi ${Math.round(autoRefreshMs / 1000)} giây. Lần cuối: ${formatClock(new Date())}`, null);
+                } catch (error) {
+                    if (!silent) {
+                        listWrap.innerHTML = `<div class="empty-box text-danger">${escapeHtml(error?.message || 'Không tải được danh sách.')}</div>`;
+                    }
+                    setRealtimeStatus(error?.message || 'Không tải được danh sách.', 'error');
+                } finally {
+                    isLoading = false;
+                    reloadBtn.disabled = false;
+                }
+            }
+
+            async function handleAction(appointmentId, action, sourceButton) {
+                const token = getToken();
+                if (!token) {
+                    showToast('Vui lòng đăng nhập lại.', 'error');
+                    return;
+                }
+
+                const actionText = action === 'accept' ? 'đồng ý' : 'từ chối';
+                const confirmed = window.confirm(`Bạn chắc chắn muốn ${actionText} yêu cầu này?`);
+                if (!confirmed) return;
+
+                const responseText = window.prompt('Phản hồi thêm (có thể để trống):', '') || '';
+                const endpoint = action === 'accept'
+                    ? `/api/host/room-appointments/${appointmentId}/accept`
+                    : `/api/host/room-appointments/${appointmentId}/reject`;
+
+                sourceButton.disabled = true;
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ response: responseText })
+                    });
+
+                    let data = await response.json();
+                    if (data && data.success === true && data.data !== undefined) {
+                        data = data.data;
+                    }
+                    if (!response.ok) {
+                        throw new Error(data?.message || 'Xử lý yêu cầu thất bại.');
+                    }
+
+                    showToast(data?.message || 'Cập nhật thành công.', 'success');
+                    await loadData({ silent: false });
+                } catch (error) {
+                    showToast(error?.message || 'Có lỗi xảy ra.', 'error');
+                    sourceButton.disabled = false;
+                }
+            }
+
+            function startAutoRefresh() {
+                if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+                autoRefreshTimer = setInterval(function () {
+                    if (document.hidden) return;
+                    loadData({ silent: true });
+                }, autoRefreshMs);
+            }
+
+            statusFilter.addEventListener('change', render);
+            searchInput.addEventListener('input', render);
+            reloadBtn.addEventListener('click', function () { loadData({ silent: false }); });
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) loadData({ silent: true });
+            });
+            window.addEventListener('beforeunload', function () {
+                if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+            });
+
+            loadData({ silent: false });
+            startAutoRefresh();
+        })();
+    </script>
+}

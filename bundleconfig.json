@@ -1,0 +1,99 @@
+[
+  {
+    "outputFileName": "wwwroot/css/site.min.css",
+    "inputFiles": [
+      "wwwroot/css/site.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/responsive.min.css",
+    "inputFiles": [
+      "wwwroot/css/responsive.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/map.min.css",
+    "inputFiles": [
+      "wwwroot/css/map.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/chat-widget.min.css",
+    "inputFiles": [
+      "wwwroot/css/chat-widget.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/js/site.min.js",
+    "inputFiles": [
+      "wwwroot/js/site.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    }
+  },
+  {
+    "outputFileName": "wwwroot/js/unimap-core.min.js",
+    "inputFiles": [
+      "wwwroot/js/unimap-core.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/auth-store.min.js",
+    "inputFiles": [
+      "wwwroot/js/auth-store.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/navbar-auth.min.js",
+    "inputFiles": [
+      "wwwroot/js/navbar-auth.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/api-client.min.js",
+    "inputFiles": [
+      "wwwroot/js/api-client.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/listing-map-utils.min.js",
+    "inputFiles": [
+      "wwwroot/js/listing-map-utils.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/listing.min.js",
+    "inputFiles": [
+      "wwwroot/js/listing.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/map.min.js",
+    "inputFiles": [
+      "wwwroot/js/map.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/chat-widget.min.js",
+    "inputFiles": [
+      "wwwroot/js/chat-widget.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  },
+  {
+    "outputFileName": "wwwroot/js/notification-center.min.js",
+    "inputFiles": [
+      "wwwroot/js/notification-center.js"
+    ],
+    "minify": { "enabled": true, "renameLocals": true }
+  }
+]

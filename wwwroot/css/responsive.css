@@ -1,0 +1,412 @@
+/* Global responsive tuning for UniMap360 (desktop/tablet/mobile) */
+:root {
+    --app-nav-height: 70px;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 0 !important;
+}
+
+.app-main-header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    width: 100%;
+    z-index: var(--z-header, 5000);
+}
+
+.app-map-main {
+    top: var(--app-nav-height);
+    height: calc(100dvh - var(--app-nav-height));
+}
+
+.app-page-main-wrap {
+    padding-top: var(--app-nav-height);
+}
+
+.app-main-footer {
+    position: relative;
+    width: 100%;
+    text-align: center;
+}
+
+.app-nav-logo {
+    height: 45px;
+    max-width: 200px;
+    object-fit: contain;
+}
+
+.app-nav-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #fff;
+}
+
+/* Navbar + top dropdown behavior */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(120, 1, 21, 0.1);
+        border-radius: 16px;
+        margin-top: 12px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .navbar-nav {
+        gap: 8px;
+    }
+
+    .nav-link {
+        margin: 0;
+        border-radius: 10px;
+        padding: 12px 16px !important;
+        font-weight: 600;
+        color: #333 !important;
+    }
+    
+    .nav-link.active {
+        background-color: rgba(120, 1, 21, 0.08) !important;
+        color: var(--color-primary) !important;
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+
+    #nav-notification-menu {
+        min-width: min(94vw, 360px) !important;
+        max-width: min(94vw, 360px) !important;
+        max-height: 60vh !important;
+    }
+
+    .auth-user-menu {
+        min-width: min(94vw, 320px);
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --app-nav-height: 64px;
+    }
+
+    .app-nav-logo {
+        height: 36px;
+        max-width: 158px;
+    }
+
+    .app-page-main-wrap .container,
+    .app-page-main-wrap .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}
+
+/* Map page */
+@media (max-width: 1200px) {
+    #floating-panel {
+        width: 380px;
+        top: 16px;
+        left: 16px;
+        bottom: 16px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    #floating-panel {
+        width: min(430px, calc(100vw - 20px));
+        top: 10px;
+        left: 10px;
+        bottom: 10px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    #floating-panel {
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        top: auto !important;
+        bottom: 0 !important;
+        height: 40vh; /* Trạng thái mặc định trên mobile */
+        border-radius: 24px 24px 0 0 !important;
+        border: none !important;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.15) !important;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+        transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #floating-panel.expanded {
+        height: 85vh !important; /* Trạng thái mở rộng trên mobile */
+    }
+    
+    /* Hide scrollbar for cleaner UI */
+    #floating-panel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .panel-header {
+        padding: 20px 20px 10px;
+        position: relative;
+    }
+    
+    /* Add a small drag handle pill for bottom sheet feel */
+    .panel-header::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background-color: #ddd;
+        border-radius: 4px;
+    }
+
+    .panel-header h5 {
+        margin-bottom: 12px !important;
+        font-size: 1.1rem;
+    }
+
+    .panel-list {
+        padding: 10px 20px 20px;
+        gap: 16px;
+    }
+}
+
+/* Listing + cards */
+@media (max-width: 767.98px) {
+    .grid-layout-container {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .filter-chips {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+}
+
+/* Detail page */
+@media (max-width: 1199.98px) {
+    #detail-title {
+        font-size: 1.7rem !important;
+    }
+
+    #detail-img {
+        height: 380px !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .detail-page-wrapper {
+        padding-top: 1.25rem !important;
+    }
+
+    #detail-content > [class*="col-"] {
+        margin-bottom: 14px;
+    }
+
+    #detail-title {
+        font-size: 1.5rem !important;
+    }
+
+    #detail-img {
+        height: 320px !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .detail-page-wrapper .btn {
+        max-width: 100%;
+    }
+
+    #detail-img {
+        height: 240px !important;
+    }
+
+    #detail-description {
+        font-size: 1rem !important;
+        line-height: 1.65 !important;
+    }
+}
+
+/* Manage/Post/Auth/Host/Employer pages */
+@media (max-width: 991.98px) {
+    .manage-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .manage-toolbar {
+        flex-direction: column;
+    }
+
+    .item-summary {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+
+    .item-summary-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .action-bar {
+        flex-wrap: wrap;
+    }
+
+    .post-card,
+    .auth-container {
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .item-summary-right {
+        justify-content: stretch;
+    }
+
+    .item-summary-right .btn-action {
+        flex: 1 1 auto;
+    }
+
+    .map-pin-canvas {
+        height: 220px !important;
+    }
+
+    .toast-msg {
+        left: 12px;
+        right: 12px;
+        top: calc(var(--app-nav-height) + 8px);
+        transform: translateY(-14px);
+    }
+
+    .toast-msg.show {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .auth-form-wrapper,
+    .auth-hero {
+        padding: 22px !important;
+    }
+
+    .role-selector {
+        flex-direction: column;
+    }
+
+    .host-appointments-toolbar,
+    .employer-applications-toolbar {
+        grid-template-columns: 1fr !important;
+    }
+
+    .applications-stats {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Utility: prevent accidental horizontal scroll on mobile */
+@media (max-width: 767.98px) {
+    body {
+        overflow-x: hidden;
+    }
+}
+
+/* =========================================================================
+   UI/UX PRO MAX - RESPONSIVE & TOUCH OPTIMIZATIONS
+   ========================================================================= */
+
+@media (max-width: 767.98px) {
+    /* 1. Typography & Readability (Minimum 16px body on mobile to prevent zoom) */
+    html, body {
+        font-size: 16px !important;
+        line-height: 1.6;
+    }
+
+    h1, .h1 { font-size: 1.75rem !important; }
+    h2, .h2 { font-size: 1.5rem !important; }
+    h3, .h3 { font-size: 1.25rem !important; }
+
+    /* 2. Touch Target Minimums (>=44px for iOS/MD compliance) */
+    .btn, 
+    .nav-link, 
+    .form-control, 
+    .form-select, 
+    .dropdown-item, 
+    button, 
+    a.btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Exceptions for tiny icon buttons inside dense grids, but ensure padding */
+    .btn-sm {
+        min-height: 38px; 
+    }
+
+    /* 3. Spacing Rhythm (8dp scale for mobile) */
+    .luxury-card-box, .post-card, .section-card, .panel {
+        padding: 16px !important; /* Touch-density spacing */
+        border-radius: 12px;
+        margin-bottom: 16px !important;
+    }
+
+    .container, .container-fluid {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    /* 4. Safe Area & Fixed Elements */
+    .app-main-footer {
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    
+    .app-page-main-wrap {
+        padding-top: calc(var(--app-nav-height) + env(safe-area-inset-top, 0px));
+    }
+
+    /* 5. Input Forms Feedback */
+    input[type="text"], 
+    input[type="email"], 
+    input[type="password"], 
+    input[type="number"], 
+    textarea {
+        font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    }
+
+    /* 6. Modals & Sheets */
+    .modal-dialog {
+        margin: 10px;
+        align-items: flex-end;
+        min-height: calc(100% - 20px);
+        display: flex;
+    }
+    .modal-content {
+        border-radius: 20px 20px 8px 8px; /* Bottom sheet style on mobile */
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+}
+
+/* Improve Animations & States globally */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

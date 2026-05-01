@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" role="img" aria-label="Room image fallback">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fee2e2"/>
+      <stop offset="100%" stop-color="#fecaca"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <rect x="120" y="92" width="560" height="266" rx="20" fill="#ffffff" opacity="0.95"/>
+  <path d="M250 230l150-115 150 115v95h-55v-65h-190v65h-55z" fill="#ef4444"/>
+  <rect x="368" y="250" width="64" height="75" rx="8" fill="#fff"/>
+  <text x="400" y="390" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#7f1d1d">Phong tro UniMap360</text>
+</svg>

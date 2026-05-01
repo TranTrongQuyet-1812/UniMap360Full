@@ -1,0 +1,374 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Bài đăng ở ghép";
+    ViewData["ActiveAdminPage"] = "mod-roommates";
+}
+
+<style>
+    .filter-bento { background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px; }
+    .filter-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--admin-text-light); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    .form-select-sm, .form-control-sm { border-radius: var(--radius-sm); border-color: var(--admin-border); font-weight: 600; padding: 8px 12px; }
+    
+    .bulk-bar { background: #fef2f2; border: 1px solid #fee2e2; padding: 12px 20px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .bulk-label { font-size: 0.75rem; font-weight: 800; color: var(--admin-secondary); text-transform: uppercase; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-black mb-1">Quản lý Bài đăng Ở ghép</h3>
+        <p class="text-muted mb-0 small">Duyệt và kiểm soát toàn diện các tin tìm người ở ghép từ sinh viên.</p>
+    </div>
+</div>
+
+<div class="filter-bento">
+    <div class="row g-3">
+        <div class="col-md-5">
+            <label class="filter-label">Tìm kiếm tiêu đề / Sinh viên</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Nhập tiêu đề hoặc tên sinh viên..." id="roommateSearch">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Trạng thái</label>
+            <select class="form-select form-select-sm" id="roommateStatusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="true">Đang hiển thị</option>
+                <option value="false">Đang ẩn / Từ chối</option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button class="btn btn-outline-dark fw-bold btn-sm flex-grow-1" id="btnRefreshRoommates">
+                <i class="fas fa-sync-alt me-2"></i>Làm mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="roommateBulkActions" class="bulk-bar d-none">
+    <div class="bulk-label"><i class="fas fa-check-double me-2"></i>Thao tác hàng loạt (<span id="roommateSelectedCount">0</span>)</div>
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-xs btn-outline-warning fw-bold py-1 px-3" id="btnBulkHideRoommates" style="font-size: 0.7rem;">ẨN</button>
+        <button class="btn btn-xs btn-outline-dark fw-bold py-1 px-3" id="btnBulkShowRoommates" style="font-size: 0.7rem;">HIỆN</button>
+        <button class="btn btn-xs btn-outline-danger fw-bold py-1 px-3" id="btnBulkRejectRoommates" style="font-size: 0.7rem;">TỪ CHỐI</button>
+        <button class="btn btn-xs btn-danger fw-bold py-1 px-3" id="btnBulkDeleteRoommates" style="font-size: 0.7rem;">XÓA</button>
+    </div>
+</div>
+
+<div class="bento-box p-0">
+    <div class="table-responsive border-0" style="min-height: 400px;">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" id="roommatesSelectAll"></th>
+                    <th style="width: 80px;">ID</th>
+                    <th>TIÊU ĐỀ BÀI ĐĂNG</th>
+                    <th>SINH VIÊN</th>
+                    <th>KHU VỰC</th>
+                    <th style="width: 120px;">NGÂN SÁCH</th>
+                    <th style="width: 150px;">TRẠNG THÁI</th>
+                    <th class="text-end" style="width: 120px;">THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody id="roommateTableBody">
+                <tr><td colspan="8" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let roommateRows = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnRefreshRoommates').addEventListener('click', loadRoommates);
+        document.getElementById('roommateSearch').addEventListener('input', debounce(loadRoommates, 300));
+        document.getElementById('roommateStatusFilter').addEventListener('change', loadRoommates);
+        document.getElementById('roommatesSelectAll').addEventListener('change', function () {
+            document.querySelectorAll('.roommate-select').forEach(cb => cb.checked = this.checked);
+            syncRoommateBulkButtons();
+        });
+
+        document.getElementById('roommateTableBody').addEventListener('change', function (e) {
+            if (e.target && e.target.classList.contains('roommate-select')) {
+                syncRoommateSelectAllCheckbox();
+                syncRoommateBulkButtons();
+            }
+        });
+
+        document.getElementById('btnBulkHideRoommates').addEventListener('click', () => bulkRoommateAction('hide'));
+        document.getElementById('btnBulkShowRoommates').addEventListener('click', () => bulkRoommateAction('restore'));
+        document.getElementById('btnBulkRejectRoommates').addEventListener('click', () => bulkRoommateAction('reject'));
+        document.getElementById('btnBulkDeleteRoommates').addEventListener('click', bulkDeleteRoommates);
+
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-action-btn');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            if (action === 'openRoommateDetail') openRoommateDetail(btn.getAttribute('data-id'));
+            else if (action === 'runRoommateAction') runRoommateAction(btn.getAttribute('data-id'), btn.getAttribute('data-action-type'));
+            else if (action === 'deleteRoommate') deleteRoommate(btn.getAttribute('data-id'));
+            else if (action === 'closeDrawer') closeDrawer();
+        });
+
+        loadRoommates();
+    });
+
+    async function loadRoommates() {
+        const params = new URLSearchParams();
+        const search = document.getElementById('roommateSearch').value.trim();
+        const status = document.getElementById('roommateStatusFilter').value;
+
+        if (search) params.set('search', search);
+        if (status) params.set('isActive', status);
+        params.set('limit', '200');
+
+        try {
+            const data = await adminFetchJson('/api/admin/roommates?' + params.toString());
+            roommateRows = data.items || [];
+            renderRoommates(roommateRows);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được danh sách bài đăng.', 'error');
+            renderRoommates([]);
+        }
+    }
+
+    function renderRoommates(rows) {
+        const body = document.getElementById('roommateTableBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="8" class="text-center p-5 text-muted">Không tìm thấy bài đăng nào.</td></tr>';
+            document.getElementById('roommatesSelectAll').checked = false;
+            syncRoommateBulkButtons();
+            return;
+        }
+
+        body.innerHTML = rows.map(r => {
+            const isActive = r.status === 'Active';
+            
+            let actionsHtml = `
+                <li><a class="dropdown-item js-action-btn" href="#" data-action="openRoommateDetail" data-id="${r.id}"><i class="fas fa-eye me-2"></i>Chi tiết</a></li>
+                <li><hr class="dropdown-divider"></li>
+            `;
+            
+            if (isActive) {
+                actionsHtml += `<li><a class="dropdown-item js-action-btn text-warning" href="#" data-action="runRoommateAction" data-action-type="hide" data-id="${r.id}"><i class="fas fa-eye-slash me-2"></i>Ẩn bài đăng</a></li>`;
+            } else {
+                actionsHtml += `<li><a class="dropdown-item js-action-btn text-success" href="#" data-action="runRoommateAction" data-action-type="restore" data-id="${r.id}"><i class="fas fa-check-circle me-2"></i>Duyệt & Hiển thị</a></li>`;
+            }
+            
+            actionsHtml += `
+                <li><a class="dropdown-item js-action-btn text-danger" href="#" data-action="runRoommateAction" data-action-type="reject" data-id="${r.id}"><i class="fas fa-ban me-2"></i>Từ chối bài</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item js-action-btn text-danger fw-bold" href="#" data-action="deleteRoommate" data-id="${r.id}"><i class="fas fa-trash-alt me-2"></i>XÓA VĨNH VIỄN</a></li>
+            `;
+
+            return `
+            <tr>
+                <td><input type="checkbox" class="roommate-select" value="${r.id}"></td>
+                <td class="text-muted small fw-bold">#${r.id}</td>
+                <td>
+                    <div class="fw-bold">${escapeHtml(r.title || '-')}</div>
+                    <div class="text-muted small">${r.targetGender === 'Male' ? 'Nam' : (r.targetGender === 'Female' ? 'Nữ' : 'Tất cả')}</div>
+                </td>
+                <td>
+                    <div class="fw-bold small text-uppercase" style="color: var(--admin-secondary);">${escapeHtml(r.studentName || '-')}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(r.studentEmail || '-')}</div>
+                </td>
+                <td class="small text-muted">${escapeHtml(r.areaPreference || '-')}</td>
+                <td class="fw-bold">${Number(r.budgetPerMonth || 0).toLocaleString('vi-VN')}đ</td>
+                <td>${renderRoommateStatusBadge(r.status)}</td>
+                <td class="text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-dark fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.7rem;">THAO TÁC</button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; min-width: 180px;">
+                            ${actionsHtml}
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `}).join('');
+
+        document.getElementById('roommatesSelectAll').checked = false;
+        syncRoommateBulkButtons();
+    }
+
+    function getSelectedRoommateIds() {
+        return Array.from(document.querySelectorAll('.roommate-select:checked')).map(x => Number(x.value));
+    }
+
+    function syncRoommateBulkButtons() {
+        const ids = getSelectedRoommateIds();
+        const count = ids.length;
+        const hasSelection = count > 0;
+        const bar = document.getElementById('roommateBulkActions');
+        
+        if (hasSelection) bar.classList.remove('d-none');
+        else bar.classList.add('d-none');
+        
+        document.getElementById('roommateSelectedCount').textContent = count;
+        document.getElementById('btnBulkHideRoommates').disabled = !hasSelection;
+        document.getElementById('btnBulkShowRoommates').disabled = !hasSelection;
+        document.getElementById('btnBulkRejectRoommates').disabled = !hasSelection;
+        document.getElementById('btnBulkDeleteRoommates').disabled = !hasSelection;
+    }
+
+    function syncRoommateSelectAllCheckbox() {
+        const all = Array.from(document.querySelectorAll('.roommate-select'));
+        const checked = all.filter(x => x.checked);
+        document.getElementById('roommatesSelectAll').checked = all.length > 0 && checked.length === all.length;
+    }
+
+    async function openRoommateDetail(id) {
+        try {
+            const d = await adminFetchJson(`/api/admin/roommates/${id}`);
+            const mediaHtml = (d.media || []).length
+                ? d.media.map(x => `<img src="${escapeHtml(x.mediaUrl)}" style="width:100px; height:100px; object-fit:cover; border-radius:8px; margin:4px;">`).join('')
+                : '<div class="text-muted">Không có ảnh.</div>';
+
+            const content = `
+                <div class="mb-3"><strong>Tiêu đề:</strong> ${escapeHtml(d.title || '-')}</div>
+                <div class="mb-3"><strong>Trạng thái:</strong> ${renderRoommateStatusBadge(d.status)}</div>
+                <div class="mb-3"><strong>Sinh viên:</strong> ${escapeHtml(d.student?.fullName || '-')} (${escapeHtml(d.student?.email || '-')})</div>
+                <div class="mb-3"><strong>Trường:</strong> ${escapeHtml(d.student?.university || '-')} - ${escapeHtml(d.student?.major || '-')}</div>
+                <div class="mb-3"><strong>Ngân sách:</strong> ${Number(d.budgetPerMonth || 0).toLocaleString('vi-VN')}đ</div>
+                <div class="mb-3"><strong>Khu vực:</strong> ${escapeHtml(d.areaPreference || '-')}</div>
+                <div class="mb-3"><strong>Thói quen:</strong> ${escapeHtml(d.habits || '-')}</div>
+                <div class="mb-3"><strong>Mô tả:</strong><br>${escapeHtml(d.description || '-')}</div>
+                <div><strong>Hình ảnh:</strong><br>${mediaHtml}</div>
+            `;
+
+            openDrawer(`Chi tiết bài đăng #${id}`, content, '<button class="btn btn-secondary js-action-btn" data-action="closeDrawer">Đóng</button>');
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được chi tiết bài đăng.', 'error');
+        }
+    }
+
+    async function runRoommateAction(id, action) {
+        const actionLabel = getRoommateActionLabel(action);
+        const reason = prompt(`Nhập lý do cho hành động ${actionLabel} bài đăng #${id}:`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        try {
+            await adminFetchJson(`/api/admin/roommates/${id}/${action}`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+            showAdminToast('Thao tác thành công.', 'success');
+            await loadRoommates();
+        } catch (err) {
+            showAdminToast(err.message || 'Thao tác thất bại.', 'error');
+        }
+    }
+
+    async function deleteRoommate(id) {
+        const reason = prompt(`Nhập lý do xóa vĩnh viễn bài đăng #${id}:`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const ok = confirm(`Xác nhận xóa vĩnh viễn bài đăng #${id}? (Sẽ xóa cả ảnh trên Cloudinary)`);
+        if (!ok) return;
+
+        try {
+            await adminFetchJson(`/api/admin/roommates/${id}`, {
+                method: 'DELETE',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+            showAdminToast('Đã xóa bài đăng.', 'success');
+            await loadRoommates();
+        } catch (err) {
+            showAdminToast(err.message || 'Xóa thất bại.', 'error');
+        }
+    }
+
+    async function bulkRoommateAction(action) {
+        const ids = getSelectedRoommateIds();
+        if (!ids.length) return;
+
+        const actionLabel = getRoommateActionLabel(action);
+        const reason = prompt(`Nhập lý do cho thao tác ${actionLabel} hàng loạt (${ids.length} bài):`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await adminFetchJson(`/api/admin/roommates/${id}/${action}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                success++;
+            } catch {}
+        }
+
+        showAdminToast(`${actionLabel} hàng loạt: ${success}/${ids.length} thành công.`, success === ids.length ? 'success' : 'error');
+        await loadRoommates();
+    }
+
+    async function bulkDeleteRoommates() {
+        const ids = getSelectedRoommateIds();
+        if (!ids.length) return;
+
+        const reason = prompt(`Nhập lý do xóa hàng loạt (${ids.length} bài):`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const ok = confirm(`Xác nhận xóa vĩnh viễn ${ids.length} bài đăng đã chọn?`);
+        if (!ok) return;
+
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await adminFetchJson(`/api/admin/roommates/${id}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                success++;
+            } catch {}
+        }
+
+        showAdminToast(`Xóa hàng loạt: ${success}/${ids.length} thành công.`, success === ids.length ? 'success' : 'error');
+        await loadRoommates();
+    }
+
+    function getRoommateActionLabel(action) {
+        if (action === 'hide') return 'ẩn';
+        if (action === 'restore') return 'hiện';
+        if (action === 'reject') return 'từ chối';
+        return action;
+    }
+
+    function renderRoommateStatusBadge(status) {
+        if (status === 'Active') return '<span class="badge bg-success">Đang hiển thị</span>';
+        if (status === 'Hidden') return '<span class="badge bg-warning text-dark">Đang ẩn</span>';
+        return `<span class="badge bg-secondary">${escapeHtml(status || '-')}</span>`;
+    }
+
+    function escapeHtml(input) {
+        if (!input) return '';
+        return String(input)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function debounce(fn, wait) {
+        let t = null;
+        return function (...args) {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+</script>
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" role="img" aria-label="Job image fallback">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <rect x="120" y="92" width="560" height="266" rx="20" fill="#ffffff" opacity="0.95"/>
+  <rect x="245" y="160" width="310" height="185" rx="16" fill="#3b82f6"/>
+  <rect x="335" y="132" width="130" height="36" rx="10" fill="#1d4ed8"/>
+  <rect x="345" y="197" width="110" height="20" rx="8" fill="#dbeafe"/>
+  <rect x="300" y="232" width="200" height="20" rx="8" fill="#dbeafe"/>
+  <rect x="320" y="267" width="160" height="20" rx="8" fill="#dbeafe"/>
+  <text x="400" y="390" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#1e3a8a">Viec lam UniMap360</text>
+</svg>

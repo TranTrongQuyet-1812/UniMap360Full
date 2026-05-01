@@ -1,0 +1,437 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý tài khoản";
+    ViewData["ActiveAdminPage"] = "users";
+}
+
+<style>
+    .filter-bento { background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px; }
+    .filter-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--admin-text-light); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    .form-select-sm, .form-control-sm { border-radius: var(--radius-sm); border-color: var(--admin-border); font-weight: 600; padding: 8px 12px; }
+    .form-select-sm:focus, .form-control-sm:focus { border-color: var(--admin-secondary); box-shadow: none; }
+    
+    .role-badge { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: var(--radius-sm); letter-spacing: 0.5px; }
+    .role-admin { background: #0f172a; color: #fff; }
+    .role-host { background: #780115; color: #fff; }
+    .role-employer { background: #334155; color: #fff; }
+    .role-student { background: #f1f5f9; color: #475569; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-black mb-1">Quản lý Tài Khoản</h3>
+        <p class="text-muted mb-0 small">Hệ thống quản lý người dùng và phân quyền toàn diện.</p>
+    </div>
+    <button class="btn btn-dark fw-bold px-4" id="btnOpenCreateUser" style="background: var(--admin-secondary); border: none; font-size: 0.8rem; text-transform: uppercase;">
+        <i class="fas fa-plus me-2"></i>Tạo tài khoản mới
+    </button>
+</div>
+
+<div class="filter-bento">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="filter-label">Tìm kiếm Email</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="user@example.com..." id="searchUser">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Vai trò</label>
+            <select class="form-select form-select-sm" id="filterRole">
+                <option value="">Tất cả vai trò</option>
+                <option value="Admin">Quản trị viên</option>
+                <option value="Host">Chủ trọ</option>
+                <option value="Employer">Nhà tuyển dụng</option>
+                <option value="Student">Người tìm kiếm</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Trạng thái</label>
+            <select class="form-select form-select-sm" id="filterStatus">
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="locked">Bị khóa</option>
+                <option value="inactive">Đã đóng</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-dark fw-bold btn-sm w-100" id="btnRefreshUsers">
+                <i class="fas fa-sync-alt me-2"></i>Làm mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="bento-box p-0 overflow-hidden">
+    <div class="table-responsive border-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>EMAIL NGƯỜI DÙNG</th>
+                    <th style="width: 150px;">VAI TRÒ</th>
+                    <th style="width: 150px;">TRẠNG THÁI</th>
+                    <th>LÝ DO KHÓA</th>
+                    <th style="width: 160px;">NGÀY TẠO</th>
+                    <th class="text-end" style="width: 120px;">THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <tr><td colspan="7" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="actionReasonModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-sm);">
+            <div class="modal-header border-0 bg-white pt-4 px-4">
+                <h5 class="modal-title fw-black text-uppercase" id="actionReasonTitle" style="font-size: 1rem; letter-spacing: 0.5px;">Xác nhận hành động</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <p class="mb-3 text-muted" id="actionReasonDesc">Vui lòng nhập lý do để lưu nhật ký kiểm toán.</p>
+                <input type="text" class="form-control form-control-sm" id="actionReasonInput" placeholder="Nhập lý do...">
+            </div>
+            <div class="modal-footer border-0 bg-light px-4 py-3">
+                <button type="button" class="btn btn-sm btn-light fw-bold" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-sm btn-dark fw-bold px-4" id="btnSubmitReason" style="background: var(--admin-secondary); border: none;">XÁC NHẬN</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="permanentDeleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-sm);">
+            <div class="modal-header border-0 bg-danger text-white pt-4 px-4">
+                <h5 class="modal-title fw-black text-uppercase" style="font-size: 1rem; letter-spacing: 0.5px;"><i class="fas fa-trash-alt me-2"></i>Xóa vĩnh viễn</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <p class="text-danger fw-bold mb-2">CẢNH BÁO: Hành động này không thể hoàn tác!</p>
+                <p class="small text-muted mb-3">Xác nhận xóa vĩnh viễn tài khoản. Dữ liệu liên quan sẽ bị loại bỏ khỏi hệ thống.</p>
+                <input type="text" class="form-control form-control-sm" id="permanentDeleteReasonInput" placeholder="Lý do xóa vĩnh viễn (bắt buộc)">
+            </div>
+            <div class="modal-footer border-0 bg-light px-4 py-3">
+                <button type="button" class="btn btn-sm btn-light fw-bold" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-sm btn-danger fw-bold px-4" id="btnPermanentDeleteConfirm">XÓA NGAY</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let users = [];
+    let currentEditingUser = null;
+    let pendingAction = null;
+    let pendingDeleteUserId = null;
+    let actionReasonModal;
+    let permanentDeleteModal;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        actionReasonModal = new bootstrap.Modal(document.getElementById('actionReasonModal'));
+        permanentDeleteModal = new bootstrap.Modal(document.getElementById('permanentDeleteModal'));
+
+        document.getElementById('btnRefreshUsers').addEventListener('click', loadUsers);
+        document.getElementById('searchUser').addEventListener('input', debounce(loadUsers, 300));
+        document.getElementById('filterRole').addEventListener('change', loadUsers);
+        document.getElementById('filterStatus').addEventListener('change', loadUsers);
+
+        document.getElementById('btnOpenCreateUser').addEventListener('click', openCreateUserDrawer);
+        document.getElementById('btnSubmitReason').addEventListener('click', submitReasonAction);
+        document.getElementById('btnPermanentDeleteConfirm').addEventListener('click', submitPermanentDelete);
+
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-action-btn');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            if (action === 'openEditDrawer') openEditDrawer(btn.getAttribute('data-id'));
+            else if (action === 'promptPermanentDelete') promptPermanentDelete(btn.getAttribute('data-id'));
+            else if (action === 'closeDrawer') closeDrawer();
+            else if (action === 'saveUserChanges') saveUserChanges(btn.getAttribute('data-id'));
+            else if (action === 'createNewUser') createNewUser();
+        });
+
+        loadUsers();
+    });
+
+    async function loadUsers() {
+        const role = document.getElementById('filterRole').value;
+        const status = document.getElementById('filterStatus').value;
+        const search = document.getElementById('searchUser').value.trim();
+
+        const params = new URLSearchParams();
+        if (role) params.set('role', role);
+        if (search) params.set('search', search);
+        if (status === 'active') params.set('isActive', 'true');
+        if (status === 'inactive') params.set('isActive', 'false');
+        if (status === 'locked') params.set('isLocked', 'true');
+
+        try {
+            const data = await adminFetchJson('/api/admin/users?' + params.toString());
+            users = data.items || [];
+            renderUsers(users);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được danh sách tài khoản.', 'error');
+            renderUsers([]);
+        }
+    }
+
+    function renderUsers(rows) {
+        const body = document.getElementById('userTableBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="7" class="text-center p-5 text-muted">Không tìm thấy tài khoản nào.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(x => {
+            const roleBadge = roleBadgeHtml(x.role);
+            const activeBadge = x.isActive
+                ? '<span class="badge-status badge-active">Hoạt động</span>'
+                : '<span class="badge-status badge-locked">Đã đóng</span>';
+            const lockText = x.isLocked ? (x.lockedReason || 'Đã khóa') : '-';
+            return `
+                <tr>
+                    <td class="text-muted">#${x.accountId}</td>
+                    <td class="fw-bold">${escapeHtml(x.email)}</td>
+                    <td>${roleBadge}</td>
+                    <td>${activeBadge}${x.isLocked ? ' <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">LOCKED</span>' : ''}</td>
+                    <td class="small text-muted">${escapeHtml(lockText)}</td>
+                    <td class="text-muted small fw-bold">${formatAdminDate(x.createdAt)}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-dark fw-bold js-action-btn" data-action="openEditDrawer" data-id="${x.accountId}" style="font-size: 0.7rem;">CHI TIẾT <i class="fas fa-chevron-right ms-1"></i></button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function openEditDrawer(accountId) {
+        try {
+            const user = await adminFetchJson('/api/admin/users/' + accountId);
+            currentEditingUser = user;
+            const footer = `
+                <button class="btn btn-outline-danger me-auto js-action-btn" data-action="promptPermanentDelete" data-id="${accountId}"><i class="fas fa-trash me-2"></i>Xóa tài khoản</button>
+                <button class="btn btn-secondary js-action-btn" data-action="closeDrawer">Đóng</button>
+                <button class="btn btn-primary js-action-btn" data-action="saveUserChanges" data-id="${accountId}">Lưu thay đổi</button>
+            `;
+
+            const roleLabels = {
+                Host: 'Chủ trọ',
+                Employer: 'Nhà tuyển dụng',
+                Student: 'Người tìm kiếm'
+            };
+
+            const roleOptions = ['Host', 'Employer', 'Student']
+                .map(r => `<option value="${r}" ${user.role === r ? 'selected' : ''}>${roleLabels[r]}</option>`)
+                .join('');
+
+            const html = `
+                <form id="drawerUserForm">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small text-uppercase">Email</label>
+                        <input type="email" class="form-control" id="frmEmail" value="${escapeHtml(user.email)}" ${user.role === 'Admin' ? 'disabled' : ''}>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label text-muted fw-bold small text-uppercase">Vai trò</label>
+                            <select class="form-select" id="frmRole" ${user.role === 'Admin' ? 'disabled' : ''}>
+                                    ${user.role === 'Admin' ? '<option value="Admin" selected>Quản trị viên</option>' : roleOptions}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted fw-bold small text-uppercase">Trạng thái hoạt động</label>
+                            <select class="form-select" id="frmIsActive" ${user.role === 'Admin' ? 'disabled' : ''}>
+                                <option value="1" ${user.isActive ? 'selected' : ''}>1 - Hoạt động</option>
+                                <option value="0" ${!user.isActive ? 'selected' : ''}>0 - Ngừng hoạt động</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small text-uppercase">Khóa tài khoản</label>
+                        <select class="form-select" id="frmIsLocked" ${user.role === 'Admin' ? 'disabled' : ''}>
+                            <option value="0" ${!user.isLocked ? 'selected' : ''}>Mở khóa</option>
+                            <option value="1" ${user.isLocked ? 'selected' : ''}>Khóa</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small text-uppercase">Lý do khóa</label>
+                        <input type="text" class="form-control" id="frmLockedReason" value="${escapeHtml(user.lockedReason || '')}" ${user.role === 'Admin' ? 'disabled' : ''}>
+                    </div>
+                    <div class="alert alert-secondary mb-0">
+                        <div><strong>Lần đăng nhập cuối:</strong> ${formatAdminDate(user.lastLoginAt)}</div>
+                    </div>
+                </form>
+            `;
+
+            openDrawer('Chi tiết tài khoản #' + accountId, html, footer);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được chi tiết tài khoản.', 'error');
+        }
+    }
+
+    function openCreateUserDrawer() {
+        const html = `
+            <form id="drawerCreateForm">
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold small text-uppercase">Email</label>
+                    <input type="email" class="form-control" id="createEmail" placeholder="user@domain.com">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold small text-uppercase">Password tạm</label>
+                    <input type="password" class="form-control" id="createPassword" placeholder="Mật khẩu tạm">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold small text-uppercase">Vai trò</label>
+                    <select class="form-select" id="createRole">
+                        <option value="Student">Người tìm kiếm</option>
+                        <option value="Host">Chủ trọ</option>
+                        <option value="Employer">Nhà tuyển dụng</option>
+                    </select>
+                </div>
+            </form>
+        `;
+
+        const footer = `
+            <button class="btn btn-secondary js-action-btn" data-action="closeDrawer">Hủy</button>
+            <button class="btn btn-success js-action-btn" data-action="createNewUser"><i class="fas fa-plus me-2"></i>Tạo User</button>
+        `;
+
+        openDrawer('Tạo tài khoản mới', html, footer);
+    }
+
+    async function createNewUser() {
+        const email = document.getElementById('createEmail').value.trim();
+        const password = document.getElementById('createPassword').value;
+        const role = document.getElementById('createRole').value;
+
+        if (!email || !password) {
+            showAdminToast('Email và mật khẩu là bắt buộc.', 'error');
+            return;
+        }
+
+        try {
+            await adminFetchJson('/api/admin/users', {
+                method: 'POST',
+                body: JSON.stringify({ email, password, role, reason: 'Create by admin UI' })
+            });
+            closeDrawer();
+            showAdminToast('Tạo tài khoản thành công.', 'success');
+            await loadUsers();
+        } catch (err) {
+            showAdminToast(err.message || 'Tạo tài khoản thất bại.', 'error');
+        }
+    }
+
+    function saveUserChanges(accountId) {
+        pendingAction = async (reason) => {
+            const email = document.getElementById('frmEmail').value.trim();
+            const role = document.getElementById('frmRole').value;
+            const isActive = document.getElementById('frmIsActive').value === '1';
+            const isLocked = document.getElementById('frmIsLocked').value === '1';
+            const lockedReason = document.getElementById('frmLockedReason').value.trim();
+
+            if (!currentEditingUser) {
+                throw new Error('Thiếu dữ liệu phiên chỉnh sửa.');
+            }
+
+            await adminFetchJson('/api/admin/users/' + accountId, {
+                method: 'PUT',
+                body: JSON.stringify({ email, isActive, isLocked, lockedReason, reason })
+            });
+
+            if (currentEditingUser.role !== 'Admin' && role !== currentEditingUser.role) {
+                await adminFetchJson('/api/admin/users/' + accountId + '/role', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ newRole: role, reason })
+                });
+            }
+
+            closeDrawer();
+            showAdminToast('Đã lưu thay đổi tài khoản.', 'success');
+            await loadUsers();
+        };
+
+        document.getElementById('actionReasonTitle').innerHTML = '<i class="fas fa-user-tag me-2"></i>Lưu thay đổi tài khoản';
+        document.getElementById('actionReasonDesc').innerText = 'Nhập lý do để lưu nhật ký kiểm toán.';
+        document.getElementById('actionReasonInput').value = '';
+        actionReasonModal.show();
+    }
+
+    function promptPermanentDelete(accountId) {
+        pendingDeleteUserId = accountId;
+        document.getElementById('permanentDeleteReasonInput').value = '';
+        permanentDeleteModal.show();
+    }
+
+    async function submitPermanentDelete() {
+        if (!pendingDeleteUserId) return;
+
+        const reason = document.getElementById('permanentDeleteReasonInput').value.trim();
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do xóa vĩnh viễn.', 'error');
+            return;
+        }
+
+        try {
+            await adminFetchJson('/api/admin/users/' + pendingDeleteUserId, {
+                method: 'DELETE',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+
+            permanentDeleteModal.hide();
+            closeDrawer();
+            showAdminToast('Đã xóa vĩnh viễn tài khoản.', 'success');
+            await loadUsers();
+        } catch (err) {
+            showAdminToast(err.message || 'Xóa vĩnh viễn thất bại.', 'error');
+        }
+    }
+
+    async function submitReasonAction() {
+        const reason = document.getElementById('actionReasonInput').value.trim();
+        if (!reason) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const action = pendingAction;
+        pendingAction = null;
+        actionReasonModal.hide();
+
+        try {
+            if (action) await action(reason);
+        } catch (err) {
+            showAdminToast(err.message || 'Hành động thất bại.', 'error');
+        }
+    }
+
+    function roleBadgeHtml(role) {
+        if (role === 'Admin') return '<span class="badge bg-dark">Quản trị</span>';
+        if (role === 'Host') return '<span class="badge bg-primary">Chủ trọ</span>';
+        if (role === 'Employer') return '<span class="badge bg-secondary">Nhà tuyển dụng</span>';
+        return '<span class="badge bg-info text-dark">Người tìm kiếm</span>';
+    }
+
+    function escapeHtml(input) {
+        return String(input)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function debounce(fn, wait) {
+        let t = null;
+        return function (...args) {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+</script>
+}

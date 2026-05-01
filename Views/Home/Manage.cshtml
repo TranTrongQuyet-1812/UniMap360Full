@@ -1,0 +1,1098 @@
+@{
+    ViewData["Title"] = "Quản lý bài đăng";
+}
+
+<style>
+    .manage-page-wrapper {
+        min-height: calc(100vh - var(--app-nav-height, 70px));
+        background-color: var(--color-bg);
+        padding: 40px 0;
+    }
+    .manage-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 30px;
+    }
+    .manage-header h2 {
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+    .manage-header p {
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+    .manage-toolbar {
+        background: #fff;
+        padding: 15px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-card);
+        margin-bottom: 25px;
+        display: flex;
+        gap: 15px;
+        transition: box-shadow var(--motion-base) var(--ease-cinematic), border-color var(--motion-base) var(--ease-cinematic);
+    }
+    .manage-toolbar:focus-within {
+        border-color: var(--color-border-dark);
+        box-shadow: var(--shadow-float);
+    }
+    .manage-toolbar input, .manage-toolbar select {
+        padding: 10px 15px;
+        border: 2px solid var(--color-border);
+        border-radius: 8px;
+        outline: none;
+    }
+    .manage-toolbar input { flex: 1; }
+
+    .item-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 15px;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        transition: border-color var(--motion-base) var(--ease-cinematic), box-shadow var(--motion-base) var(--ease-cinematic), transform var(--motion-fast) var(--ease-cinematic);
+    }
+    .item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-float);
+    }
+    .item-card.is-editing {
+        border-color: var(--color-primary);
+    }
+    .item-summary {
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+    }
+    .item-summary-left h4 {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+    .item-meta {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        display: flex;
+        gap: 15px;
+        margin-bottom: 4px;
+    }
+    .meta-badge {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    .badge-open { background: #e8f5e9; color: #2e7d32; }
+    .badge-closed { background: #ffebee; color: #c62828; }
+    
+    .item-summary-right { display: flex; gap: 10px; }
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    .btn-edit { background: #f0f0f0; color: #333; }
+    .btn-edit:hover { background: #e0e0e0; }
+    .btn-editing { background: var(--color-primary); color: #fff; }
+    
+    .item-detail {
+        display: none;
+        padding: 25px;
+        background: #fafafa;
+        border-top: 1px solid #eee;
+    }
+    .item-card.is-editing .item-detail { display: block; }
+    
+    /* Edit Form Styles (Reused from Post) */
+    .form-label-custom { font-weight: 700; font-size: 0.9rem; margin-bottom: 5px; display: block; }
+    .form-input { width: 100%; padding: 10px 15px; border: 2px solid var(--color-border); border-radius: 8px; margin-bottom: 15px; background: #fff;}
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .action-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
+    .location-editor { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    .map-pin-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+    .map-pin-status { font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 8px; }
+    .map-pin-canvas { height: 210px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; margin-bottom: 8px; }
+    .map-pin-btn { padding: 8px 12px; border: none; border-radius: 8px; font-weight: 700; color: #fff; cursor: pointer; }
+    .map-pin-btn.primary { background: #2563eb; }
+    .map-pin-btn.secondary { background: #6b7280; }
+    
+    .btn-save { background: var(--color-primary); color: #fff; }
+    .btn-delete { background: #dc3545; color: #fff; }
+    .btn-cancel { background: transparent; color: #666; border: 1px solid #ccc; }
+
+    .toast-msg {
+        position: fixed; top: 90px; right: 20px; padding: 16px 28px; border-radius: 10px; color: #fff; font-weight: 600; z-index: 5600; opacity: 0; transform: translateX(40px); transition: all 0.4s;
+    }
+    .toast-msg.show { opacity: 1; transform: translateX(0); }
+    .toast-msg.success { background: #198754; }
+    .toast-msg.error { background: #dc3545; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 12px; }
+    .empty-state i { font-size: 4rem; color: #ccc; margin-bottom: 15px; }
+</style>
+
+<div class="manage-page-wrapper">
+    <div class="container">
+        <div class="manage-header">
+            <div>
+                <h2>Quản lý bài đăng</h2>
+                <p>Xem, chỉnh sửa hoặc xóa bài đã đăng.</p>
+            </div>
+            <div>
+                <a href="/Home/PostRoom" class="btn btn-primary fw-bold" id="btn-post-new" style="background: var(--color-primary); border: none; display:none;">
+                    <i class="fas fa-plus me-1"></i> Đăng bài mới
+                </a>
+            </div>
+        </div>
+
+        <div class="manage-toolbar">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm theo tiêu đề...">
+            <select id="statusFilter">
+                <option value="">Tất cả trạng thái</option>
+            </select>
+        </div>
+
+        <div id="manageResults">
+            <div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-msg" id="toastMsg"></div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Xóa bài đăng này?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa bài đăng này không?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa bài đăng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template Form Sửa Phòng Trọ -->
+<template id="tpl-edit-room">
+    <form class="edit-form" data-type="room">
+        <input type="hidden" name="OriginalLocationId" value="0">
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Danh mục</label>
+                <select name="CategoryId" class="form-input" required>
+                    <option value="">— Chọn danh mục —</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label-custom">Tỉnh/Thành phố</label>
+                <select name="ProvinceCode" class="form-input js-province-select">
+                    <option value="">— Chọn tỉnh/thành —</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Quận/Huyện</label>
+                <select name="DistrictCode" class="form-input js-district-select" disabled>
+                    <option value="">— Chọn quận/huyện —</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label-custom">Phường/Xã</label>
+                <select name="WardCode" class="form-input js-ward-select" disabled>
+                    <option value="">— Chọn phường/xã —</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Số nhà</label>
+                <input type="text" name="HouseNumber" class="form-input" placeholder="VD: 25/7A">
+            </div>
+            <div>
+                <label class="form-label-custom">Đường</label>
+                <input type="text" name="Street" class="form-input" placeholder="VD: Nguyễn Trãi">
+            </div>
+        </div>
+        <div class="location-editor">
+            <label class="form-label-custom">Ghim vị trí bản đồ</label>
+            <div class="map-pin-actions">
+                <button type="button" class="map-pin-btn primary js-geocode-btn">Ghim từ địa chỉ</button>
+                <button type="button" class="map-pin-btn primary js-gps-btn">Lấy vị trí của tôi</button>
+                <button type="button" class="map-pin-btn secondary js-reset-pin-btn">Đặt lại ghim</button>
+            </div>
+            <div class="map-pin-status js-map-status">Chưa có vị trí. Hãy chọn địa chỉ và ghim vị trí.</div>
+            <div class="map-pin-canvas js-map-canvas"></div>
+            <div class="form-row" style="margin-top: 10px; margin-bottom: 0;">
+                <div>
+                    <label class="form-label-custom">Latitude</label>
+                    <input type="text" name="Latitude" class="form-input js-lat-input" readonly>
+                </div>
+                <div>
+                    <label class="form-label-custom">Longitude</label>
+                    <input type="text" name="Longitude" class="form-input js-lng-input" readonly>
+                </div>
+            </div>
+        </div>
+        <label class="form-label-custom">Tiêu đề</label>
+        <input type="text" name="Title" class="form-input" required maxlength="255">
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Giá thuê (VNĐ)</label>
+                <input type="number" name="Price" class="form-input" required>
+            </div>
+            <div>
+                <label class="form-label-custom">Diện tích (m²)</label>
+                <input type="number" name="Area" class="form-input" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Điện thoại</label>
+                <input type="tel" name="ContactPhone" class="form-input" maxlength="20">
+            </div>
+            <div>
+                <label class="form-label-custom">Trạng thái</label>
+                <select name="RoomStatus" class="form-input">
+                    <option value="Available">Còn trống</option>
+                    <option value="Rented">Đã cho thuê</option>
+                </select>
+            </div>
+        </div>
+        <label class="form-label-custom">Mô tả</label>
+        <textarea name="Description" class="form-input" rows="3"></textarea>
+        
+        <div class="action-bar">
+            <button type="button" class="btn-action btn-delete js-action-btn" data-action="askDelete">Xóa bài đăng</button>
+            <button type="button" class="btn-action btn-cancel js-action-btn" data-action="closeEdit">Hủy</button>
+            <button type="submit" class="btn-action btn-save">Lưu chỉnh sửa</button>
+        </div>
+    </form>
+</template>
+
+<!-- Template Form Sửa Việc Làm -->
+<template id="tpl-edit-job">
+    <form class="edit-form" data-type="job">
+        <input type="hidden" name="OriginalLocationId" value="0">
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Danh mục</label>
+                <select name="CategoryId" class="form-input" required>
+                    <option value="">— Chọn danh mục —</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label-custom">Tỉnh/Thành phố</label>
+                <select name="ProvinceCode" class="form-input js-province-select">
+                    <option value="">— Chọn tỉnh/thành —</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Quận/Huyện</label>
+                <select name="DistrictCode" class="form-input js-district-select" disabled>
+                    <option value="">— Chọn quận/huyện —</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label-custom">Phường/Xã</label>
+                <select name="WardCode" class="form-input js-ward-select" disabled>
+                    <option value="">— Chọn phường/xã —</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Số nhà</label>
+                <input type="text" name="HouseNumber" class="form-input" placeholder="VD: 25/7A">
+            </div>
+            <div>
+                <label class="form-label-custom">Đường</label>
+                <input type="text" name="Street" class="form-input" placeholder="VD: Nguyễn Trãi">
+            </div>
+        </div>
+        <div class="location-editor">
+            <label class="form-label-custom">Ghim vị trí bản đồ</label>
+            <div class="map-pin-actions">
+                <button type="button" class="map-pin-btn primary js-geocode-btn">Ghim từ địa chỉ</button>
+                <button type="button" class="map-pin-btn primary js-gps-btn">Lấy vị trí của tôi</button>
+                <button type="button" class="map-pin-btn secondary js-reset-pin-btn">Đặt lại ghim</button>
+            </div>
+            <div class="map-pin-status js-map-status">Chưa có vị trí. Hãy chọn địa chỉ và ghim vị trí.</div>
+            <div class="map-pin-canvas js-map-canvas"></div>
+            <div class="form-row" style="margin-top: 10px; margin-bottom: 0;">
+                <div>
+                    <label class="form-label-custom">Latitude</label>
+                    <input type="text" name="Latitude" class="form-input js-lat-input" readonly>
+                </div>
+                <div>
+                    <label class="form-label-custom">Longitude</label>
+                    <input type="text" name="Longitude" class="form-input js-lng-input" readonly>
+                </div>
+            </div>
+        </div>
+        <label class="form-label-custom">Tên công việc</label>
+        <input type="text" name="JobTitle" class="form-input" required maxlength="255">
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Mức lương</label>
+                <input type="text" name="SalaryRange" class="form-input" maxlength="100">
+            </div>
+            <div>
+                <label class="form-label-custom">Loại hình</label>
+                <select name="JobType" class="form-input">
+                    <option value="Part-time">Part-time</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Internship">Thực tập</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Điện thoại</label>
+                <input type="tel" name="ContactPhone" class="form-input" maxlength="20">
+            </div>
+            <div>
+                <label class="form-label-custom">Trạng thái</label>
+                <select name="JobStatus" class="form-input">
+                    <option value="Open">Đang tuyển</option>
+                    <option value="Closed">Đã đóng</option>
+                </select>
+            </div>
+        </div>
+        <label class="form-label-custom">Mô tả</label>
+        <textarea name="Description" class="form-input" rows="3"></textarea>
+        
+        <div class="action-bar">
+            <button type="button" class="btn-action btn-delete js-action-btn" data-action="askDelete">Xóa bài đăng</button>
+            <button type="button" class="btn-action btn-cancel js-action-btn" data-action="closeEdit">Hủy</button>
+            <button type="submit" class="btn-action btn-save">Lưu chỉnh sửa</button>
+        </div>
+    </form>
+</template>
+
+@section Scripts {
+<script>
+    let currentRole = '';
+    let itemsData = [];
+    let deleteTargetId = null;
+    let deleteTargetType = '';
+    let deleteModalInstance = null;
+    let roomCategories = [];
+    let jobCategories = [];
+    let provinceOptions = [];
+    const districtCache = new Map();
+    const wardCache = new Map();
+
+    function getAccount() {
+        try {
+            return JSON.parse(localStorage.getItem('unimap360.account') || sessionStorage.getItem('unimap360.account'));
+        } catch { return null; }
+    }
+    
+
+
+    function setupStatusFilterByRole() {
+        const select = document.getElementById('statusFilter');
+        if (!select) return;
+
+        const options = currentRole === 'host'
+            ? [
+                { value: 'Available', text: 'Còn trống' },
+                { value: 'Rented', text: 'Đã cho thuê' },
+                { value: 'Hidden', text: 'Đã ẩn' },
+                { value: 'Rejected', text: 'Đã từ chối' }
+            ]
+            : [
+                { value: 'Open', text: 'Đang tuyển' },
+                { value: 'Closed', text: 'Đã đóng' },
+                { value: 'Hidden', text: 'Đã ẩn' },
+                { value: 'Rejected', text: 'Đã từ chối' }
+            ];
+
+        select.innerHTML = '<option value="">Tất cả trạng thái</option>';
+        options.forEach(option => {
+            const node = document.createElement('option');
+            node.value = option.value;
+            node.textContent = option.text;
+            select.appendChild(node);
+        });
+    }
+
+    async function readJsonSafe(response) {
+        const raw = await response.text();
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch { return raw; }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function renderOptions(selectEl, items, valueField, textField) {
+        if (!selectEl) return;
+
+        const placeholder = selectEl.querySelector('option[value=""]');
+        selectEl.innerHTML = '';
+        if (placeholder) selectEl.appendChild(placeholder);
+
+        items.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item[valueField];
+            opt.textContent = item[textField];
+            selectEl.appendChild(opt);
+        });
+    }
+
+    async function loadDistrictOptions(provinceCode) {
+        if (!provinceCode) return [];
+        if (districtCache.has(provinceCode)) return districtCache.get(provinceCode);
+
+        const res = await fetch('/api/locations/districts?provinceCode=' + encodeURIComponent(provinceCode));
+        const data = await readJsonSafe(res);
+        const items = res.ok && data && data.items ? data.items : [];
+        districtCache.set(provinceCode, items);
+        return items;
+    }
+
+    async function loadWardOptions(districtCode) {
+        if (!districtCode) return [];
+        if (wardCache.has(districtCode)) return wardCache.get(districtCode);
+
+        const res = await fetch('/api/locations/wards?districtCode=' + encodeURIComponent(districtCode));
+        const data = await readJsonSafe(res);
+        const items = res.ok && data && data.items ? data.items : [];
+        wardCache.set(districtCode, items);
+        return items;
+    }
+
+    function setLocationStatus(form, text) {
+        const statusEl = form.querySelector('.js-map-status');
+        if (statusEl) statusEl.textContent = text;
+    }
+
+    function setCoordinates(form, lat, lng) {
+        const latInput = form.querySelector('input[name="Latitude"]');
+        const lngInput = form.querySelector('input[name="Longitude"]');
+        latInput.value = Number(lat).toFixed(7);
+        lngInput.value = Number(lng).toFixed(7);
+    }
+
+    function clearCoordinates(form) {
+        const latInput = form.querySelector('input[name="Latitude"]');
+        const lngInput = form.querySelector('input[name="Longitude"]');
+        latInput.value = '';
+        lngInput.value = '';
+    }
+
+    async function initializeLocationEditor(form, item) {
+        if (!item) return;
+        const provinceSelect = form.querySelector('select[name="ProvinceCode"]');
+        const districtSelect = form.querySelector('select[name="DistrictCode"]');
+        const wardSelect = form.querySelector('select[name="WardCode"]');
+        const geocodeBtn = form.querySelector('.js-geocode-btn');
+        const gpsBtn = form.querySelector('.js-gps-btn');
+        const resetBtn = form.querySelector('.js-reset-pin-btn');
+        const mapCanvas = form.querySelector('.js-map-canvas');
+
+        renderOptions(provinceSelect, provinceOptions, 'code', 'displayName');
+
+        const mapState = {
+            map: null,
+            marker: null
+        };
+        form._mapState = mapState;
+
+        if (window.L && mapCanvas) {
+            mapState.map = window.L.map(mapCanvas, {
+                center: [10.7769, 106.7009],
+                zoom: 12,
+                scrollWheelZoom: true
+            });
+
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(mapState.map);
+
+            mapState.map.on('click', e => {
+                createOrMoveMarker(form, e.latlng.lat, e.latlng.lng);
+                setLocationStatus(form, 'Đã cập nhật vị trí từ thao tác bấm bản đồ.');
+            });
+        }
+
+        const location = item.location || {};
+        form.OriginalLocationId.value = item.locationId || 0;
+        form.querySelector('input[name="HouseNumber"]').value = location.houseNumber || '';
+        form.querySelector('input[name="Street"]').value = location.street || '';
+
+        const provinceCode = location.provinceCode ? String(location.provinceCode) : '';
+        const districtCode = location.districtCode ? String(location.districtCode) : '';
+        const wardCode = location.wardCode ? String(location.wardCode) : '';
+
+        if (provinceCode) {
+            provinceSelect.value = provinceCode;
+            const districts = await loadDistrictOptions(provinceCode);
+            renderOptions(districtSelect, districts, 'code', 'displayName');
+            districtSelect.disabled = false;
+            if (districtCode) {
+                districtSelect.value = districtCode;
+                const wards = await loadWardOptions(districtCode);
+                renderOptions(wardSelect, wards, 'code', 'displayName');
+                wardSelect.disabled = false;
+                if (wardCode) wardSelect.value = wardCode;
+            }
+        }
+
+        if (location.latitude != null && location.longitude != null) {
+            createOrMoveMarker(form, Number(location.latitude), Number(location.longitude));
+            setLocationStatus(form, 'Đã tải vị trí hiện tại của bài đăng.');
+        } else {
+            setLocationStatus(form, 'Chưa có vị trí. Hãy chọn địa chỉ và ghim vị trí.');
+        }
+
+        form.dataset.originalLocation = JSON.stringify({
+            locationId: item.locationId || 0,
+            provinceCode: provinceCode,
+            districtCode: districtCode,
+            wardCode: wardCode,
+            houseNumber: (location.houseNumber || '').trim(),
+            street: (location.street || '').trim(),
+            latitude: location.latitude != null ? Number(location.latitude).toFixed(7) : '',
+            longitude: location.longitude != null ? Number(location.longitude).toFixed(7) : ''
+        });
+
+        provinceSelect.addEventListener('change', async () => {
+            clearCoordinates(form);
+            districtSelect.innerHTML = '<option value="">— Chọn quận/huyện —</option>';
+            wardSelect.innerHTML = '<option value="">— Chọn phường/xã —</option>';
+            districtSelect.disabled = true;
+            wardSelect.disabled = true;
+            if (!provinceSelect.value) return;
+
+            const districts = await loadDistrictOptions(provinceSelect.value);
+            renderOptions(districtSelect, districts, 'code', 'displayName');
+            districtSelect.disabled = false;
+        });
+
+        districtSelect.addEventListener('change', async () => {
+            clearCoordinates(form);
+            wardSelect.innerHTML = '<option value="">— Chọn phường/xã —</option>';
+            wardSelect.disabled = true;
+            if (!districtSelect.value) return;
+
+            const wards = await loadWardOptions(districtSelect.value);
+            renderOptions(wardSelect, wards, 'code', 'displayName');
+            wardSelect.disabled = false;
+        });
+
+        wardSelect.addEventListener('change', () => {
+            clearCoordinates(form);
+        });
+
+        geocodeBtn.addEventListener('click', async () => {
+            const provinceName = provinceSelect.options[provinceSelect.selectedIndex]?.textContent?.trim() || '';
+            const districtName = districtSelect.options[districtSelect.selectedIndex]?.textContent?.trim() || '';
+            const wardName = wardSelect.options[wardSelect.selectedIndex]?.textContent?.trim() || '';
+            const houseNumber = form.querySelector('input[name="HouseNumber"]').value.trim();
+            const street = form.querySelector('input[name="Street"]').value.trim();
+
+            if (!provinceSelect.value || !districtSelect.value) {
+                showToast('Vui lòng chọn tỉnh/thành và quận/huyện trước khi ghim.', 'error');
+                return;
+            }
+
+            geocodeBtn.disabled = true;
+            geocodeBtn.textContent = 'Đang ghim...';
+            try {
+                const res = await fetch('/api/geocoding/forward', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provinceName, districtName, wardName, houseNumber, street })
+                });
+                const data = await readJsonSafe(res);
+                if (!res.ok || !data || !data.bestCandidate) {
+                    showToast('Không tìm thấy vị trí phù hợp.', 'error');
+                    return;
+                }
+
+                createOrMoveMarker(form, data.bestCandidate.latitude, data.bestCandidate.longitude);
+                setLocationStatus(form, 'Đã ghim vị trí từ địa chỉ.');
+            } finally {
+                geocodeBtn.disabled = false;
+                geocodeBtn.textContent = 'Ghim từ địa chỉ';
+            }
+        });
+
+        gpsBtn.addEventListener('click', async () => {
+            if (!navigator.geolocation) {
+                showToast('Trình duyệt không hỗ trợ định vị.', 'error');
+                return;
+            }
+
+            gpsBtn.disabled = true;
+            gpsBtn.textContent = 'Đang lấy GPS...';
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+                createOrMoveMarker(form, position.coords.latitude, position.coords.longitude);
+                setLocationStatus(form, 'Đã ghim vị trí từ GPS thiết bị.');
+            } catch {
+                showToast('Không thể lấy vị trí hiện tại.', 'error');
+            } finally {
+                gpsBtn.disabled = false;
+                gpsBtn.textContent = 'Lấy vị trí của tôi';
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            clearCoordinates(form);
+            if (form._mapState?.map && form._mapState?.marker) {
+                form._mapState.map.removeLayer(form._mapState.marker);
+                form._mapState.marker = null;
+            }
+            setLocationStatus(form, 'Đã đặt lại ghim vị trí.');
+        });
+    }
+
+    function createOrMoveMarker(form, lat, lng) {
+        const mapState = form._mapState;
+        if (!mapState || !mapState.map) return;
+
+        if (!mapState.marker) {
+            mapState.marker = window.L.marker([lat, lng], { draggable: true }).addTo(mapState.map);
+            mapState.marker.on('dragend', () => {
+                const p = mapState.marker.getLatLng();
+                setCoordinates(form, p.lat, p.lng);
+                setLocationStatus(form, 'Đã cập nhật vị trí từ thao tác kéo ghim.');
+            });
+        } else {
+            mapState.marker.setLatLng([lat, lng]);
+        }
+
+        mapState.map.setView([lat, lng], 16);
+        setCoordinates(form, lat, lng);
+    }
+
+    function hasLocationChanged(form) {
+        const original = JSON.parse(form.dataset.originalLocation || '{}');
+        const current = {
+            provinceCode: (form.ProvinceCode.value || '').trim(),
+            districtCode: (form.DistrictCode.value || '').trim(),
+            wardCode: (form.WardCode.value || '').trim(),
+            houseNumber: (form.HouseNumber.value || '').trim(),
+            street: (form.Street.value || '').trim(),
+            latitude: (form.Latitude.value || '').trim(),
+            longitude: (form.Longitude.value || '').trim()
+        };
+
+        return current.provinceCode !== (original.provinceCode || '')
+            || current.districtCode !== (original.districtCode || '')
+            || current.wardCode !== (original.wardCode || '')
+            || current.houseNumber !== (original.houseNumber || '')
+            || current.street !== (original.street || '')
+            || current.latitude !== (original.latitude || '')
+            || current.longitude !== (original.longitude || '');
+    }
+
+    async function loadLookupData() {
+        try {
+            const token = getToken();
+            const [metaRes, provinceRes] = await Promise.all([
+                fetch('/api/manage-posts/metadata', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }),
+                fetch('/api/locations/provinces')
+            ]);
+
+            const json = await readJsonSafe(metaRes);
+            const provinceJson = await readJsonSafe(provinceRes);
+            if (!metaRes.ok || !json) {
+                roomCategories = [];
+                jobCategories = [];
+                provinceOptions = [];
+                return;
+            }
+
+            const categories = Array.isArray(json.categories) ? json.categories : [];
+
+            if ((json.role || '').toLowerCase() === 'host') {
+                roomCategories = categories;
+                jobCategories = [];
+            } else {
+                jobCategories = categories;
+                roomCategories = [];
+            }
+
+            provinceOptions = provinceRes.ok && provinceJson && provinceJson.items
+                ? provinceJson.items
+                : [];
+        } catch {
+            roomCategories = [];
+            jobCategories = [];
+            provinceOptions = [];
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const acc = getAccount();
+        if (!acc || !acc.email) {
+            window.location.href = '/Home/Auth';
+            return;
+        }
+        currentRole = (acc.role || '').toLowerCase();
+        
+        const btnNew = document.getElementById('btn-post-new');
+        const headerActionWrap = document.querySelector('.manage-header > div:last-child');
+        if (currentRole === 'host' && headerActionWrap) {
+            const btnRequests = document.createElement('a');
+            btnRequests.href = '/Home/HostAppointments';
+            btnRequests.className = 'btn btn-outline-secondary fw-bold me-2';
+            btnRequests.innerHTML = '<i class="fas fa-calendar-check me-1"></i> Yêu cầu xem phòng';
+            headerActionWrap.prepend(btnRequests);
+        }
+        if (currentRole === 'employer' && headerActionWrap) {
+            const btnApplications = document.createElement('a');
+            btnApplications.href = '/Home/EmployerApplications';
+            btnApplications.className = 'btn btn-outline-secondary fw-bold me-2';
+            btnApplications.innerHTML = '<i class="fas fa-file-signature me-1"></i> Hồ sơ ứng tuyển';
+            headerActionWrap.prepend(btnApplications);
+        }
+        if (currentRole === 'host') {
+            btnNew.href = '/Home/PostRoom';
+            btnNew.style.display = 'inline-block';
+        } else if (currentRole === 'employer') {
+            btnNew.href = '/Home/PostJob';
+            btnNew.style.display = 'inline-block';
+        }
+        setupStatusFilterByRole();
+
+        await loadLookupData();
+        await fetchListings();
+        deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteModal'));
+        
+        document.getElementById('confirmDeleteBtn').addEventListener('click', doDelete);
+        document.getElementById('searchInput').addEventListener('input', renderList);
+        document.getElementById('statusFilter').addEventListener('change', renderList);
+
+        // Bind dynamic action buttons (removed inline onclick)
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-action-btn');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            if (action === 'askDelete') askDelete(btn);
+            else if (action === 'closeEdit') closeEdit(btn);
+            else if (action === 'toggleEdit') toggleEdit(btn.getAttribute('data-id'));
+        });
+    });
+
+    async function fetchListings() {
+        const token = getToken();
+        if (currentRole !== 'host' && currentRole !== 'employer') {
+            document.getElementById('manageResults').innerHTML = '<div class="empty-state">Tài khoản của bạn không có quyền đăng bài.</div>';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/manage-posts/items', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const data = await readJsonSafe(res);
+                itemsData = data.items || [];
+                renderList();
+            } else {
+                showToast('Lỗi tải dữ liệu', 'error');
+            }
+        } catch (e) {
+            showToast('Lỗi mạng', 'error');
+        }
+    }
+
+    function renderList() {
+        const container = document.getElementById('manageResults');
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const stat = document.getElementById('statusFilter').value;
+
+        let filtered = itemsData.filter(x => {
+            const title = (x.title || x.jobTitle || '').toLowerCase();
+            const st = x.roomStatus || x.jobStatus || '';
+            if (q && !title.includes(q)) return false;
+            if (stat && st !== stat) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <h4>Chưa có bài đăng nào</h4>
+                    <p class="text-muted">Bạn chưa có bài đăng nào hoặc không có kết quả tìm kiếm.</p>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(x => {
+            const id = x.roomId || x.jobId;
+            const title = x.title || x.jobTitle || 'Không có tiêu đề';
+            const status = x.roomStatus || x.jobStatus || 'Open';
+            const dt = new Date(x.createdAt).toLocaleDateString();
+            const isRoom = currentRole === 'host';
+            let extra = '';
+            
+            if (isRoom) {
+                extra = `<span><i class="fas fa-tag"></i> ${new Intl.NumberFormat('vi-VN').format(x.price)} đ</span>
+                         <span><i class="fas fa-vector-square"></i> ${escapeHtml(x.area)} m²</span>`;
+            } else {
+                extra = `<span><i class="fas fa-money-bill"></i> Lương: ${escapeHtml(x.salaryRange || 'Thỏa thuận')}</span>
+                         <span><i class="fas fa-clock"></i> ${escapeHtml(x.jobType || 'Part-time')}</span>`;
+            }
+
+            let badgeClass = (status === 'Available' || status === 'Open') ? 'badge-open' : 'badge-closed';
+            
+            html += `
+                <div class="item-card" id="card-${id}" data-id="${id}" data-type="${isRoom ? 'room' : 'job'}">
+                    <div class="item-summary">
+                        <div class="item-summary-left">
+                            <h4>${escapeHtml(title)}</h4>
+                            <div class="item-meta">
+                                <span class="meta-badge ${badgeClass}">${escapeHtml(status)}</span>
+                                <span><i class="fas fa-calendar-alt"></i> ${dt}</span>
+                            </div>
+                            <div class="item-meta mt-1">${extra}</div>
+                        </div>
+                        <div class="item-summary-right">
+                            <button class="btn-action btn-edit js-action-btn" data-action="toggleEdit" data-id="${id}">
+                                <i class="fas fa-pen"></i> Chỉnh sửa
+                            </button>
+                        </div>
+                    </div>
+                    <div class="item-detail" id="detail-${id}"></div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleEdit(id) {
+        const card = document.getElementById('card-' + id);
+        const detailDiv = document.getElementById('detail-' + id);
+        const isEditing = card.classList.contains('is-editing');
+        const btn = card.querySelector('.btn-edit');
+
+        // Đóng các item khác
+        document.querySelectorAll('.item-card').forEach(c => {
+            if (c.id !== 'card-' + id) {
+                c.classList.remove('is-editing');
+                const b = c.querySelector('.btn-edit');
+                if (b) {
+                    b.innerHTML = '<i class="fas fa-pen"></i> Chỉnh sửa';
+                    b.classList.remove('btn-editing');
+                }
+                c.querySelector('.item-detail').innerHTML = '';
+            }
+        });
+
+        if (isEditing) {
+            // Đóng item hiện tại
+            card.classList.remove('is-editing');
+            detailDiv.innerHTML = '';
+            btn.innerHTML = '<i class="fas fa-pen"></i> Chỉnh sửa';
+            btn.classList.remove('btn-editing');
+        } else {
+            // Mở item
+            const type = card.dataset.type;
+            const tpl = document.getElementById(type === 'room' ? 'tpl-edit-room' : 'tpl-edit-job').innerHTML;
+            detailDiv.innerHTML = tpl;
+            card.classList.add('is-editing');
+            btn.innerHTML = '<i class="fas fa-chevron-up"></i> Đóng lại';
+            btn.classList.add('btn-editing');
+            
+            // Xử lý Form
+            const form = detailDiv.querySelector('form');
+            form.dataset.id = id;
+            populateFormOptions(form, type);
+            fillForm(form, id, type);
+            initializeLocationEditor(form, itemsData.find(x => x.roomId == id || x.jobId == id));
+            form.addEventListener('submit', handleSave);
+        }
+    }
+
+    function populateFormOptions(form, type) {
+        const categoryItems = type === 'room' ? roomCategories : jobCategories;
+        renderOptions(form.CategoryId, categoryItems, 'categoryId', 'categoryName');
+    }
+
+    function closeEdit(btn) {
+        const card = btn.closest('.item-card');
+        const id = card.dataset.id;
+        toggleEdit(id);
+    }
+
+    function fillForm(form, id, type) {
+        const item = itemsData.find(x => x.roomId == id || x.jobId == id);
+        if (!item) return;
+
+        form.CategoryId.value = item.categoryId;
+        form.OriginalLocationId.value = item.locationId || 0;
+        form.ContactPhone.value = item.contactPhone || '';
+        form.Description.value = item.description || '';
+
+        if (type === 'room') {
+            form.Title.value = item.title;
+            form.Price.value = item.price;
+            form.Area.value = item.area;
+            form.RoomStatus.value = item.roomStatus;
+        } else {
+            form.JobTitle.value = item.jobTitle;
+            form.SalaryRange.value = item.salaryRange || '';
+            form.JobType.value = item.jobType || '';
+            form.JobStatus.value = item.jobStatus;
+        }
+    }
+
+    async function handleSave(e) {
+        e.preventDefault();
+        const form = e.target;
+        const id = form.dataset.id;
+        const type = form.dataset.type;
+        const btnSave = form.querySelector('.btn-save');
+        
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu';
+
+        const body = {
+            categoryId: parseInt(form.CategoryId.value) || 0,
+            locationId: parseInt(form.OriginalLocationId.value) || 0,
+            contactPhone: form.ContactPhone.value.trim() || null,
+            description: form.Description.value.trim() || null
+        };
+
+        const locationChanged = hasLocationChanged(form);
+        if (locationChanged) {
+            if (!form.ProvinceCode.value || !form.DistrictCode.value || !form.Latitude.value || !form.Longitude.value) {
+                showToast('Khi đổi địa chỉ, bạn cần chọn tỉnh/quận và ghim vị trí bản đồ.', 'error');
+                btnSave.disabled = false;
+                btnSave.innerHTML = 'Lưu chỉnh sửa';
+                return;
+            }
+
+            body.locationId = 0;
+            body.provinceCode = form.ProvinceCode.value || null;
+            body.provinceName = form.ProvinceCode.options[form.ProvinceCode.selectedIndex]?.textContent?.trim() || null;
+            body.districtCode = form.DistrictCode.value || null;
+            body.districtName = form.DistrictCode.options[form.DistrictCode.selectedIndex]?.textContent?.trim() || null;
+            body.wardCode = form.WardCode.value || null;
+            body.wardName = form.WardCode.options[form.WardCode.selectedIndex]?.textContent?.trim() || null;
+            body.houseNumber = form.HouseNumber.value.trim() || null;
+            body.street = form.Street.value.trim() || null;
+            body.latitude = parseFloat(form.Latitude.value);
+            body.longitude = parseFloat(form.Longitude.value);
+        }
+
+        if (type === 'room') {
+            body.title = form.Title.value.trim();
+            body.price = parseFloat(form.Price.value) || 0;
+            body.area = parseFloat(form.Area.value) || 0;
+            body.roomStatus = form.RoomStatus.value.trim() || null;
+        } else {
+            body.jobTitle = form.JobTitle.value.trim();
+            body.salaryRange = form.SalaryRange.value.trim() || null;
+            body.jobType = form.JobType.value.trim() || null;
+            body.jobStatus = form.JobStatus.value.trim() || null;
+        }
+
+        const endpoint = type === 'room' ? `/api/host/rooms/${id}` : `/api/employer/jobs/${id}`;
+        
+        try {
+            const res = await fetch(endpoint, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify(body)
+            });
+            const data = await readJsonSafe(res);
+            if (res.ok) {
+                showToast('Lưu thành công!', 'success');
+                await fetchListings();
+            } else {
+                showToast(typeof data === 'string' ? data : ((data && data.message) || 'Lỗi lưu dữ liệu'), 'error');
+            }
+        } catch (err) {
+            showToast('Lỗi mạng', 'error');
+        }
+
+        if(btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = 'Lưu chỉnh sửa';
+        }
+    }
+
+    function askDelete(btn) {
+        const form = btn.closest('form');
+        deleteTargetId = form.dataset.id;
+        deleteTargetType = form.dataset.type;
+        deleteModalInstance.show();
+    }
+
+    async function doDelete() {
+        if (!deleteTargetId) return;
+        const btn = document.getElementById('confirmDeleteBtn');
+        btn.disabled = true;
+        btn.innerHTML = 'Đang xóa...';
+
+        const endpoint = deleteTargetType === 'room' 
+            ? `/api/host/rooms/${deleteTargetId}` 
+            : `/api/employer/jobs/${deleteTargetId}`;
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (res.ok) {
+                showToast('Đã xóa thành công', 'success');
+                deleteModalInstance.hide();
+                await fetchListings();
+            } else {
+                const data = await readJsonSafe(res);
+                showToast(typeof data === 'string' ? data : ((data && data.message) || 'Lỗi xóa'), 'error');
+            }
+        } catch (err) {
+            showToast('Lỗi mạng', 'error');
+        }
+        
+        btn.disabled = false;
+        btn.innerHTML = 'Xóa bài đăng';
+    }
+</script>
+}

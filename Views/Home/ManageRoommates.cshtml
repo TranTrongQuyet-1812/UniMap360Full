@@ -1,0 +1,448 @@
+@{
+    ViewData["Title"] = "Quản lý bài đăng ở ghép";
+}
+
+<style>
+    .manage-page-wrapper {
+        min-height: calc(100vh - var(--app-nav-height, 70px));
+        background-color: var(--color-bg);
+        padding: 40px 0;
+    }
+    .manage-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 30px;
+    }
+    .manage-header h2 {
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+    .manage-header p {
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+    .manage-toolbar {
+        background: #fff;
+        padding: 15px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-card);
+        margin-bottom: 25px;
+        display: flex;
+        gap: 15px;
+        transition: box-shadow var(--motion-base) var(--ease-cinematic), border-color var(--motion-base) var(--ease-cinematic);
+    }
+    .manage-toolbar:focus-within {
+        border-color: var(--color-border-dark);
+        box-shadow: var(--shadow-float);
+    }
+    .manage-toolbar input {
+        padding: 10px 15px;
+        border: 2px solid var(--color-border);
+        border-radius: 8px;
+        outline: none;
+        flex: 1;
+    }
+
+    .item-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 15px;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        transition: transform var(--motion-fast) var(--ease-cinematic);
+    }
+    .item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-float);
+    }
+    .item-summary {
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .item-summary-left h4 {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+        color: #1a1a1a;
+    }
+    .item-meta {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        display: flex;
+        gap: 15px;
+        margin-bottom: 4px;
+    }
+    
+    .item-summary-right { display: flex; gap: 10px; }
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    .btn-delete { background: #fee2e2; color: #dc2626; }
+    .btn-delete:hover { background: #fecaca; }
+
+    .btn-edit { background: #f3f4f6; color: #1f2937; }
+    .btn-edit:hover { background: #e5e7eb; }
+    .btn-editing { background: var(--color-primary); color: #fff; }
+
+    .item-detail {
+        display: none;
+        padding: 25px;
+        background: #f9fafb;
+        border-top: 1px solid #f3f4f6;
+    }
+    .item-card.is-editing .item-detail { display: block; }
+    .item-card.is-editing { border-color: var(--color-primary); }
+
+    .form-label-custom { font-weight: 700; font-size: 0.9rem; margin-bottom: 5px; display: block; }
+    .form-input { width: 100%; padding: 10px 15px; border: 2px solid var(--color-border); border-radius: 8px; margin-bottom: 15px; background: #fff;}
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .action-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
+    .btn-save { background: var(--color-primary); color: #fff; }
+
+    .toast-msg {
+        position: fixed; top: 90px; right: 20px; padding: 16px 28px; border-radius: 10px; color: #fff; font-weight: 600; z-index: 5600; opacity: 0; transform: translateX(40px); transition: all 0.4s;
+    }
+    .toast-msg.show { opacity: 1; transform: translateX(0); }
+    .toast-msg.success { background: #10b981; }
+    .toast-msg.error { background: #ef4444; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 12px; }
+    .empty-state i { font-size: 4rem; color: #ccc; margin-bottom: 15px; }
+</style>
+
+<div class="manage-page-wrapper">
+    <div class="container" style="max-width: 800px;">
+        <div class="manage-header">
+            <div>
+                <h2>Bài đăng của bạn</h2>
+                <p>Quản lý các bài viết tìm bạn ở ghép.</p>
+            </div>
+            <div>
+                <a href="/Home/Roommates" class="btn btn-primary fw-bold" style="background: var(--color-primary); border: none;">
+                    <i class="fas fa-plus me-1"></i> Đăng bài mới
+                </a>
+            </div>
+        </div>
+
+        <div class="manage-toolbar">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm nội dung bài đăng...">
+        </div>
+
+        <div id="manageResults">
+            <div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-msg" id="toastMsg"></div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Xóa bài đăng này?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-muted">
+        Hành động này không thể hoàn tác. Bài đăng của bạn sẽ bị xóa vĩnh viễn khỏi bảng tin.
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger fw-bold" id="confirmDeleteBtn">Xóa bài đăng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template Form Sửa -->
+<template id="tpl-edit-post">
+    <form class="edit-form">
+        <div>
+            <label class="form-label-custom">Nội dung bài viết</label>
+            <textarea name="Description" class="form-input" rows="4" required></textarea>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Ngân sách (VNĐ/tháng)</label>
+                <input type="number" name="BudgetPerMonth" class="form-input" placeholder="VD: 1500000">
+            </div>
+            <div>
+                <label class="form-label-custom">Giới tính tìm kiếm</label>
+                <select name="TargetGender" class="form-input">
+                    <option value="Any">Bất kỳ</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label class="form-label-custom">Khu vực mong muốn</label>
+                <input type="text" name="AreaPreference" class="form-input" placeholder="VD: Quận 1, Gần ĐHQG...">
+            </div>
+            <div>
+                <label class="form-label-custom">Thói quen / Tiêu chí</label>
+                <input type="text" name="Habits" class="form-input" placeholder="VD: Sạch sẽ, không hút thuốc...">
+            </div>
+        </div>
+        <div>
+            <label class="form-label-custom">Trạng thái hiển thị</label>
+            <select name="IsActive" class="form-input">
+                <option value="true">Đang hiển thị</option>
+                <option value="false">Ẩn bài viết</option>
+            </select>
+        </div>
+        <div class="action-bar">
+            <button type="button" class="btn-action btn-edit js-action-btn" data-action="closeEdit">Hủy</button>
+            <button type="submit" class="btn-action btn-save"><i class="fas fa-save me-1"></i> Lưu thay đổi</button>
+        </div>
+    </form>
+</template>
+
+@section Scripts {
+<script>
+    let itemsData = [];
+    let deleteTargetId = null;
+    let deleteModalInstance = null;
+
+
+    async function fetchListings() {
+        const token = getToken();
+        if (!token) {
+            window.location.href = '/Home/Auth';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/Roommates/me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                itemsData = data.items || [];
+                renderList();
+            } else {
+                document.getElementById('manageResults').innerHTML = '<div class="empty-state"><i class="fa-solid fa-user-xmark"></i><h4 class="fw-bold mt-3">Không có quyền truy cập</h4><p class="text-muted">Tính năng này chỉ dành cho tài khoản Sinh viên.</p></div>';
+            }
+        } catch (e) {
+            showToast('Lỗi mạng', 'error');
+        }
+    }
+
+    function renderList() {
+        const container = document.getElementById('manageResults');
+        const q = document.getElementById('searchInput').value.toLowerCase();
+
+        const filtered = itemsData.filter(item => {
+            const textToSearch = (item.description || '') + ' ' + (item.title || '') + ' ' + (item.areaPreference || '');
+            if (q && !textToSearch.toLowerCase().includes(q)) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-box-open"></i>
+                    <h4 class="fw-bold mt-3">Chưa có bài đăng nào</h4>
+                    <p class="text-muted">Bạn chưa đăng bài tìm người ở ghép hoặc không có kết quả phù hợp.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(item => {
+            const dateStr = new Date(item.createdAt).toLocaleDateString('vi-VN', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            const statusBadge = item.isActive 
+                ? '<span class="badge bg-success bg-opacity-10 text-success ms-2">Đang hiển thị</span>'
+                : '<span class="badge bg-secondary bg-opacity-10 text-secondary ms-2">Đang ẩn</span>';
+
+            html += `
+                <div class="item-card" id="card-${item.id}">
+                    <div class="item-summary">
+                        <div class="item-summary-left" style="flex:1; margin-right: 20px; overflow:hidden;">
+                            <div class="item-meta">
+                                <span><i class="far fa-clock"></i> ${dateStr}</span>
+                                ${statusBadge}
+                            </div>
+                            <h4 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top:5px;">${item.description || 'Bài đăng không có nội dung...'}</h4>
+                        </div>
+                        <div class="item-summary-right">
+                            <button class="btn-action btn-edit js-action-btn" data-action="toggleEdit" data-id="${item.id}">
+                                <i class="fas fa-pen"></i> Sửa
+                            </button>
+                            <button class="btn-action btn-delete js-action-btn" data-action="askDelete" data-id="${item.id}">
+                                <i class="fas fa-trash-alt"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                    <div class="item-detail" id="detail-${item.id}"></div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleEdit(id) {
+        const card = document.getElementById('card-' + id);
+        const detailDiv = document.getElementById('detail-' + id);
+        const isEditing = card.classList.contains('is-editing');
+        const btn = card.querySelector('.btn-edit');
+
+        // Đóng các form đang mở khác
+        document.querySelectorAll('.item-card').forEach(c => {
+            if (c.id !== 'card-' + id) {
+                c.classList.remove('is-editing');
+                const b = c.querySelector('.btn-edit');
+                if (b) {
+                    b.innerHTML = '<i class="fas fa-pen"></i> Sửa';
+                    b.classList.remove('btn-editing');
+                }
+                c.querySelector('.item-detail').innerHTML = '';
+            }
+        });
+
+        if (isEditing) {
+            // Đóng item hiện tại
+            card.classList.remove('is-editing');
+            detailDiv.innerHTML = '';
+            btn.innerHTML = '<i class="fas fa-pen"></i> Sửa';
+            btn.classList.remove('btn-editing');
+        } else {
+            // Mở item
+            const tpl = document.getElementById('tpl-edit-post').innerHTML;
+            detailDiv.innerHTML = tpl;
+            card.classList.add('is-editing');
+            btn.innerHTML = '<i class="fas fa-chevron-up"></i> Đóng lại';
+            btn.classList.add('btn-editing');
+            
+            // Xử lý Form
+            const form = detailDiv.querySelector('form');
+            form.dataset.id = id;
+            fillForm(form, id);
+            form.addEventListener('submit', handleSave);
+        }
+    }
+
+    function fillForm(form, id) {
+        const item = itemsData.find(x => x.id == id);
+        if (!item) return;
+
+        form.Description.value = item.description || '';
+        form.BudgetPerMonth.value = item.budgetPerMonth || '';
+        form.TargetGender.value = item.targetGender || 'Any';
+        form.AreaPreference.value = item.areaPreference || '';
+        form.Habits.value = item.habits || '';
+        form.IsActive.value = item.isActive ? 'true' : 'false';
+    }
+
+    async function handleSave(e) {
+        e.preventDefault();
+        const form = e.target;
+        const id = form.dataset.id;
+        const btnSave = form.querySelector('.btn-save');
+        
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu';
+
+        const body = {
+            description: form.Description.value.trim() || null,
+            budgetPerMonth: parseFloat(form.BudgetPerMonth.value) || null,
+            targetGender: form.TargetGender.value,
+            areaPreference: form.AreaPreference.value.trim() || null,
+            habits: form.Habits.value.trim() || null,
+            isActive: form.IsActive.value === 'true'
+        };
+
+        try {
+            const res = await fetch('/api/Roommates/' + id, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                showToast('Lưu thành công!', 'success');
+                await fetchListings();
+            } else {
+                showToast('Lỗi khi lưu bài đăng', 'error');
+            }
+        } catch (err) {
+            showToast('Lỗi mạng', 'error');
+        }
+
+        if(btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="fas fa-save me-1"></i> Lưu thay đổi';
+        }
+    }
+
+    function askDelete(id) {
+        deleteTargetId = id;
+        deleteModalInstance.show();
+    }
+
+    async function doDelete() {
+        if (!deleteTargetId) return;
+        const btn = document.getElementById('confirmDeleteBtn');
+        btn.disabled = true;
+        btn.innerHTML = 'Đang xóa...';
+
+        try {
+            const res = await fetch('/api/Roommates/' + deleteTargetId, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (res.ok) {
+                showToast('Đã xóa bài đăng thành công!', 'success');
+                deleteModalInstance.hide();
+                await fetchListings();
+            } else {
+                showToast('Lỗi khi xóa bài đăng', 'error');
+            }
+        } catch (err) {
+            showToast('Lỗi mạng', 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = 'Xóa bài đăng';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteModal'));
+        document.getElementById('confirmDeleteBtn').addEventListener('click', doDelete);
+        document.getElementById('searchInput').addEventListener('input', renderList);
+        
+        // Use event delegation for dynamic buttons
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-action-btn');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            
+            if (action === 'askDelete') askDelete(id);
+            else if (action === 'toggleEdit') toggleEdit(id);
+            else if (action === 'closeEdit') toggleEdit(btn.closest('form').dataset.id);
+        });
+
+        await fetchListings();
+    });
+</script>
+}

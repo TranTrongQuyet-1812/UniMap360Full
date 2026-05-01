@@ -1,0 +1,344 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniMap360 - The Cinematic Experience</title>
+    
+    <!-- Google Fonts: Playfair Display cho Headline sang trọng, Inter cho Body dễ đọc -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/@@studio-freight/lenis@@1.0.34/dist/lenis.min.js"></script>
+
+    <style>
+        :root {
+            --color-primary: #780115;
+            --color-accent: #f7b638;
+            --color-bg: #0a0a0a;
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'Inter', sans-serif;
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--color-bg);
+            color: #fff;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Cinematic Grain */
+        .grain {
+            position: fixed; inset: 0; z-index: 999; pointer-events: none; opacity: 0.04;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23noise)"/></svg>');
+        }
+
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem 4%;
+            display: flex; justify-content: flex-start; align-items: center;
+            z-index: 1000;
+            background: transparent;
+            backdrop-filter: none;
+            border-bottom: none;
+        }
+        .logo-img { height: 35px; }
+        
+        .btn-header-cta {
+            background: var(--color-primary); color: #fff;
+            padding: 0.7rem 1.5rem; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 600; text-decoration: none;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-header-cta:hover { background: var(--color-accent); color: #000; }
+
+        /* Card Stacking Layout */
+        .stack-container { position: relative; width: 100%; }
+        
+        .stack-card {
+            position: relative; height: 110vh; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        .card-bg {
+            position: absolute; inset: 0; z-index: 1;
+        }
+        .card-bg video {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.6) saturate(1.2);
+        }
+        .card-overlay {
+            position: absolute; inset: 0; z-index: 2;
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
+        }
+
+        .card-content {
+            position: relative; z-index: 3; text-align: center;
+            max-width: 90%;
+        }
+        .card-eyebrow {
+            font-size: 0.9rem; color: var(--color-accent);
+            text-transform: uppercase; letter-spacing: 0.5em;
+            margin-bottom: 2rem; display: block;
+        }
+        .card-title {
+            font-family: var(--font-display);
+            font-size: clamp(4rem, 12vw, 10rem);
+            line-height: 0.9; text-transform: uppercase;
+            margin-bottom: 3rem;
+        }
+        .card-title span { display: block; -webkit-text-stroke: 1px #fff; color: transparent; }
+        .card-subtitle {
+            font-size: clamp(0.95rem, 1.5vw, 1.2rem); color: rgba(255,255,255,0.75);
+            max-width: 520px; margin: 0 auto 2.5rem; line-height: 1.7; font-weight: 300;
+        }
+
+        /* Bento Grid Style */
+        .features-section {
+            padding: 10rem 4%; background: var(--color-bg);
+            position: relative; z-index: 10;
+        }
+        .bento-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 300px; gap: 1.5rem; max-width: 1400px; margin: 0 auto;
+        }
+        .bento-item {
+            background: #111; border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px; padding: 3rem; position: relative;
+            overflow: hidden; transition: all 0.5s var(--ease-out-expo);
+        }
+        .bento-item:hover { border-color: var(--color-accent); background: #1a1a1a; }
+        .bento-item.large { grid-column: span 2; grid-row: span 2; }
+        .bento-item.wide { grid-column: span 2; }
+
+        .bento-tag {
+            color: var(--color-accent); font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 1rem;
+            display: block;
+        }
+        .bento-item h3 { font-family: var(--font-display); font-size: 2.5rem; margin-bottom: 1.5rem; }
+        .bento-item p { color: #888; line-height: 1.8; font-size: 1.1rem; }
+
+        /* Responsive cho Bento Grid */
+        @@media (max-width: 1024px) {
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-auto-rows: 250px;
+            }
+            .bento-item.wide { grid-column: span 2; }
+            .bento-item.large { grid-column: span 2; grid-row: span 2; }
+        }
+
+        @@media (max-width: 767.98px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+                grid-auto-rows: auto;
+            }
+            .bento-item {
+                padding: 2rem;
+            }
+            .bento-item.large,
+            .bento-item.wide {
+                grid-column: span 1;
+                grid-row: span 1;
+                min-height: 250px;
+            }
+            .bento-item h3 { font-size: 2rem; }
+            
+            .card-title {
+                font-size: clamp(2.5rem, 10vw, 5rem) !important;
+            }
+            .features-section {
+                padding: 5rem 4%;
+            }
+        }
+
+        .bento-video-bg {
+            position: absolute; inset: 0; z-index: -1; opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .bento-item:hover .bento-video-bg { opacity: 0.3; }
+        .bento-video-bg video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Final CTA Button Style */
+        .cta-wrapper {
+            display: flex; justify-content: center; padding-top: 4rem;
+            max-width: 1400px; margin: 0 auto;
+        }
+        .btn-final {
+            background: rgba(120, 1, 21, 0.88); color: #fff;
+            padding: 1rem 2.2rem; border-radius: 10px;
+            font-family: var(--font-body); font-weight: 600; font-size: 1rem;
+            text-decoration: none; border: 1px solid rgba(247, 182, 56, 0.45);
+            box-shadow: 0 14px 30px rgba(120, 1, 21, 0.28);
+            transition: all 0.4s var(--ease-out-expo);
+            display: flex; align-items: center; gap: 15px;
+        }
+        .btn-final:hover {
+            background: rgba(247, 182, 56, 0.95); color: #1a1a1a;
+            transform: translateY(-3px);
+            box-shadow: 0 20px 36px rgba(247, 182, 56, 0.32);
+        }
+
+        footer {
+            padding: 5rem 4% 10rem; text-align: center; color: #444; 
+            font-size: 0.8rem; letter-spacing: 0.1em;
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .loader-text { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.5em; color: var(--color-accent); }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div id="loader">
+        <div class="loader-text">UNIMAP360</div>
+    </div>
+
+    <header>
+        <img src="https://res.cloudinary.com/dreyjycrh/image/upload/v1776439376/LogoSQL.png" alt="UniMap360" class="logo-img">
+    </header>
+
+    <div class="stack-container">
+        <!-- Card 1: Hero / Flag -->
+        <section class="stack-card" id="card-1">
+            <div class="card-bg">
+                <video src="/assets/videos/14455494_1280_720_60fps.mp4" autoplay loop muted playsinline></video>
+                <div class="card-overlay"></div>
+            </div>
+            <div class="card-content">
+                <span class="card-eyebrow">For Every Student</span>
+                <h1 class="card-title">Tìm Nơi Ở<span>Tìm Việc Làm</span></h1>
+                <p class="card-subtitle">Nền tảng dành riêng cho sinh viên — tìm phòng trọ an toàn và việc làm phù hợp ngay cạnh trường học của bạn.</p>
+            </div>
+        </section>
+
+        <!-- Card 2: Discovery / Boat -->
+        <section class="stack-card" id="card-2">
+            <div class="card-bg">
+                <video src="/assets/videos/18088-288458760_medium.mp4" autoplay loop muted playsinline></video>
+                <div class="card-overlay"></div>
+            </div>
+            <div class="card-content">
+                <span class="card-eyebrow">Your City, Your Map</span>
+                <h1 class="card-title">Khám Phá<span>Xung Quanh</span></h1>
+                <p class="card-subtitle">Bản đồ thông minh hiển thị phòng trọ và việc làm theo vị trí thực tế — tìm đúng nơi, đúng lúc.</p>
+            </div>
+        </section>
+
+        <!-- Card 3: Community / Student -->
+        <section class="stack-card" id="card-3">
+            <div class="card-bg">
+                <video src="/assets/videos/0505.mp4" autoplay loop muted playsinline></video>
+                <div class="card-overlay"></div>
+            </div>
+            <div class="card-content">
+                <span class="card-eyebrow">Start Your Journey</span>
+                <h1 class="card-title">Bước Vào<span>Tương Lai</span></h1>
+                <p class="card-subtitle">Hàng trăm cơ hội việc làm part-time và full-time đang chờ — bắt đầu sự nghiệp ngay từ hôm nay —</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Bento Section -->
+    <section class="features-section" id="features">
+        <div class="bento-grid">
+            <div class="bento-item large gs-reveal">
+                <span class="bento-tag">Innovation</span>
+                <h3>Bản Đồ<br>Đa Chiều</h3>
+                <p>Khám phá mọi tiện ích quanh trường đại học với công nghệ định vị chính xác nhất.</p>
+                <div class="bento-video-bg">
+                    <video src="/assets/videos/7683392-hd_1280_720_30fps.mp4" autoplay loop muted playsinline></video>
+                </div>
+            </div>
+            <div class="bento-item wide gs-reveal">
+                <span class="bento-tag">Housing</span>
+                <h3>Phòng Trọ An Toàn</h3>
+                <p>Hệ thống kiểm duyệt gắt gao, bảo vệ quyền lợi sinh viên.</p>
+            </div>
+            <div class="bento-item gs-reveal">
+                <span class="bento-tag">Jobs</span>
+                <h3>Việc Làm Sát Bên</h3>
+                <p>Kiếm thêm thu nhập ngay cạnh nơi ở.</p>
+            </div>
+            <div class="bento-item gs-reveal">
+                <span class="bento-tag">Security</span>
+                <h3>Bảo Mật</h3>
+                <p>Minh bạch & Tin cậy.</p>
+            </div>
+        </div>
+
+        <!-- Nút bấm nằm ngay dưới Bento -->
+        <div class="cta-wrapper">
+            <a href="@Url.Action("Index", "Home")" class="btn-final gs-reveal">
+                Khám phá bản đồ
+            </a>
+        </div>
+    </section>
+
+    <footer>
+        © 2026 UNIMAP360 — DESIGNED FOR THE FUTURE.
+    </footer>
+
+    <script>
+        // Lenis Smooth Scroll
+        const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Card Stacking Animation
+        const cards = gsap.utils.toArray('.stack-card');
+        cards.forEach((card, i) => {
+            if (i < cards.length - 1) {
+                gsap.to(card, {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: "top top",
+                        end: "bottom top",
+                        scrub: true,
+                        pin: true,
+                        pinSpacing: false
+                    },
+                    scale: 0.9,
+                    opacity: 0.5,
+                    filter: "blur(10px)",
+                    y: "-10%"
+                });
+            }
+        });
+
+        // Reveal Animations
+        gsap.utils.toArray('.gs-reveal').forEach(el => {
+            gsap.from(el, {
+                scrollTrigger: { trigger: el, start: "top 90%" },
+                y: 50, opacity: 0, duration: 1, ease: "power3.out"
+            });
+        });
+
+        // Loader
+        window.addEventListener('load', () => {
+            gsap.to('#loader', { duration: 1, opacity: 0, pointerEvents: 'none', delay: 1 });
+            gsap.from('.card-title', { duration: 1.5, y: 100, opacity: 0, skewY: 10, stagger: 0.3, ease: "power4.out", delay: 1.2 });
+        });
+    </script>
+</body>
+</html>

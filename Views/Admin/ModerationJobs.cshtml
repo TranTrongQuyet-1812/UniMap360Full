@@ -1,0 +1,372 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Việc làm";
+    ViewData["ActiveAdminPage"] = "mod-jobs";
+}
+
+<style>
+    .filter-bento { background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px; }
+    .filter-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--admin-text-light); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    .form-select-sm, .form-control-sm { border-radius: var(--radius-sm); border-color: var(--admin-border); font-weight: 600; padding: 8px 12px; }
+    
+    .bulk-bar { background: #fef2f2; border: 1px solid #fee2e2; padding: 12px 20px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .bulk-label { font-size: 0.75rem; font-weight: 800; color: var(--admin-secondary); text-transform: uppercase; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-black mb-1">Quản lý Việc làm</h3>
+        <p class="text-muted mb-0 small">Theo dõi và kiểm soát các tin tuyển dụng trên hệ thống.</p>
+    </div>
+</div>
+
+<div class="filter-bento">
+    <div class="row g-3">
+        <div class="col-md-5">
+            <label class="filter-label">Tìm kiếm tiêu đề / ID</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Nhập tiêu đề..." id="jobSearch">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Trạng thái</label>
+            <select class="form-select form-select-sm" id="jobStatusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Open">Đang hiển thị</option>
+                <option value="Hidden">Đang ẩn</option>
+                <option value="Rejected">Đã từ chối</option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button class="btn btn-outline-dark fw-bold btn-sm flex-grow-1" id="btnRefreshJobs">
+                <i class="fas fa-sync-alt me-2"></i>Làm mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="jobBulkActions" class="bulk-bar d-none">
+    <div class="bulk-label"><i class="fas fa-check-double me-2"></i>Thao tác hàng loạt (<span id="jobSelectedCount">0</span>)</div>
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-xs btn-outline-warning fw-bold py-1 px-3" id="btnBulkHideJobs" style="font-size: 0.7rem;">ẨN</button>
+        <button class="btn btn-xs btn-outline-dark fw-bold py-1 px-3" id="btnBulkShowJobs" style="font-size: 0.7rem;">HIỆN</button>
+        <button class="btn btn-xs btn-outline-danger fw-bold py-1 px-3" id="btnBulkRejectJobs" style="font-size: 0.7rem;">TỪ CHỐI</button>
+        <button class="btn btn-xs btn-danger fw-bold py-1 px-3" id="btnBulkDeleteJobs" style="font-size: 0.7rem;">XÓA</button>
+    </div>
+</div>
+
+<div class="bento-box p-0">
+    <div class="table-responsive border-0" style="min-height: 400px;">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" id="jobsSelectAll"></th>
+                    <th style="width: 80px;">ID</th>
+                    <th>THÔNG TIN VIỆC LÀM</th>
+                    <th>NHÀ TUYỂN DỤNG</th>
+                    <th style="width: 150px;">LƯƠNG</th>
+                    <th style="width: 150px;">TRẠNG THÁI</th>
+                    <th class="text-end" style="width: 120px;">THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody id="jobTableBody">
+                <tr><td colspan="7" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let jobRows = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnRefreshJobs').addEventListener('click', loadJobs);
+        document.getElementById('jobSearch').addEventListener('input', debounce(loadJobs, 300));
+        document.getElementById('jobStatusFilter').addEventListener('change', loadJobs);
+        document.getElementById('jobsSelectAll').addEventListener('change', function () {
+            document.querySelectorAll('.job-select').forEach(cb => cb.checked = this.checked);
+            syncJobBulkButtons();
+        });
+
+        document.getElementById('jobTableBody').addEventListener('change', function (e) {
+            if (e.target && e.target.classList.contains('job-select')) {
+                syncJobSelectAllCheckbox();
+                syncJobBulkButtons();
+            }
+        });
+
+        document.getElementById('btnBulkHideJobs').addEventListener('click', () => bulkJobAction('hide'));
+        document.getElementById('btnBulkShowJobs').addEventListener('click', () => bulkJobAction('restore'));
+        document.getElementById('btnBulkRejectJobs').addEventListener('click', () => bulkJobAction('reject'));
+        document.getElementById('btnBulkDeleteJobs').addEventListener('click', bulkDeleteJobs);
+
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-action-btn');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            if (action === 'openJobDetail') openJobDetail(btn.getAttribute('data-id'));
+            else if (action === 'runJobAction') runJobAction(btn.getAttribute('data-id'), btn.getAttribute('data-action-type'));
+            else if (action === 'deleteJob') deleteJob(btn.getAttribute('data-id'));
+            else if (action === 'closeDrawer') closeDrawer();
+        });
+
+        loadJobs();
+    });
+
+    async function loadJobs() {
+        const params = new URLSearchParams();
+        const search = document.getElementById('jobSearch').value.trim();
+        const status = document.getElementById('jobStatusFilter').value;
+
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        params.set('limit', '200');
+
+        try {
+            const data = await adminFetchJson('/api/admin/jobs?' + params.toString());
+            jobRows = data.items || [];
+            renderJobs(jobRows);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được danh sách việc làm.', 'error');
+            renderJobs([]);
+        }
+    }
+
+    function renderJobs(rows) {
+        const body = document.getElementById('jobTableBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="7" class="text-center p-5 text-muted">Không tìm thấy việc làm nào.</td></tr>';
+            document.getElementById('jobsSelectAll').checked = false;
+            syncJobBulkButtons();
+            return;
+        }
+
+        body.innerHTML = rows.map(j => `
+            <tr>
+                <td><input type="checkbox" class="job-select" value="${j.jobId}"></td>
+                <td class="text-muted small fw-bold">#${j.jobId}</td>
+                <td>
+                    <div class="fw-bold">${escapeHtml(j.jobTitle || j.title || '-')}</div>
+                </td>
+                <td>
+                    <div class="fw-bold small text-uppercase" style="color: var(--admin-secondary);">${escapeHtml(j.companyName || j.employerName || '-')}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(j.employerEmail || '-')}</div>
+                </td>
+                <td class="fw-bold text-success" style="font-size: 0.85rem;">${escapeHtml(j.salaryRange || 'Thỏa thuận')}</td>
+                <td>${renderJobStatusBadge(j.jobStatus || j.status)}</td>
+                <td class="text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-dark fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.7rem;">THAO TÁC</button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem;">
+                            <li><a class="dropdown-item js-action-btn" href="#" data-action="openJobDetail" data-id="${j.jobId}"><i class="fas fa-eye me-2"></i>Chi tiết</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item js-action-btn text-warning" href="#" data-action="runJobAction" data-action-type="hide" data-id="${j.jobId}"><i class="fas fa-eye-slash me-2"></i>Ẩn tin</a></li>
+                            <li><a class="dropdown-item js-action-btn text-success" href="#" data-action="runJobAction" data-action-type="restore" data-id="${j.jobId}"><i class="fas fa-check-circle me-2"></i>Hiển thị</a></li>
+                            <li><a class="dropdown-item js-action-btn text-danger" href="#" data-action="runJobAction" data-action-type="reject" data-id="${j.jobId}"><i class="fas fa-ban me-2"></i>Từ chối</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item js-action-btn text-danger fw-bold" href="#" data-action="deleteJob" data-id="${j.jobId}"><i class="fas fa-trash-alt me-2"></i>XÓA VĨNH VIỄN</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        document.getElementById('jobsSelectAll').checked = false;
+        syncJobBulkButtons();
+    }
+
+    function getSelectedJobIds() {
+        return Array.from(document.querySelectorAll('.job-select:checked')).map(x => Number(x.value));
+    }
+
+    function syncJobBulkButtons() {
+        const ids = getSelectedJobIds();
+        const count = ids.length;
+        const hasSelection = count > 0;
+        const bar = document.getElementById('jobBulkActions');
+        
+        if (hasSelection) {
+            bar.classList.remove('d-none');
+        } else {
+            bar.classList.add('d-none');
+        }
+        
+        document.getElementById('jobSelectedCount').textContent = count;
+        document.getElementById('btnBulkHideJobs').disabled = !hasSelection;
+        document.getElementById('btnBulkShowJobs').disabled = !hasSelection;
+        document.getElementById('btnBulkRejectJobs').disabled = !hasSelection;
+        document.getElementById('btnBulkDeleteJobs').disabled = !hasSelection;
+    }
+
+    function syncJobSelectAllCheckbox() {
+        const all = Array.from(document.querySelectorAll('.job-select'));
+        const checked = all.filter(x => x.checked);
+        document.getElementById('jobsSelectAll').checked = all.length > 0 && checked.length === all.length;
+    }
+
+    async function openJobDetail(jobId) {
+        try {
+            const d = await adminFetchJson(`/api/admin/jobs/${jobId}`);
+            const mediaHtml = (d.media || []).length
+                ? d.media.map(x => `<div><a href="${escapeHtml(x.mediaUrl)}" target="_blank">${escapeHtml(x.mediaUrl)}</a></div>`).join('')
+                : '<div class="text-muted">Không có tệp đính kèm.</div>';
+
+            const content = `
+                <div class="mb-3"><strong>Tiêu đề:</strong> ${escapeHtml(d.title || d.jobTitle || '-')}</div>
+                <div class="mb-3"><strong>Trạng thái:</strong> ${renderJobStatusBadge(d.status || d.jobStatus)}</div>
+                <div class="mb-3"><strong>Nhà tuyển dụng:</strong> ${escapeHtml(d.employer?.companyName || d.companyName || '-')} (${escapeHtml(d.employer?.email || d.employerEmail || '-')})</div>
+                <div class="mb-3"><strong>Loại việc:</strong> ${escapeHtml(d.jobType || '-')}</div>
+                <div class="mb-3"><strong>Lương:</strong> ${escapeHtml(d.salaryRange || '-')}</div>
+                <div class="mb-3"><strong>Liên hệ:</strong> ${escapeHtml(d.contactPhone || '-')}</div>
+                <div class="mb-3"><strong>Địa chỉ:</strong> ${escapeHtml(d.location?.addressText || d.location || '-')}</div>
+                <div class="mb-3"><strong>Mô tả:</strong><br>${escapeHtml(d.description || '-')}</div>
+                <div><strong>Tệp đính kèm:</strong><br>${mediaHtml}</div>
+            `;
+
+            openDrawer(`Chi tiết việc làm #${jobId}`, content, '<button class="btn btn-secondary js-action-btn" data-action="closeDrawer">Đóng</button>');
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được chi tiết việc làm.', 'error');
+        }
+    }
+
+    async function runJobAction(jobId, action) {
+        const actionLabel = getJobActionLabel(action);
+        const reason = prompt(`Nhập lý do cho hành động ${actionLabel} việc làm #${jobId}:`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        try {
+            await adminFetchJson(`/api/admin/jobs/${jobId}/${action}`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+            showAdminToast('Thao tác thành công.', 'success');
+            await loadJobs();
+        } catch (err) {
+            showAdminToast(err.message || 'Thao tác thất bại.', 'error');
+        }
+    }
+
+    async function deleteJob(jobId) {
+        const reason = prompt(`Nhập lý do xóa việc làm #${jobId}:`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const ok = confirm(`Xác nhận xóa việc làm #${jobId}?`);
+        if (!ok) return;
+
+        try {
+            await adminFetchJson(`/api/admin/jobs/${jobId}`, {
+                method: 'DELETE',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+            showAdminToast('Đã xóa việc làm.', 'success');
+            await loadJobs();
+        } catch (err) {
+            showAdminToast(err.message || 'Xóa việc làm thất bại.', 'error');
+        }
+    }
+
+    async function bulkJobAction(action) {
+        const ids = getSelectedJobIds();
+        if (!ids.length) {
+            showAdminToast('Chưa chọn việc làm nào.', 'error');
+            return;
+        }
+
+        const actionLabel = getJobActionLabel(action);
+        const reason = prompt(`Nhập lý do cho thao tác ${actionLabel} hàng loạt (${ids.length} việc làm):`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await adminFetchJson(`/api/admin/jobs/${id}/${action}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                success++;
+            } catch {
+                // tiếp tục xử lý các item còn lại
+            }
+        }
+
+        showAdminToast(`${actionLabel} hàng loạt: ${success}/${ids.length} thành công.`, success === ids.length ? 'success' : 'error');
+        await loadJobs();
+    }
+
+    async function bulkDeleteJobs() {
+        const ids = getSelectedJobIds();
+        if (!ids.length) {
+            showAdminToast('Chưa chọn việc làm nào.', 'error');
+            return;
+        }
+
+        const reason = prompt(`Nhập lý do xóa hàng loạt (${ids.length} việc làm):`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const ok = confirm(`Xác nhận xóa ${ids.length} việc làm đã chọn?`);
+        if (!ok) return;
+
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await adminFetchJson(`/api/admin/jobs/${id}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                success++;
+            } catch {
+                // tiếp tục xử lý các item còn lại
+            }
+        }
+
+        showAdminToast(`Xóa hàng loạt: ${success}/${ids.length} thành công.`, success === ids.length ? 'success' : 'error');
+        await loadJobs();
+    }
+
+    function getJobActionLabel(action) {
+        if (action === 'hide') return 'ẩn';
+        if (action === 'restore') return 'hiện';
+        if (action === 'reject') return 'từ chối';
+        return action;
+    }
+
+    function renderJobStatusBadge(status) {
+        const s = (status || '').toLowerCase();
+        if (s === 'open' || s === 'available') return '<span class="badge bg-success">Đang hiển thị</span>';
+        if (s === 'hidden') return '<span class="badge bg-warning text-dark">Đang ẩn</span>';
+        if (s === 'rejected') return '<span class="badge bg-danger">Đã từ chối</span>';
+        return `<span class="badge bg-secondary">${escapeHtml(status || '-')}</span>`;
+    }
+
+    function escapeHtml(input) {
+        return String(input)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function debounce(fn, wait) {
+        let t = null;
+        return function (...args) {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+</script>
+}

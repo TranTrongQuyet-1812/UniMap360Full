@@ -1,0 +1,6 @@
+secrets.ini
+appsettings.Local.json
+.Agent/
+bin/
+obj/
+.vs/

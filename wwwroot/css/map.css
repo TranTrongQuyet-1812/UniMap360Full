@@ -1,0 +1,754 @@
+/* ============================================
+   UniMap360 — Floating Editorial UI
+   Design System: Neo Flat, Crisp Borders, Floating Panels
+   Font: Inter (Google Fonts)
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* --- CSS Variables (Swiss Academic Minimal) --- */
+:root {
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --color-text: #0f172a;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-surface: #ffffff;
+    --color-surface-hover: #fafafa;
+    --color-border: #e2e8f0;
+    --color-border-dark: #cbd5e1;
+    --color-bg: #f8fafc;
+
+    /* Swiss Academic Core */
+    --color-primary: #780115; /* Deep Maroon */
+    --color-accent: #f7b638;  /* Xanthous Gold */
+    
+    /* Map Markers (Unified to Primary) */
+    --color-room: #780115;       
+    --color-room-soft: #fcf1f3;
+    --color-job: #780115;        
+    --color-job-soft: #fcf1f3;
+
+    /* Bento Structural Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-panel: 12px;
+    
+    /* Academic Flat Shadows (No cheap blurs) */
+    --shadow-float: 6px 6px 0px rgba(120, 1, 21, 0.1);
+    --shadow-card: 2px 2px 0px rgba(0, 0, 0, 0.04);
+    
+    --transition-fast: 0.15s ease-out;
+    --transition-bounce: 0.25s ease-out;
+}
+
+/* --- Tweak Academic Navbar --- */
+.academic-navbar {
+    background-color: var(--color-primary); /* Maroon */
+    box-shadow: 0 4px 12px rgba(120, 1, 21, 0.15); /* Gentle Maroon Shadow */
+    height: 70px;
+}
+.academic-navbar .navbar-brand {
+    color: #ffffff !important;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+}
+.academic-navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    position: relative;
+    transition: var(--transition-fast);
+}
+.academic-navbar .nav-link:hover,
+.academic-navbar .nav-link.active {
+    color: #ffffff !important;
+}
+.academic-navbar .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background-color: var(--color-accent);
+    transform: scaleX(0);
+    transition: transform var(--transition-fast) ease-in-out;
+}
+.academic-navbar .nav-link:hover::after,
+.academic-navbar .nav-link.active::after {
+    transform: scaleX(1);
+}
+
+/* --- Reset --- */
+*, *::before, *::after { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0;
+    height: 100%; width: 100%;
+    font-family: var(--font-main);
+    background-color: var(--color-bg);
+}
+
+/* --- Main Container --- */
+#unimap-container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Chỉ khoá cuộn ở Map */
+}
+
+/* --- Map --- */
+#map {
+    height: 100%;
+    width: 100%;
+    background-color: #f1f3f5;
+    z-index: 1;
+}
+
+/* We don't blur or grayscale the map anymore, we let the Inverted GeoJSON mask do the work. 
+   Just a tiny desaturation so it's not too warm. */
+.leaflet-tile-pane {
+    filter: saturate(0.85);
+}
+
+/* ============================================
+   FLOATING PANEL (Replaces the Sidebar)
+   ============================================ */
+
+#floating-panel {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    bottom: 24px;   /* Floats 24px away from top/bottom/left */
+    width: 420px;
+    background: var(--color-surface);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-float);
+    border: 1px solid rgba(0,0,0,0.04);
+    z-index: 1000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+    #floating-panel {
+        top: 10px; left: 10px; right: 10px; bottom: 50%; width: auto;
+    }
+}
+
+/* --- Panel Header --- */
+.panel-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.panel-header h5 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--color-primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+/* --- Search Bar (Flat & Minimal) --- */
+.search-box { width: 100%; position: relative; }
+
+.search-icon {
+    position: absolute;
+    left: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+.search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 44px;
+    border: 1.5px solid var(--color-border-dark);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.1); /* Subtle dark ring */
+}
+
+/* --- Filter Chips (Editorial Style) --- */
+.filter-chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+.filter-chips::-webkit-scrollbar { display: none; }
+
+.chip {
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text-secondary);
+    transition: all 0.2s;
+    user-select: none;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+
+.chip:hover {
+    border-color: var(--color-text-secondary);
+    color: var(--color-text);
+}
+
+/* Active Chips are Solid Black/Red/Blue */
+.chip.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+.chip-room.active {
+    background: var(--color-room);
+    border-color: var(--color-room);
+}
+.chip-job.active {
+    background: var(--color-job);
+    border-color: var(--color-job);
+}
+
+/* --- Panel List --- */
+.panel-list {
+    padding: 20px 24px;
+    gap: 24px; /* Big gap between cards */
+}
+
+.panel-list::-webkit-scrollbar { width: 6px; }
+.panel-list::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-dark);
+    border-radius: 10px;
+}
+
+/* ============================================
+   AIRBNB-STYLE CARDS
+   ============================================ */
+
+.item-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    cursor: pointer;
+    text-decoration: none;
+    position: relative;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    /* No border on the whole card, rely on layout */
+}
+
+.item-img-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-bg);
+}
+
+.item-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.item-card:hover .item-img {
+    transform: scale(1.05); /* Slight zoom like AirBnb */
+}
+
+.item-info {
+    padding: 12px 0 0 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.item-address {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0 0 6px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-price-tag {
+    font-size: 16px;
+    font-weight: 800;
+    margin-top: 4px;
+    letter-spacing: -0.5px;
+}
+.price-room { color: var(--color-room); }
+.price-job { color: var(--color-job); }
+
+/* ============================================
+   FLAT SOLID MARKERS
+   ============================================ */
+
+.custom-marker-container {
+    background: transparent !important;
+    border: none !important;
+}
+
+.marker-pin {
+    padding: 6px 12px;
+    border-radius: 20px; /* Pill shape */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 800;
+    box-shadow: var(--shadow-card);
+    transition: all var(--transition-bounce);
+    border: 1.5px solid white;
+}
+
+.marker-pin::after {
+    content: '';
+    position: absolute;
+    bottom: -6px; left: 50%; transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+}
+
+.room-pin { background-color: var(--color-room); }
+.room-pin::after { border-color: var(--color-room) transparent transparent transparent; }
+
+.job-pin { background-color: var(--color-job); }
+.job-pin::after { border-color: var(--color-job) transparent transparent transparent; }
+
+.custom-marker-container:hover .marker-pin {
+    transform: scale(1.1) translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* Removed display:none */
+
+/* ============================================
+   TOOLTIP 
+   ============================================ */
+.leaflet-tooltip-custom {
+    background: var(--color-surface) !important;
+    border: 1px solid var(--color-border) !important;
+    box-shadow: var(--shadow-float) !important;
+    color: var(--color-text);
+    border-radius: var(--radius-md) !important;
+    padding: 12px !important;
+    min-width: 200px;
+    white-space: normal !important; /* Fix tràn chữ */
+    word-wrap: break-word;
+}
+
+.mini-card-img {
+    width: 100%; height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+}
+.mini-card-title { font-size: 14px; font-weight: 700; margin: 0 0 4px 0; line-height: 1.4; }
+.mini-card-price { font-size: 15px; font-weight: 800; }
+
+/* ============================================
+   CLUSTER CLOUD
+   ============================================ */
+.cluster-bubble {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 900; font-size: 15px;
+    border: 2px solid white;
+    box-shadow: var(--shadow-card);
+    transition: transform var(--transition-bounce);
+}
+.cluster-bubble:hover { 
+    transform: scale(1.15); 
+    border-color: var(--color-accent);
+    box-shadow: 4px 4px 0px rgba(247, 182, 56, 0.4);
+}
+.cluster-bubble.room { background: var(--color-primary); color: white; }
+.cluster-bubble.job { background: var(--color-accent); color: var(--color-primary); }
+
+/* ============================================
+   Controls Reset
+   ============================================ */
+.leaflet-control-zoom {
+    border: none !important; box-shadow: var(--shadow-card) !important;
+    margin-right: 24px !important; margin-bottom: 24px !important;
+}
+.leaflet-control-zoom a {
+    border-radius: var(--radius-sm) !important;
+    color: var(--color-text) !important; border: 1px solid var(--color-border) !important;
+}/* ============================================
+   NEW MINI CARD PIN (Unified Design)
+   ============================================ */
+
+.custom-marker-container-clear {
+    background: transparent !important;
+    border: none !important;
+}
+
+.custom-marker-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto; /* Let wrapper take click */
+}
+
+.marker-pin-card {
+    color: white;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 95px;
+    max-width: 125px;
+    box-shadow: var(--shadow-float);
+    transition: all var(--transition-bounce);
+    border: 1.5px solid white;
+    position: relative;
+    z-index: 500;
+}
+
+.marker-pin-card::after {
+    content: '';
+    position: absolute;
+    bottom: -6px; left: 50%; transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+}
+
+/* Split logic: Maroon cho Phòng trọ, Xanthous cho Việc làm */
+.room-pin { background-color: var(--color-primary); color: white; }
+.room-pin::after { border-color: var(--color-primary) transparent transparent transparent; }
+
+.job-pin { background-color: var(--color-accent); color: var(--color-primary); }
+.job-pin::after { border-color: var(--color-accent) transparent transparent transparent; }
+.job-pin .pin-price { border-top-color: rgba(120, 1, 21, 0.2); }
+
+.pin-icon {
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.pin-title {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 3px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* max 2 lines */
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pin-price {
+    font-size: 13px;
+    font-weight: 800;
+    padding-top: 2px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    width: 100%;
+}
+
+/* Hover bounce with Color Swap Punch */
+.custom-marker-wrapper:hover .room-pin,
+.custom-marker-wrapper.hovered .room-pin {
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 6px 6px 0px rgba(247, 182, 56, 0.4); /* Xanthous flat shadow */
+    border-color: var(--color-accent); /* Xanthous border flash */
+    z-index: 1000;
+}
+.custom-marker-wrapper:hover .room-pin::after,
+.custom-marker-wrapper.hovered .room-pin::after {
+    border-color: var(--color-accent) transparent transparent transparent;
+}
+
+.custom-marker-wrapper:hover .job-pin,
+.custom-marker-wrapper.hovered .job-pin {
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 6px 6px 0px rgba(120, 1, 21, 0.3); /* Maroon flat shadow */
+    border-color: var(--color-primary); /* Maroon border flash */
+    z-index: 1000;
+}
+.custom-marker-wrapper:hover .job-pin::after,
+.custom-marker-wrapper.hovered .job-pin::after {
+    border-color: var(--color-primary) transparent transparent transparent;
+}
+
+/* ============================================
+   GRID VIEW & VIEW TOGGLE
+   ============================================ */
+
+/* View Toggle Floating Button */
+.view-toggle-wrapper {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+}
+
+.view-toggle-pill {
+    background: var(--color-surface);
+    border-radius: 30px;
+    display: flex;
+    padding: 6px;
+    border: 1px solid var(--color-border-dark);
+}
+
+.view-toggle-pill .toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all var(--transition-bounce);
+}
+
+.view-toggle-pill .toggle-btn:hover {
+    color: var(--color-text);
+}
+
+.view-toggle-pill .toggle-btn.active {
+    background-color: var(--color-primary);
+    color: white;
+    box-shadow: 2px 4px 12px rgba(120, 1, 21, 0.2);
+}
+
+/* Bento Grid System for Grid View */
+.grid-layout-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    align-items: stretch;
+}
+
+.grid-layout-container .mini-card {
+    height: 100%;
+    margin-bottom: 0 !important;
+    border: 1px solid var(--color-border); /* Crisp Border instead of shadow */
+    box-shadow: var(--shadow-card);
+    transition: all var(--transition-fast);
+}
+
+.grid-layout-container .mini-card:hover {
+    box-shadow: var(--shadow-float);
+    transform: translateY(-4px);
+    border-color: var(--color-accent);
+}
+
+/* ============================================
+   PAGINATION, SKELETON & EMPTY STATE
+   ============================================ */
+
+/* Shimmer Skeleton Effect */
+@keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+}
+
+.skeleton-box {
+    background: #f6f7f8;
+    background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 100%;
+    animation-duration: 1.5s;
+    animation-fill-mode: forwards;
+    animation-iteration-count: infinite;
+    animation-name: shimmer;
+    animation-timing-function: linear;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-card {
+    height: 320px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    background-color: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skeleton-img { width: 100%; height: 160px; border-radius: var(--radius-sm); }
+.skeleton-title { width: 80%; height: 24px; }
+.skeleton-text { width: 100%; height: 16px; }
+.skeleton-text-short { width: 60%; height: 16px; }
+
+/* Empty State / Error State */
+.empty-state-container {
+    text-align: center;
+    padding: 64px 24px;
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border-dark);
+    border-radius: var(--radius-panel);
+    grid-column: 1 / -1; /* Chiếm trọn bề ngang Grid */
+}
+.empty-state-icon {
+    font-size: 48px;
+    color: var(--color-text-muted);
+    margin-bottom: 24px;
+}
+
+/* Pagination UI */
+#grid-pagination-container {
+    position: relative;
+    z-index: 100; /* Nâng phân trang lên để không bị Footer là lớp chắn trong suốt đè lên */
+    padding-bottom: 20px;
+}
+
+.academic-pagination {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+.academic-pagination .page-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border-dark);
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.academic-pagination .page-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.academic-pagination .page-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-card);
+}
+.academic-pagination .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-bg);
+}
+
+/* Force override ASP.NET Footer to prevent click-blocking */
+footer.border-top {
+    position: relative !important;
+    bottom: auto !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin-top: 2rem !important;
+    z-index: 10;
+}
+
+/* ============================================
+   Responsive Hardening
+   ============================================ */
+@media (max-width: 991.98px) {
+    .view-toggle-wrapper {
+        top: 10px;
+    }
+
+    .view-toggle-pill .toggle-btn {
+        padding: 7px 12px;
+        font-size: 13px;
+    }
+
+    .leaflet-control-zoom {
+        margin-right: 10px !important;
+        margin-bottom: 10px !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .view-toggle-wrapper {
+        top: 8px;
+        left: auto;
+        right: 8px;
+        transform: none;
+    }
+
+    .view-toggle-pill {
+        border-radius: 12px;
+        padding: 4px;
+    }
+
+    .view-toggle-pill .toggle-btn {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-radius: 8px;
+    }
+
+    .search-input {
+        height: 44px;
+        font-size: 14px;
+    }
+
+    .chip {
+        padding: 7px 12px;
+        font-size: 12px;
+        flex: 0 0 auto;
+    }
+
+    .item-title {
+        font-size: 14px;
+    }
+
+    .item-address {
+        font-size: 12px;
+    }
+
+    .item-price-tag {
+        font-size: 15px;
+    }
+
+    .grid-layout-container {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+}

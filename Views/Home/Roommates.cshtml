@@ -1,0 +1,1037 @@
+@{
+    ViewData["Title"] = "UniMap360 - Cộng Đồng Ở Ghép";
+}
+
+<style>
+    /* Facebook-like Feed Layout with Premium UI */
+    body {
+        background-color: #f7f8fa;
+    }
+    
+    .feed-container {
+        padding-top: 40px;
+        padding-bottom: 60px;
+    }
+
+    .glass-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--color-border);
+        overflow: hidden;
+        transition: all var(--motion-base) var(--ease-cinematic);
+    }
+    
+    .glass-card:hover {
+        box-shadow: var(--shadow-float);
+    }
+
+    /* Left Sidebar */
+    .sidebar-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: var(--color-text-dark);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color var(--motion-fast) var(--ease-cinematic);
+    }
+
+    .sidebar-menu-item:hover, .sidebar-menu-item.active {
+        background-color: rgba(120, 1, 21, 0.08);
+        color: var(--color-primary);
+    }
+    
+    .sidebar-menu-item i {
+        font-size: 1.25rem;
+        width: 24px;
+        text-align: center;
+        color: var(--color-primary);
+    }
+
+    /* Post Composer */
+    .composer-card {
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .composer-top {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .composer-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247, 182, 56, 0.5); /* Gold ring */
+    }
+    
+    .composer-input-btn {
+        flex: 1;
+        background-color: #f0f2f5;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 16px;
+        text-align: left;
+        color: var(--color-text-muted);
+        font-weight: 500;
+        transition: background-color var(--motion-fast);
+    }
+    
+    .composer-input-btn:hover {
+        background-color: #e4e6eb;
+    }
+
+    .composer-actions {
+        display: flex;
+        border-top: 1px solid var(--color-border);
+        padding-top: 12px;
+    }
+    
+    .composer-action-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 8px;
+        color: var(--color-text-dark);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color var(--motion-fast);
+    }
+    
+    .composer-action-btn:hover {
+        background-color: rgba(120, 1, 21, 0.05);
+    }
+    
+    .composer-action-btn i.photo-icon { color: #45bd62; }
+    .composer-action-btn i.video-icon { color: #f02849; }
+    .composer-action-btn i.tag-icon { color: var(--color-accent); }
+
+    /* Feed Post */
+    .post-card {
+        padding: 0;
+        margin-bottom: 24px;
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 16px 16px 12px;
+    }
+
+    .post-author-info {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .post-author-name {
+        font-weight: 700;
+        color: var(--color-text-dark);
+        margin-bottom: 2px;
+    }
+
+    .post-meta {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .post-content {
+        padding: 0 16px 12px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .post-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .post-tag {
+        background: rgba(247, 182, 56, 0.15);
+        color: var(--color-primary);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(247, 182, 56, 0.3);
+    }
+
+    .post-media {
+        width: 100%;
+        background-color: #000;
+        max-height: 500px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .post-media img, .post-media video {
+        width: 100%;
+        max-height: 500px;
+        object-fit: cover;
+    }
+
+    .post-actions {
+        display: flex;
+        padding: 12px 16px;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .action-btn {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        padding: 8px 0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        background-color: rgba(120, 1, 21, 0.05);
+        color: var(--color-primary);
+    }
+
+    .action-btn.btn-primary-action {
+        color: var(--color-primary);
+    }
+
+    .action-btn.action-disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Modal Styling for Create Post */
+    .create-post-modal .modal-content {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .create-post-modal .modal-header {
+        border-bottom: 1px solid var(--color-border);
+        justify-content: center;
+        position: relative;
+    }
+
+    .create-post-modal .modal-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    .create-post-modal .btn-close {
+        position: absolute;
+        right: 16px;
+        top: 16px;
+        background-color: #e4e6eb;
+        border-radius: 50%;
+        padding: 10px;
+        opacity: 0.8;
+    }
+
+    .create-post-modal .btn-close:hover {
+        opacity: 1;
+        background-color: #d8dadf;
+    }
+
+    .post-textarea {
+        border: none;
+        resize: none;
+        font-size: 1.1rem;
+        padding: 0;
+        box-shadow: none !important;
+        margin-bottom: 16px;
+    }
+    
+    .post-textarea::placeholder {
+        color: var(--color-text-muted);
+        font-weight: 500;
+    }
+
+    .media-upload-area {
+        border: 2px dashed var(--color-border);
+        border-radius: 12px;
+        padding: 32px 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: rgba(120, 1, 21, 0.02);
+    }
+
+    .media-upload-area:hover {
+        background: rgba(120, 1, 21, 0.05);
+        border-color: var(--color-primary);
+    }
+
+    .media-upload-area i {
+        font-size: 2rem;
+        color: var(--color-text-muted);
+        margin-bottom: 8px;
+    }
+
+    .btn-publish {
+        width: 100%;
+        background-color: var(--color-primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+    }
+
+    .btn-publish:hover {
+        background-color: #5e000f;
+    }
+
+    .post-media-grid { display: grid; gap: 4px; background: #000; }
+    .post-media-grid.count-1 { grid-template-columns: 1fr; }
+    .post-media-grid.count-2 { grid-template-columns: 1fr 1fr; }
+    .post-media-grid.count-3 { grid-template-columns: 2fr 1fr; grid-template-rows: repeat(2, minmax(140px, 240px)); }
+    .post-media-grid.count-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(140px, 220px)); }
+    .post-media-grid.count-3 .post-media-tile:nth-child(1) { grid-row: 1 / span 2; }
+
+    .post-media-tile { position: relative; min-height: 160px; max-height: 300px; overflow: hidden; cursor: zoom-in; background: #111; }
+    .post-media-tile img, .post-media-tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .post-media-more { position: absolute; inset: 0; background: rgba(0,0,0,.55); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; }
+    .post-media-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: none; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .post-media-nav.prev { left: 8px; }
+    .post-media-nav.next { right: 8px; }
+    .composer-preview-item { position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #f5f5f5; }
+    .composer-preview-item img, .composer-preview-item video { width: 100%; height: 100%; object-fit: cover; }
+    .composer-preview-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,.72); color: #fff; font-size: 12px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .roommates-lightbox .modal-content { background: rgba(0,0,0,.92); border: none; border-radius: 14px; }
+    .roommates-lightbox-stage { width: 100%; min-height: 320px; max-height: 80vh; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 10px; overflow: hidden; position: relative; }
+    .roommates-lightbox-stage img, .roommates-lightbox-stage video { width: 100%; max-height: 80vh; object-fit: contain; }
+    .roommates-lightbox-close { position: absolute; top: 8px; right: 8px; z-index: 3; width: 34px; height: 34px; border: none; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; }
+    .roommates-lightbox-stage { touch-action: pan-y; }
+    .roommates-lightbox-media { animation: roommatesLightboxPop .2s ease; }
+
+    @@keyframes roommatesLightboxPop {
+        from { transform: scale(0.98); opacity: 0.3; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    @@media (max-width: 768px) {
+        .post-media-grid.count-3 { grid-template-columns: 1fr; grid-template-rows: none; }
+        .post-media-grid.count-3 .post-media-tile:nth-child(1) { grid-row: auto; }
+        .post-media-grid.count-4 { grid-template-columns: 1fr 1fr; }
+    }
+</style>
+
+<div class="container feed-container">
+    <div class="row">
+        <!-- Left Sidebar: Filters & Nav -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top: 100px; z-index: 10;">
+                <div class="glass-card mb-4" style="padding: 8px;">
+                    <div class="sidebar-menu-item active">
+                        <i class="fa-solid fa-house"></i>
+                        Trang Chủ Ở Ghép
+                    </div>
+                    <div class="sidebar-menu-item">
+                        <i class="fa-solid fa-mars-and-venus"></i>
+                        Tìm Cùng Giới
+                    </div>
+                    <div class="sidebar-menu-item">
+                        <i class="fa-solid fa-wallet"></i>
+                        Giá Dưới 2 Triệu
+                    </div>
+                    <div class="sidebar-menu-item">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        Gần Trường Của Tôi
+                    </div>
+                </div>
+
+                <div class="glass-card p-3">
+                    <h6 class="mb-3 fw-bold" style="color: var(--color-text-muted); font-size: 0.9rem; text-transform: uppercase;">
+                        Thói quen nổi bật
+                    </h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="post-tag">#KhongHutThuoc</span>
+                        <span class="post-tag">#SachSe</span>
+                        <span class="post-tag">#ItTuTap</span>
+                        <span class="post-tag">#NuoiMeo</span>
+                        <span class="post-tag">#GiuImLangDem</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Feed Column -->
+        <div class="col-lg-6 col-md-8 mx-auto">
+            
+            <!-- Composer Area -->
+            <div class="glass-card composer-card p-3 mb-4" id="composerCard" style="display: none; border-radius: 8px;">
+                <div class="d-flex align-items-center">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" id="composerAvatar" class="composer-avatar me-2" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e4e6eb;">
+                    <button class="flex-grow-1 text-start border-0 px-3 py-2 text-muted" data-bs-toggle="modal" data-bs-target="#createPostModal" style="background-color: #f0f2f5; border-radius: 20px; font-size: 1.1rem; cursor: pointer;">
+                        <span id="composerPrompt">Bạn muốn đăng bài?</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feed Loading Skeleton -->
+            <div id="feedLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" style="color: var(--color-primary) !important;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted fw-bold">Đang tải bảng tin...</p>
+            </div>
+
+            <!-- Feed Container -->
+            <div id="feedContainer">
+                <!-- Posts will be injected here via JS -->
+            </div>
+
+            <div class="text-center py-3" id="feedEnd" style="display: none;">
+                <p class="text-muted fw-bold"><i class="fa-solid fa-circle-check text-success me-2"></i> Bạn đã xem hết tin mới!</p>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Suggestions -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top: 100px; z-index: 10;">
+                <div class="glass-card p-3 mb-4">
+                    <h6 class="mb-3 fw-bold" style="color: var(--color-text-muted); font-size: 0.9rem; text-transform: uppercase;">
+                        Mẹo tìm bạn nhanh
+                    </h6>
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <i class="fa-solid fa-lightbulb text-warning mt-1"></i>
+                        <span style="font-size: 0.85rem; color: var(--color-text-dark);">Hãy ghi rõ thói quen sinh hoạt để dễ tìm được bạn hợp ý.</span>
+                    </div>
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <i class="fa-solid fa-shield-halved text-success mt-1"></i>
+                        <span style="font-size: 0.85rem; color: var(--color-text-dark);">Giao dịch qua UniMap360 đảm bảo danh tính sinh viên 100%.</span>
+                    </div>
+                </div>
+                
+                <p class="text-muted text-center mt-3" style="font-size: 0.75rem;">
+                    UniMap360 © 2026<br>Sinh viên tìm bạn ở ghép an toàn.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Post Modal -->
+<div class="modal fade" id="createPostModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 8px; box-shadow: 0 12px 28px 0 rgba(0,0,0,0.2); border: none;">
+            <div class="modal-header border-bottom-0 text-center position-relative pb-2 pt-3">
+                <h5 class="modal-title w-100 fw-bold" style="font-size: 20px;">Tạo bài viết</h5>
+                <button type="button" class="btn-close position-absolute" data-bs-dismiss="modal" aria-label="Close" style="right: 16px; top: 16px; background-color: #e4e6eb; border-radius: 50%; margin: 0; padding: 10px;"></button>
+            </div>
+            <hr class="mx-0 my-0" style="color: #ced0d4;">
+            <div class="modal-body pt-3 pb-3">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" id="modalUserAvatar" class="me-2" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e4e6eb;">
+                    <div>
+                        <div class="fw-bold" id="modalUserName" style="font-size: 15px; color: #050505;">Người dùng</div>
+                    </div>
+                </div>
+
+                <form id="createPostForm">
+                    <textarea class="form-control border-0 px-0 shadow-none mb-2" id="postDescription" rows="4" placeholder="Bạn muốn tìm người ở ghép?" style="font-size: 24px; resize: none;"></textarea>
+                    
+                    <div id="locationInputContainer" class="mb-3" style="display: none;">
+                        <div class="d-flex align-items-center border rounded px-3 py-2 bg-light">
+                            <i class="fa-solid fa-location-dot text-danger me-2"></i>
+                            <input type="text" class="form-control border-0 bg-transparent shadow-none p-0" id="postArea" placeholder="Thêm vị trí (Khu vực, tên đường...)">
+                            <i class="fa-solid fa-xmark text-muted ms-2" style="cursor: pointer;" onclick="document.getElementById('locationInputContainer').style.display='none'; document.getElementById('postArea').value='';"></i>
+                        </div>
+                    </div>
+
+                    <!-- Hidden inputs for backend requirements -->
+                    <input type="hidden" id="postTitle" value="">
+                    <input type="hidden" id="postGender" value="Any">
+                    <input type="hidden" id="postBudget" value="">
+                    <input type="hidden" id="postHabits" value="">
+
+                    <div id="mediaPreviewContainer" class="mb-3 d-flex flex-wrap gap-2 justify-content-center" style="display: none !important;"></div>
+
+                    <div class="border rounded p-3 d-flex align-items-center justify-content-between mb-3" style="box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                        <span class="fw-bold" style="font-size: 15px; color: #050505;">Thêm vào bài viết</span>
+                        <div class="d-flex gap-4 align-items-center pe-2">
+                            <label for="postMedia" class="mb-0" style="cursor: pointer;" title="Ảnh/video">
+                                <i class="fa-solid fa-images fs-4" style="color: #45bd62;"></i>
+                            </label>
+                            <input class="d-none" type="file" id="postMedia" multiple accept="image/*,video/*">
+                            
+                            <i class="fa-solid fa-location-dot fs-4" style="color: #f5533d; cursor: pointer;" title="Vị trí" onclick="document.getElementById('locationInputContainer').style.display='block'; document.getElementById('postArea').focus();"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn w-100 fw-bold text-white border-0 shadow-sm transition-all" id="btnSubmitPost" 
+                            style="background: linear-gradient(90deg, #780115, #f7b638); font-size: 16px; padding: 10px 0; border-radius: 8px;">
+                        <i class="fa-solid fa-paper-plane me-2"></i> Đăng bài
+                    </button>
+                    <style>
+                        #btnSubmitPost:hover {
+                            opacity: 0.9;
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 12px rgba(120, 1, 21, 0.2);
+                        }
+                        #btnSubmitPost:active {
+                            transform: translateY(0);
+                        }
+                    </style>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Media Viewer Modal -->
+<div class="modal fade roommates-lightbox" id="roommatesMediaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-body p-2 p-md-3">
+                <div class="roommates-lightbox-stage" id="roommatesLightboxStage">
+                    <button type="button" class="roommates-lightbox-close" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <button type="button" class="post-media-nav prev" id="lightboxPrevBtn" aria-label="Ảnh trước">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div id="roommatesLightboxContent" class="w-100"></div>
+                    <button type="button" class="post-media-nav next" id="lightboxNextBtn" aria-label="Ảnh sau">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="text-center text-white-50 mt-2 small" id="roommatesLightboxCounter"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/vi.min.js"></script>
+    <script>
+        function getAuthToken() {
+            if (typeof UniMap360AuthStore !== 'undefined' && typeof UniMap360AuthStore.getStoredToken === 'function') {
+                return UniMap360AuthStore.getStoredToken();
+            }
+            return localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken');
+        }
+
+        function getAuthAccount() {
+            if (typeof UniMap360AuthStore !== 'undefined' && typeof UniMap360AuthStore.getStoredAccount === 'function') {
+                return UniMap360AuthStore.getStoredAccount();
+            }
+            return null;
+        }
+
+        function handleUnauthorized(message) {
+            if (typeof UniMap360AuthStore !== 'undefined' && typeof UniMap360AuthStore.clearStoredAuth === 'function') {
+                UniMap360AuthStore.clearStoredAuth();
+            } else {
+                localStorage.removeItem('unimap360.accessToken');
+                sessionStorage.removeItem('unimap360.accessToken');
+                localStorage.removeItem('unimap360.account');
+                sessionStorage.removeItem('unimap360.account');
+            }
+            alert(message || 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            window.location.href = '/Home/Auth';
+        }
+
+        function isVideoUrl(url) {
+            return /\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(url || '') || (url || '').includes('/video/');
+        }
+
+        function refreshRelativeTimes() {
+            document.querySelectorAll('.js-post-time').forEach(el => {
+                const createdAt = el.getAttribute('data-created-at');
+                if (!createdAt) return;
+                const m = moment.utc(createdAt).local();
+                if (m.isValid()) el.textContent = m.fromNow();
+            });
+        }
+
+        async function compressImageIfNeeded(file) {
+            const isImage = file.type.startsWith('image/');
+            if (!isImage) return file;
+
+            const maxBytes = 2 * 1024 * 1024; // 2MB
+            if (file.size <= maxBytes) return file;
+
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const img = await new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = reject;
+                image.src = dataUrl;
+            });
+
+            const maxSide = 1920;
+            const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const width = Math.max(1, Math.round(img.width * ratio));
+            const height = Math.max(1, Math.round(img.height * ratio));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.8));
+            if (!blob) return file;
+
+            const originalBaseName = file.name.replace(/\.[^/.]+$/, '');
+            return new File([blob], `${originalBaseName}.webp`, {
+                type: 'image/webp',
+                lastModified: Date.now()
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            moment.locale('vi');
+            window.selectedMediaFiles = window.selectedMediaFiles || [];
+            window.composerPreviewUrls = window.composerPreviewUrls || [];
+            window.feedPostsCache = window.feedPostsCache || [];
+            window.currentAccountId = 0;
+
+            const createPostModalEl = document.getElementById('createPostModal');
+            const composerOpenBtn = document.querySelector('[data-bs-target="#createPostModal"]');
+            const lightboxModalEl = document.getElementById('roommatesMediaModal');
+            const lightboxModal = lightboxModalEl ? bootstrap.Modal.getOrCreateInstance(lightboxModalEl) : null;
+
+            if (createPostModalEl) {
+                createPostModalEl.addEventListener('show.bs.modal', () => {
+                    createPostModalEl.setAttribute('aria-hidden', 'false');
+                });
+
+                createPostModalEl.addEventListener('shown.bs.modal', () => {
+                    const desc = document.getElementById('postDescription');
+                    if (desc) desc.focus();
+                });
+
+                createPostModalEl.addEventListener('hide.bs.modal', () => {
+                    const active = document.activeElement;
+                    if (active && createPostModalEl.contains(active) && typeof active.blur === 'function') {
+                        active.blur();
+                    }
+                });
+
+                createPostModalEl.addEventListener('hidden.bs.modal', () => {
+                    createPostModalEl.setAttribute('aria-hidden', 'true');
+                    if (composerOpenBtn && typeof composerOpenBtn.focus === 'function') {
+                        composerOpenBtn.focus();
+                    }
+                });
+            }
+            
+            // Check auth state to show composer
+            try {
+                const acc = getAuthAccount();
+                const token = getAuthToken();
+                if (acc && acc.role === 'Student' && token) {
+                    window.currentAccountId = Number(acc.accountId || 0);
+                    document.getElementById('composerCard').style.display = 'block';
+                    
+                    const avatarUrl = acc.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(acc.email)}`;
+                    document.getElementById('composerAvatar').src = avatarUrl;
+                    document.getElementById('modalUserAvatar').src = avatarUrl;
+                    document.getElementById('modalUserName').textContent = acc.fullName || acc.email;
+                    
+                    const firstName = (acc.fullName || 'Bạn').split(' ').pop();
+                    document.getElementById('composerPrompt').textContent = "Bạn muốn đăng bài?";
+                    document.getElementById('postDescription').placeholder = `${firstName} muốn tìm người ở ghép?`;
+                }
+            } catch(e) {
+                console.warn('Auth store not available:', e.message);
+            }
+
+            // Media Preview Handler
+            const mediaInput = document.getElementById('postMedia');
+            const previewContainer = document.getElementById('mediaPreviewContainer');
+            
+            function syncSelectedFiles() {
+                const dt = new DataTransfer();
+                (window.selectedMediaFiles || []).forEach(file => dt.items.add(file));
+                mediaInput.files = dt.files;
+            }
+
+            function renderSelectedMediaPreview() {
+                (window.composerPreviewUrls || []).forEach(url => URL.revokeObjectURL(url));
+                window.composerPreviewUrls = [];
+                previewContainer.innerHTML = '';
+
+                if (!(window.selectedMediaFiles || []).length) {
+                    previewContainer.style.setProperty('display', 'none', 'important');
+                    return;
+                }
+
+                previewContainer.style.setProperty('display', 'flex', 'important');
+                (window.selectedMediaFiles || []).forEach((file, index) => {
+                    const isVideo = file.type.startsWith('video/');
+                    const objUrl = URL.createObjectURL(file);
+                    window.composerPreviewUrls.push(objUrl);
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'composer-preview-item';
+
+                    const media = document.createElement(isVideo ? 'video' : 'img');
+                    media.src = objUrl;
+                    if (isVideo) media.muted = true;
+                    wrapper.appendChild(media);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'composer-preview-remove';
+                    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    removeBtn.addEventListener('click', () => {
+                        window.selectedMediaFiles.splice(index, 1);
+                        syncSelectedFiles();
+                        renderSelectedMediaPreview();
+                    });
+                    wrapper.appendChild(removeBtn);
+                    previewContainer.appendChild(wrapper);
+                });
+            }
+
+            mediaInput.addEventListener('change', async function(e) {
+                const pickedFiles = Array.from(e.target.files || []);
+                if (pickedFiles.length) {
+                    const optimizedFiles = [];
+                    for (const file of pickedFiles) {
+                        optimizedFiles.push(await compressImageIfNeeded(file));
+                    }
+                    window.selectedMediaFiles = (window.selectedMediaFiles || []).concat(optimizedFiles);
+                }
+                syncSelectedFiles();
+                renderSelectedMediaPreview();
+            });
+
+            // Load real feed from API
+            loadFeed();
+
+            // Handle Post Submit
+            document.getElementById('createPostForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btnSubmitPost');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đăng...';
+
+                try {
+                    const acc = getAuthAccount();
+                    const userName = acc ? (acc.fullName || acc.email) : 'Người dùng';
+                    const desc = document.getElementById('postDescription').value;
+                    const titleFallback = desc.length > 30 ? desc.substring(0, 30) + '...' : (desc || `Bài viết của ${userName}`);
+
+                    const formData = new FormData();
+                    formData.append('Title', titleFallback);
+                    formData.append('Description', desc);
+                    formData.append('TargetGender', document.getElementById('postGender').value || 'Any');
+                    formData.append('BudgetPerMonth', document.getElementById('postBudget').value || '0');
+                    formData.append('Habits', document.getElementById('postHabits').value || '');
+                    formData.append('AreaPreference', document.getElementById('postArea').value || '');
+
+                    (window.selectedMediaFiles || []).forEach(file => formData.append('MediaFiles', file));
+
+                    const token = getAuthToken();
+                    if (!token) {
+                        handleUnauthorized('Bạn cần đăng nhập lại để đăng bài.');
+                        return;
+                    }
+
+                    const res = await fetch('/api/Roommates', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const modalEl = document.getElementById('createPostModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modalInstance.hide();
+                        e.target.reset();
+                        window.selectedMediaFiles = [];
+                        syncSelectedFiles();
+                        renderSelectedMediaPreview();
+                        loadFeed(); // Reload feed
+                    } else if (res.status === 401) {
+                        handleUnauthorized('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để đăng bài.');
+                    } else {
+                        let errMessage = '';
+                        try {
+                            const errJson = await res.json();
+                            errMessage = errJson?.detail || errJson?.message || JSON.stringify(errJson);
+                        } catch {
+                            errMessage = await res.text();
+                        }
+                        alert('Lỗi đăng bài: ' + (errMessage || 'Không xác định'));
+                    }
+                } catch (ex) {
+                    alert('Lỗi kết nối: ' + ex.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane me-2"></i> Đăng Bài';
+                }
+            });
+
+            const lightboxContentEl = document.getElementById('roommatesLightboxContent');
+            const lightboxCounterEl = document.getElementById('roommatesLightboxCounter');
+            const lightboxPrevBtn = document.getElementById('lightboxPrevBtn');
+            const lightboxNextBtn = document.getElementById('lightboxNextBtn');
+            const lightboxStageEl = document.getElementById('roommatesLightboxStage');
+
+            function getLightboxPost() {
+                const postId = window.lightboxCurrentPostId;
+                return (window.feedPostsCache || []).find(p => p.id === postId);
+            }
+
+            function renderLightboxCurrentMedia() {
+                const post = getLightboxPost();
+                if (!post || !post.media || !post.media.length) return;
+
+                const idx = window.lightboxCurrentIndex || 0;
+                const mediaUrl = post.media[idx];
+                lightboxContentEl.innerHTML = isVideoUrl(mediaUrl)
+                    ? `<video class="roommates-lightbox-media" src="${mediaUrl}" controls autoplay style="max-height:80vh;width:100%;object-fit:contain;"></video>`
+                    : `<img class="roommates-lightbox-media" src="${mediaUrl}" alt="Media viewer">`;
+                lightboxCounterEl.textContent = `${idx + 1} / ${post.media.length}`;
+                const canNavigate = post.media.length > 1;
+                lightboxPrevBtn.style.display = canNavigate ? 'flex' : 'none';
+                lightboxNextBtn.style.display = canNavigate ? 'flex' : 'none';
+            }
+
+            function openLightbox(postId, mediaIndex) {
+                window.lightboxCurrentPostId = postId;
+                window.lightboxCurrentIndex = mediaIndex;
+                renderLightboxCurrentMedia();
+                if (lightboxModal) lightboxModal.show();
+            }
+
+            function navigateLightbox(step) {
+                const post = getLightboxPost();
+                if (!post || !post.media || post.media.length < 2) return;
+                window.lightboxCurrentIndex = (window.lightboxCurrentIndex + step + post.media.length) % post.media.length;
+                renderLightboxCurrentMedia();
+            }
+
+            document.getElementById('feedContainer').addEventListener('click', (e) => {
+                const messageBtn = e.target.closest('.js-open-direct-chat');
+                if (messageBtn) {
+                    const ownerId = Number(messageBtn.getAttribute('data-owner-account-id') || 0);
+                    if (!ownerId) return;
+
+                    const token = getAuthToken();
+                    if (!token) {
+                        window.location.href = '/Home/Auth';
+                        return;
+                    }
+
+                    const chatApi = window.UniMap360ChatWidget;
+                    if (!chatApi || typeof chatApi.openDirectChat !== 'function') {
+                        alert('Khong mo duoc hop chat. Vui long thu lai.');
+                        return;
+                    }
+
+                    const ownerName = messageBtn.getAttribute('data-owner-name') || null;
+                    Promise.resolve(chatApi.openDirectChat(ownerId, ownerName)).catch((err) => {
+                        alert(err?.message || 'Khong mo duoc doan chat.');
+                    });
+                    return;
+                }
+
+                const tile = e.target.closest('.js-open-media');
+                if (!tile) return;
+                const postId = Number(tile.getAttribute('data-post-id'));
+                const mediaIndex = Number(tile.getAttribute('data-media-index'));
+                openLightbox(postId, mediaIndex);
+            });
+
+            lightboxPrevBtn.addEventListener('click', () => navigateLightbox(-1));
+            lightboxNextBtn.addEventListener('click', () => navigateLightbox(1));
+
+            document.addEventListener('keydown', (e) => {
+                if (!lightboxModalEl || !lightboxModalEl.classList.contains('show')) return;
+                if (e.key === 'ArrowLeft') navigateLightbox(-1);
+                if (e.key === 'ArrowRight') navigateLightbox(1);
+            });
+
+            let touchStartX = 0;
+            let touchStartY = 0;
+            lightboxStageEl.addEventListener('touchstart', (e) => {
+                if (!e.touches || !e.touches.length) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            lightboxStageEl.addEventListener('touchend', (e) => {
+                if (!e.changedTouches || !e.changedTouches.length) return;
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+                navigateLightbox(dx < 0 ? 1 : -1);
+            }, { passive: true });
+
+            if (lightboxModalEl) {
+                lightboxModalEl.addEventListener('hidden.bs.modal', () => {
+                    document.getElementById('roommatesLightboxContent').innerHTML = '';
+                    window.lightboxCurrentPostId = null;
+                    window.lightboxCurrentIndex = 0;
+                });
+            }
+
+            if (window.timeRefreshTimer) clearInterval(window.timeRefreshTimer);
+            window.timeRefreshTimer = setInterval(refreshRelativeTimes, 60000);
+        });
+
+        async function loadFeed() {
+            const feedContainer = document.getElementById('feedContainer');
+            const feedLoading = document.getElementById('feedLoading');
+            const feedEnd = document.getElementById('feedEnd');
+
+            feedLoading.style.display = 'block';
+            feedEnd.style.display = 'none';
+            feedContainer.innerHTML = '';
+
+            try {
+                const res = await fetch('/api/Roommates');
+                const data = await res.json();
+                const posts = data.items || [];
+                window.feedPostsCache = Array.isArray(posts) ? posts : [];
+
+                feedLoading.style.display = 'none';
+
+                if (!posts || posts.length === 0) {
+                    feedContainer.innerHTML = `
+                        <div class="glass-card p-5 text-center">
+                            <i class="fa-solid fa-people-roof" style="font-size: 3rem; color: var(--color-primary); opacity: 0.5;"></i>
+                            <h5 class="mt-3 fw-bold">Chưa có bài đăng nào</h5>
+                            <p class="text-muted">Hãy là người đầu tiên đăng tin tìm bạn ở ghép!</p>
+                        </div>`;
+                    feedEnd.style.display = 'block';
+                    return;
+                }
+
+                feedPostsCache = Array.isArray(posts) ? posts : [];
+                let html = '';
+                posts.forEach(post => {
+                    const ownerAccountId = Number(post.authorAccountId || 0);
+                    const isOwnPost = ownerAccountId > 0 && ownerAccountId === Number(window.currentAccountId || 0);
+                    const timeAgo = moment.utc(post.createdAt).local().fromNow();
+                    const budgetText = post.budgetPerMonth ? Number(post.budgetPerMonth).toLocaleString('vi-VN') + ' VNĐ/tháng' : 'Thỏa thuận';
+                    const areaText = post.areaPreference ? `<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-map-location-dot" style="color: var(--color-primary);"></i> <strong>Khu vực:</strong> ${post.areaPreference}</div>` : '';
+                    
+                    let tagsHtml = '';
+                    if (post.habits) {
+                        tagsHtml = post.habits.split(',').map(h => h.trim()).filter(h => h).map(h => `<span class="post-tag">#${h}</span>`).join('');
+                    }
+
+                    let genderBadge = '';
+                    if (post.targetGender && post.targetGender !== 'Any') {
+                        const genderIcon = post.targetGender === 'Nam' ? 'fa-mars' : 'fa-venus';
+                        const genderColor = post.targetGender === 'Nam' ? '#4A90D9' : '#E75480';
+                        genderBadge = `<span class="badge" style="background: ${genderColor}; font-size: 0.75rem;"><i class="fa-solid ${genderIcon} me-1"></i>${post.targetGender}</span>`;
+                    }
+
+                    let mediaHtml = '';
+                    if (post.media && post.media.length > 0) {
+                        const showCount = Math.min(post.media.length, 4);
+                        const layoutCount = showCount >= 4 ? 4 : showCount;
+                        const colsClass = `count-${layoutCount}`;
+                        let tiles = '';
+                        for (let i = 0; i < showCount; i++) {
+                            const mediaUrl = post.media[i];
+                            const mediaIsVideo = isVideoUrl(mediaUrl);
+                            const mediaTag = mediaIsVideo
+                                ? `<video src="${mediaUrl}" muted playsinline preload="metadata"></video>`
+                                : `<img src="${mediaUrl}" alt="Roommate Post" loading="lazy">`;
+                            const moreOverlay = (i === showCount - 1 && post.media.length > showCount)
+                                ? `<div class="post-media-more">+${post.media.length - showCount}</div>`
+                                : '';
+                            tiles += `<div class="post-media-tile js-open-media" data-post-id="${post.id}" data-media-index="${i}">${mediaTag}${moreOverlay}</div>`;
+                        }
+                        mediaHtml = `<div class="post-media-grid ${colsClass}">${tiles}</div>`;
+                    }
+
+                    html += `
+                        <div class="glass-card post-card" id="post-${post.id}">
+                            <div class="post-header">
+                                <div class="post-author-info">
+                                    <img src="${post.authorAvatar}" class="composer-avatar" alt="Avatar" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(post.authorName)">
+                                    <div>
+                                        <div class="post-author-name">${post.authorName} ${genderBadge}</div>
+                                        <div class="post-meta">
+                                            <span class="js-post-time" data-created-at="${post.createdAt}">${timeAgo}</span> • <i class="fa-solid fa-earth-asia"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-light border shadow-none rounded-circle"><i class="fa-solid fa-ellipsis"></i></button>
+                            </div>
+                            
+                            <div class="post-content">
+                                <h5 class="fw-bold mb-2">${post.title}</h5>
+                                <p class="mb-2" style="white-space: pre-wrap;">${post.description || ''}</p>
+                                ${areaText}
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="fa-solid fa-wallet text-accent"></i> <strong>Ngân sách:</strong> ${budgetText}
+                                </div>
+                                ${tagsHtml ? `<div class="post-tags">${tagsHtml}</div>` : ''}
+                            </div>
+
+                            ${mediaHtml}
+
+                            <div class="post-actions">
+                                <button type="button" class="action-btn ${isOwnPost ? 'action-disabled' : 'js-open-direct-chat'}" data-owner-account-id="${ownerAccountId}" data-owner-name="${(post.authorName || '').replaceAll('"', '&quot;')}">
+                                    <i class="fa-regular fa-comment-dots"></i> ${isOwnPost ? 'Bài của bạn' : 'Nhắn Tin'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                feedContainer.innerHTML = html;
+                refreshRelativeTimes();
+                feedEnd.style.display = 'block';
+            } catch (ex) {
+                feedLoading.style.display = 'none';
+                feedContainer.innerHTML = `
+                    <div class="glass-card p-4 text-center">
+                        <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 2rem;"></i>
+                        <p class="mt-2 fw-bold">Không thể tải bảng tin</p>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadFeed()">Thử lại</button>
+                    </div>`;
+            }
+        }
+    </script>
+}
+
+
+
+
+
+

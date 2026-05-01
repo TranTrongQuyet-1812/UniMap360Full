@@ -1,0 +1,372 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Phòng trọ";
+    ViewData["ActiveAdminPage"] = "mod-rooms";
+}
+
+<style>
+    .filter-bento { background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px; }
+    .filter-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--admin-text-light); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    .form-select-sm, .form-control-sm { border-radius: var(--radius-sm); border-color: var(--admin-border); font-weight: 600; padding: 8px 12px; }
+    
+    .bulk-bar { background: #fef2f2; border: 1px solid #fee2e2; padding: 12px 20px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .bulk-label { font-size: 0.75rem; font-weight: 800; color: var(--admin-secondary); text-transform: uppercase; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-black mb-1">Quản lý Phòng trọ</h3>
+        <p class="text-muted mb-0 small">Theo dõi và kiểm soát các tin đăng phòng trọ trên hệ thống.</p>
+    </div>
+</div>
+
+<div class="filter-bento">
+    <div class="row g-3">
+        <div class="col-md-5">
+            <label class="filter-label">Tìm kiếm tiêu đề / ID</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Nhập tiêu đề..." id="roomSearch">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Trạng thái</label>
+            <select class="form-select form-select-sm" id="roomStatusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Available">Đang hiển thị</option>
+                <option value="Hidden">Đang ẩn</option>
+                <option value="Rejected">Đã từ chối</option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button class="btn btn-outline-dark fw-bold btn-sm flex-grow-1" id="btnRefreshRooms">
+                <i class="fas fa-sync-alt me-2"></i>Làm mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="roomBulkActions" class="bulk-bar d-none">
+    <div class="bulk-label"><i class="fas fa-check-double me-2"></i>Thao tác hàng loạt (<span id="roomSelectedCount">0</span>)</div>
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-xs btn-outline-warning fw-bold py-1 px-3" id="btnBulkHideRooms" style="font-size: 0.7rem;">ẨN</button>
+        <button class="btn btn-xs btn-outline-dark fw-bold py-1 px-3" id="btnBulkShowRooms" style="font-size: 0.7rem;">HIỆN</button>
+        <button class="btn btn-xs btn-outline-danger fw-bold py-1 px-3" id="btnBulkRejectRooms" style="font-size: 0.7rem;">TỪ CHỐI</button>
+        <button class="btn btn-xs btn-danger fw-bold py-1 px-3" id="btnBulkDeleteRooms" style="font-size: 0.7rem;">XÓA</button>
+    </div>
+</div>
+
+<div class="bento-box p-0">
+    <div class="table-responsive border-0" style="min-height: 400px;">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" id="roomsSelectAll"></th>
+                    <th style="width: 80px;">ID</th>
+                    <th>THÔNG TIN PHÒNG</th>
+                    <th>CHỦ TRỌ</th>
+                    <th>ĐỊA CHỈ</th>
+                    <th style="width: 120px;">GIÁ</th>
+                    <th style="width: 150px;">TRẠNG THÁI</th>
+                    <th class="text-end" style="width: 120px;">THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody id="roomTableBody">
+                <tr><td colspan="8" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let roomRows = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnRefreshRooms').addEventListener('click', loadRooms);
+        document.getElementById('roomSearch').addEventListener('input', debounce(loadRooms, 300));
+        document.getElementById('roomStatusFilter').addEventListener('change', loadRooms);
+        document.getElementById('roomsSelectAll').addEventListener('change', function () {
+            document.querySelectorAll('.room-select').forEach(cb => cb.checked = this.checked);
+            syncRoomBulkButtons();
+        });
+
+        document.getElementById('roomTableBody').addEventListener('change', function (e) {
+            if (e.target && e.target.classList.contains('room-select')) {
+                syncRoomSelectAllCheckbox();
+                syncRoomBulkButtons();
+            }
+        });
+
+        document.getElementById('btnBulkHideRooms').addEventListener('click', () => bulkRoomAction('hide'));
+        document.getElementById('btnBulkShowRooms').addEventListener('click', () => bulkRoomAction('restore'));
+        document.getElementById('btnBulkRejectRooms').addEventListener('click', () => bulkRoomAction('reject'));
+        document.getElementById('btnBulkDeleteRooms').addEventListener('click', bulkDeleteRooms);
+
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-action-btn');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            if (action === 'openRoomDetail') openRoomDetail(btn.getAttribute('data-id'));
+            else if (action === 'runRoomAction') runRoomAction(btn.getAttribute('data-id'), btn.getAttribute('data-action-type'));
+            else if (action === 'deleteRoom') deleteRoom(btn.getAttribute('data-id'));
+            else if (action === 'closeDrawer') closeDrawer();
+        });
+
+        loadRooms();
+    });
+
+    async function loadRooms() {
+        const params = new URLSearchParams();
+        const search = document.getElementById('roomSearch').value.trim();
+        const status = document.getElementById('roomStatusFilter').value;
+
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        params.set('limit', '200');
+
+        try {
+            const data = await adminFetchJson('/api/admin/rooms?' + params.toString());
+            roomRows = data.items || [];
+            renderRooms(roomRows);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được danh sách phòng.', 'error');
+            renderRooms([]);
+        }
+    }
+
+    function renderRooms(rows) {
+        const body = document.getElementById('roomTableBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="8" class="text-center p-5 text-muted">Không tìm thấy phòng trọ nào.</td></tr>';
+            document.getElementById('roomsSelectAll').checked = false;
+            syncRoomBulkButtons();
+            return;
+        }
+
+        body.innerHTML = rows.map(r => `
+            <tr>
+                <td><input type="checkbox" class="room-select" value="${r.roomId}"></td>
+                <td class="text-muted small fw-bold">#${r.roomId}</td>
+                <td>
+                    <div class="fw-bold">${escapeHtml(r.title || '-')}</div>
+                </td>
+                <td>
+                    <div class="fw-bold small text-uppercase" style="color: var(--admin-secondary);">${escapeHtml(r.hostName || '-')}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(r.hostEmail || '-')}</div>
+                </td>
+                <td class="small text-muted">${escapeHtml(r.location || '-')}</td>
+                <td class="fw-bold">${Number(r.price || 0).toLocaleString('vi-VN')}đ</td>
+                <td>${renderRoomStatusBadge(r.status)}</td>
+                <td class="text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-dark fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.7rem;">THAO TÁC</button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem;">
+                            <li><a class="dropdown-item js-action-btn" href="#" data-action="openRoomDetail" data-id="${r.roomId}"><i class="fas fa-eye me-2"></i>Chi tiết</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item js-action-btn text-warning" href="#" data-action="runRoomAction" data-action-type="hide" data-id="${r.roomId}"><i class="fas fa-eye-slash me-2"></i>Ẩn tin</a></li>
+                            <li><a class="dropdown-item js-action-btn text-success" href="#" data-action="runRoomAction" data-action-type="restore" data-id="${r.roomId}"><i class="fas fa-check-circle me-2"></i>Hiển thị</a></li>
+                            <li><a class="dropdown-item js-action-btn text-danger" href="#" data-action="runRoomAction" data-action-type="reject" data-id="${r.roomId}"><i class="fas fa-ban me-2"></i>Từ chối</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item js-action-btn text-danger fw-bold" href="#" data-action="deleteRoom" data-id="${r.roomId}"><i class="fas fa-trash-alt me-2"></i>XÓA VĨNH VIỄN</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        document.getElementById('roomsSelectAll').checked = false;
+        syncRoomBulkButtons();
+    }
+
+    function getSelectedRoomIds() {
+        return Array.from(document.querySelectorAll('.room-select:checked')).map(x => Number(x.value));
+    }
+
+    function syncRoomBulkButtons() {
+        const ids = getSelectedRoomIds();
+        const count = ids.length;
+        const hasSelection = count > 0;
+        const bar = document.getElementById('roomBulkActions');
+        
+        if (hasSelection) {
+            bar.classList.remove('d-none');
+        } else {
+            bar.classList.add('d-none');
+        }
+        
+        document.getElementById('roomSelectedCount').textContent = count;
+        document.getElementById('btnBulkHideRooms').disabled = !hasSelection;
+        document.getElementById('btnBulkShowRooms').disabled = !hasSelection;
+        document.getElementById('btnBulkRejectRooms').disabled = !hasSelection;
+        document.getElementById('btnBulkDeleteRooms').disabled = !hasSelection;
+    }
+
+    function syncRoomSelectAllCheckbox() {
+        const all = Array.from(document.querySelectorAll('.room-select'));
+        const checked = all.filter(x => x.checked);
+        document.getElementById('roomsSelectAll').checked = all.length > 0 && checked.length === all.length;
+    }
+
+    async function openRoomDetail(roomId) {
+        try {
+            const d = await adminFetchJson(`/api/admin/rooms/${roomId}`);
+            const mediaHtml = (d.media || []).length
+                ? d.media.map(x => `<div><a href="${escapeHtml(x.mediaUrl)}" target="_blank">${escapeHtml(x.mediaUrl)}</a></div>`).join('')
+                : '<div class="text-muted">Không có media.</div>';
+
+            const content = `
+                <div class="mb-3"><strong>Tiêu đề:</strong> ${escapeHtml(d.title || '-')}</div>
+                <div class="mb-3"><strong>Trạng thái:</strong> ${renderRoomStatusBadge(d.status)}</div>
+                <div class="mb-3"><strong>Chủ trọ:</strong> ${escapeHtml(d.host?.fullName || '-')} (${escapeHtml(d.host?.email || '-')})</div>
+                <div class="mb-3"><strong>Liên hệ:</strong> ${escapeHtml(d.contactPhone || '-')}</div>
+                <div class="mb-3"><strong>Địa chỉ:</strong> ${escapeHtml(d.location?.addressText || '-')}</div>
+                <div class="mb-3"><strong>Mô tả:</strong><br>${escapeHtml(d.description || '-')}</div>
+                <div><strong>Tệp đính kèm:</strong><br>${mediaHtml}</div>
+            `;
+
+            openDrawer(`Chi tiết phòng #${roomId}`, content, '<button class="btn btn-secondary js-action-btn" data-action="closeDrawer">Đóng</button>');
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được chi tiết phòng.', 'error');
+        }
+    }
+
+    async function runRoomAction(roomId, action) {
+        const actionLabel = getRoomActionLabel(action);
+        const reason = prompt(`Nhập lý do cho hành động ${actionLabel} phòng #${roomId}:`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        try {
+            await adminFetchJson(`/api/admin/rooms/${roomId}/${action}`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+            showAdminToast('Thao tác thành công.', 'success');
+            await loadRooms();
+        } catch (err) {
+            showAdminToast(err.message || 'Thao tác thất bại.', 'error');
+        }
+    }
+
+    async function deleteRoom(roomId) {
+        const reason = prompt(`Nhập lý do xóa phòng #${roomId}:`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const ok = confirm(`Xác nhận xóa phòng #${roomId}?`);
+        if (!ok) return;
+
+        try {
+            await adminFetchJson(`/api/admin/rooms/${roomId}`, {
+                method: 'DELETE',
+                body: JSON.stringify({ reason: reason.trim() })
+            });
+            showAdminToast('Đã xóa phòng.', 'success');
+            await loadRooms();
+        } catch (err) {
+            showAdminToast(err.message || 'Xóa phòng thất bại.', 'error');
+        }
+    }
+
+    async function bulkRoomAction(action) {
+        const ids = getSelectedRoomIds();
+        if (!ids.length) {
+            showAdminToast('Chưa chọn phòng nào.', 'error');
+            return;
+        }
+
+        const actionLabel = getRoomActionLabel(action);
+        const reason = prompt(`Nhập lý do cho thao tác ${actionLabel} hàng loạt (${ids.length} phòng):`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await adminFetchJson(`/api/admin/rooms/${id}/${action}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                success++;
+            } catch {
+                // tiếp tục xử lý các item còn lại
+            }
+        }
+
+        showAdminToast(`${actionLabel} hàng loạt: ${success}/${ids.length} thành công.`, success === ids.length ? 'success' : 'error');
+        await loadRooms();
+    }
+
+    async function bulkDeleteRooms() {
+        const ids = getSelectedRoomIds();
+        if (!ids.length) {
+            showAdminToast('Chưa chọn phòng nào.', 'error');
+            return;
+        }
+
+        const reason = prompt(`Nhập lý do xóa hàng loạt (${ids.length} phòng):`);
+        if (!reason || !reason.trim()) {
+            showAdminToast('Bắt buộc nhập lý do.', 'error');
+            return;
+        }
+
+        const ok = confirm(`Xác nhận xóa ${ids.length} phòng đã chọn?`);
+        if (!ok) return;
+
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await adminFetchJson(`/api/admin/rooms/${id}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                success++;
+            } catch {
+                // tiếp tục xử lý các item còn lại
+            }
+        }
+
+        showAdminToast(`Xóa hàng loạt: ${success}/${ids.length} thành công.`, success === ids.length ? 'success' : 'error');
+        await loadRooms();
+    }
+
+    function getRoomActionLabel(action) {
+        if (action === 'hide') return 'ẩn';
+        if (action === 'restore') return 'hiện';
+        if (action === 'reject') return 'tối chối';
+        return action;
+    }
+
+    function renderRoomStatusBadge(status) {
+        const s = (status || '').toLowerCase();
+        if (s === 'available') return '<span class="badge bg-success">Đang hiển thị</span>';
+        if (s === 'hidden') return '<span class="badge bg-warning text-dark">Đang ẩn</span>';
+        if (s === 'rejected') return '<span class="badge bg-danger">Đã từ chối</span>';
+        return `<span class="badge bg-secondary">${escapeHtml(status || '-')}</span>`;
+    }
+
+    function escapeHtml(input) {
+        return String(input)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function debounce(fn, wait) {
+        let t = null;
+        return function (...args) {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+</script>
+}

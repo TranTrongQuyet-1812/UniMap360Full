@@ -1,0 +1,209 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Nhật ký kiểm toán";
+    ViewData["ActiveAdminPage"] = "audit-logs";
+}
+
+<style>
+    .filter-bento { background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px; }
+    .filter-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--admin-text-light); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    .form-select-sm, .form-control-sm { border-radius: var(--radius-sm); border-color: var(--admin-border); font-weight: 600; padding: 8px 12px; }
+    .form-select-sm:focus, .form-control-sm:focus { border-color: var(--admin-secondary); box-shadow: none; }
+    
+    .audit-id { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 0.8rem; color: var(--admin-text-light); }
+    .action-badge { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: var(--radius-sm); letter-spacing: 0.5px; }
+    .target-box { display: flex; align-items: center; gap: 8px; }
+    .target-type { font-weight: 700; color: var(--admin-secondary); }
+    .target-id { background: #f1f5f9; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; color: #475569; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-black mb-1">Nhật ký kiểm toán</h3>
+        <p class="text-muted mb-0 small">Theo dõi toàn bộ các thao tác nhạy cảm do đội ngũ quản trị thực hiện.</p>
+    </div>
+    <button id="btnExportCsv" class="btn btn-dark fw-bold px-4" style="background: var(--admin-secondary); border: none; font-size: 0.8rem; text-transform: uppercase;">
+        <i class="fas fa-file-csv me-2"></i>Xuất CSV
+    </button>
+</div>
+
+<!-- Smart Filters Bento -->
+<div class="filter-bento">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="filter-label">Hành động</label>
+            <select class="form-select form-select-sm" id="filterAction">
+                <option value="">Tất cả hành động</option>
+                <optgroup label="Phòng trọ">
+                    <option value="room_hide">Ẩn phòng</option>
+                    <option value="room_restore">Khôi phục phòng</option>
+                    <option value="room_delete">Xóa phòng</option>
+                </optgroup>
+                <optgroup label="Việc làm">
+                    <option value="job_hide">Ẩn việc làm</option>
+                    <option value="job_restore">Khôi phục việc làm</option>
+                    <option value="job_delete">Xóa việc làm</option>
+                </optgroup>
+                <optgroup label="Tài khoản">
+                    <option value="account_lock">Khóa tài khoản</option>
+                    <option value="account_unlock">Mở khóa tài khoản</option>
+                    <option value="account_update">Cập nhật tài khoản</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Đối tượng</label>
+            <select class="form-select form-select-sm" id="filterTargetType">
+                <option value="">Tất cả đối tượng</option>
+                <option value="Account">Tài khoản (Account)</option>
+                <option value="Room">Phòng trọ (Room)</option>
+                <option value="Job">Việc làm (Job)</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="filter-label">Mã ID đối tượng</label>
+            <input type="number" class="form-control form-control-sm" placeholder="VD: 123" id="filterTargetId">
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button class="btn btn-outline-dark fw-bold btn-sm flex-grow-1" id="btnRefreshAudit">
+                <i class="fas fa-sync-alt me-2"></i>Làm mới dữ liệu
+            </button>
+            <button class="btn btn-outline-danger fw-bold btn-sm" id="btnClearFilters">
+                <i class="fas fa-times me-1"></i>Xóa lọc
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="bento-box p-0 overflow-hidden">
+    <div class="table-responsive border-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">MÃ LOG</th>
+                    <th style="width: 160px;">THỜI GIAN</th>
+                    <th style="width: 100px;">ADMIN</th>
+                    <th style="width: 180px;">HÀNH ĐỘNG</th>
+                    <th style="width: 200px;">ĐỐI TƯỢNG</th>
+                    <th>LÝ DO / CHI TIẾT</th>
+                    <th style="width: 120px;">ĐỊA CHỈ IP</th>
+                </tr>
+            </thead>
+            <tbody id="auditTableBody">
+                <tr><td colspan="7" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentExportQuery = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnRefreshAudit').addEventListener('click', loadAuditLogs);
+        document.getElementById('btnClearFilters').addEventListener('click', () => {
+            document.getElementById('filterAction').value = '';
+            document.getElementById('filterTargetType').value = '';
+            document.getElementById('filterTargetId').value = '';
+            loadAuditLogs();
+        });
+
+        document.getElementById('filterAction').addEventListener('change', loadAuditLogs);
+        document.getElementById('filterTargetType').addEventListener('change', loadAuditLogs);
+        document.getElementById('filterTargetId').addEventListener('input', debounce(loadAuditLogs, 500));
+        
+        document.getElementById('btnExportCsv').addEventListener('click', exportAuditCsv);
+        
+        loadAuditLogs();
+    });
+
+    async function loadAuditLogs() {
+        const action = document.getElementById('filterAction').value;
+        const targetType = document.getElementById('filterTargetType').value;
+        const targetId = document.getElementById('filterTargetId').value;
+
+        const params = new URLSearchParams();
+        params.set('limit', '200');
+        if (action) params.set('action', action);
+        if (targetType) params.set('targetType', targetType);
+        if (targetId) params.set('targetId', targetId);
+
+        currentExportQuery = params.toString();
+
+        try {
+            const data = await adminFetchJson('/api/admin/audit-logs?' + params.toString());
+            renderAuditRows(data.items || []);
+        } catch (err) {
+            console.error(err);
+            showAdminToast(err.message || 'Lỗi tải nhật ký.', 'error');
+            renderAuditRows([]);
+        }
+    }
+
+    async function exportAuditCsv() {
+        try {
+            const query = currentExportQuery || 'limit=200';
+            const res = await adminFetchRaw('/api/admin/audit-logs/export.csv?' + query);
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audit-logs-${new Date().getTime()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            showAdminToast('Đã tải xuống tệp CSV.', 'success');
+        } catch (err) {
+            showAdminToast(err.message || 'Lỗi xuất dữ liệu.', 'error');
+        }
+    }
+
+    function renderAuditRows(rows) {
+        const body = document.getElementById('auditTableBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="7" class="text-center p-5 text-muted">Không tìm thấy bản ghi nào khớp với bộ lọc.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(x => `
+            <tr>
+                <td class="audit-id">#${x.auditId}</td>
+                <td class="text-muted small fw-bold">${formatAdminDate(x.createdAt)}</td>
+                <td><span class="badge bg-light text-dark fw-bold">ID: ${x.adminAccountId}</span></td>
+                <td><span class="action-badge ${getActionClass(x.action)}">${x.action || '-'}</span></td>
+                <td>
+                    <div class="target-box">
+                        <span class="target-type">${x.targetType || '-'}</span>
+                        <span class="target-id">#${x.targetId ?? '-'}</span>
+                    </div>
+                </td>
+                <td class="small">${escapeHtml(x.reason || '-')}</td>
+                <td class="text-muted small">${escapeHtml(x.ipAddress || '-')}</td>
+            </tr>
+        `).join('');
+    }
+
+    function getActionClass(action) {
+        if (!action) return 'bg-light text-dark';
+        if (action.includes('delete') || action.includes('lock')) return 'bg-danger text-white';
+        if (action.includes('restore') || action.includes('unlock')) return 'bg-success text-white';
+        if (action.includes('hide')) return 'bg-warning text-dark';
+        return 'bg-dark text-white';
+    }
+
+    function escapeHtml(input) {
+        if (!input) return '';
+        return String(input).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function debounce(fn, wait) {
+        let t = null;
+        return function (...args) {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+</script>
+}

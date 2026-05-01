@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>NetTopologySuite.IO.SqlServerBytes</id>
+    <version>2.1.0</version>
+    <title>NTS I/O for MSSQL</title>
+    <authors>NetTopologySuite - Team</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">BSD-3-Clause</license>
+    <licenseUrl>https://licenses.nuget.org/BSD-3-Clause</licenseUrl>
+    <icon>icon.png</icon>
+    <projectUrl>https://github.com/NetTopologySuite/NetTopologySuite.IO.SqlServerBytes</projectUrl>
+    <description>A SQL Server IO module for NTS which works directly with the serialization format</description>
+    <copyright>Copyright © 2018 - 2022 NetTopologySuite - Team</copyright>
+    <tags>NTS MSSQL SQLServer SQL Server SQL</tags>
+    <repository type="git" url="https://github.com/NetTopologySuite/NetTopologySuite.IO.SqlServerBytes.git" commit="ddbd8573a232451956a9e176c043174d1ba46980" />
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="NetTopologySuite" version="[2.0.0, 3.0.0-A)" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

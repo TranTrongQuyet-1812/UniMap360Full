@@ -1,0 +1,460 @@
+<style>
+    .detail-luxury-header {
+        background: linear-gradient(to bottom, rgba(120, 1, 21, 0.03), transparent);
+        padding: 40px 0;
+        margin-bottom: 20px;
+    }
+    .back-btn-luxury {
+        background: #fff;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+        font-weight: 600;
+        padding: 10px 20px;
+        border-radius: 50px;
+        transition: all var(--motion-base) var(--ease-cinematic);
+        box-shadow: var(--shadow-card);
+    }
+    .back-btn-luxury:hover {
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-float);
+        transform: translateX(-4px);
+    }
+    .detail-title-luxury {
+        font-size: 3rem;
+        font-weight: 900;
+        letter-spacing: -1.5px;
+        line-height: 1.1;
+        color: var(--color-primary);
+        text-wrap: balance;
+    }
+    .luxury-card-box {
+        background: #fff;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        padding: 30px;
+        transition: box-shadow var(--motion-base) var(--ease-cinematic);
+    }
+    .luxury-card-box:hover {
+        box-shadow: var(--shadow-float);
+    }
+    .price-display-luxury {
+        background: var(--color-primary);
+        color: var(--color-accent);
+        padding: 24px;
+        border-radius: var(--radius-md);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 15px 35px rgba(120, 1, 21, 0.25);
+    }
+    .sticky-panel {
+        position: sticky;
+        top: 100px;
+    }
+    .info-item-luxury {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid var(--color-bg);
+    }
+    .info-item-luxury:last-child { border-bottom: none; }
+    .info-icon-box {
+        width: 44px; height: 44px;
+        background: rgba(120, 1, 21, 0.05);
+        color: var(--color-primary);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        margin-right: 15px;
+        font-size: 1.1rem;
+    }
+    .btn-contact-luxury {
+        background: var(--color-primary);
+        color: #fff;
+        border: none;
+        padding: 18px;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        box-shadow: 0 10px 25px rgba(120, 1, 21, 0.25);
+        transition: all var(--motion-base) var(--ease-cinematic);
+    }
+    .btn-contact-luxury:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(120, 1, 21, 0.35);
+        background: #8d021a;
+        color: #fff;
+    }
+    #detail-media-strip img {
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+        transition: transform var(--motion-fast) var(--ease-cinematic), box-shadow var(--motion-fast) var(--ease-cinematic);
+    }
+    #detail-media-strip img:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card);
+    }
+    @@media (max-width: 991.98px) {
+        .detail-luxury-header {
+            padding: 20px 0;
+        }
+        .detail-title-luxury {
+            font-size: 1.85rem;
+            letter-spacing: -0.5px;
+        }
+        .sticky-panel {
+            position: static;
+        }
+        .luxury-card-box {
+            padding: 20px 15px;
+        }
+        #detail-img {
+            height: 300px !important; /* Giảm chiều cao ảnh trên mobile */
+        }
+        .price-display-luxury {
+            padding: 16px;
+        }
+        .btn-contact-luxury {
+            padding: 15px;
+            font-size: 1rem;
+        }
+    }
+    @@media (max-width: 576px) {
+        .detail-title-luxury {
+            font-size: 1.6rem;
+        }
+        #detail-img {
+            height: 240px !important;
+        }
+    }
+    @@media (prefers-reduced-motion: reduce) {
+        .back-btn-luxury:hover,
+        .btn-contact-luxury:hover,
+        #detail-media-strip img:hover {
+            transform: none !important;
+        }
+    }
+</style>
+
+<div class="app-page-main-wrap" style="background-color: var(--color-bg); min-height: 100vh;">
+    <!-- Top Header -->
+    <div class="detail-luxury-header">
+        <div class="container">
+            <button class="back-btn-luxury border-0 mb-4" id="detail-back-top">
+                <i class="fas fa-arrow-left me-2"></i> Trở về khám phá
+            </button>
+            <div id="detail-skeleton-header" class="mb-4">
+                <div class="skeleton-box" style="height: 60px; width: 70%; margin-bottom: 15px;"></div>
+                <div class="skeleton-box" style="height: 25px; width: 40%;"></div>
+            </div>
+            <div id="detail-header-content" class="d-none">
+                <h1 id="detail-title" class="detail-title-luxury mb-3">---</h1>
+                <div class="d-flex align-items-center gap-3">
+                    <span id="detail-badge" class="badge bg-primary rounded-pill px-3 py-2">---</span>
+                    <div class="text-muted fw-500" style="font-size: 1.1rem;">
+                        <i class="fas fa-map-marker-alt text-accent me-2"></i>
+                        <span id="detail-address">---</span>
+                    </div>
+                </div>
+                <div class="mt-3 d-flex gap-4 small text-muted fw-bold">
+                    <span><i class="fas fa-info-circle me-1"></i> Trạng thái: <span id="detail-status" class="text-dark">---</span></span>
+                    <span><i class="fas fa-calendar-alt me-1"></i> Ngày đăng: <span id="detail-created" class="text-dark">---</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detail-error" class="container d-none py-5 text-center">
+        <div class="luxury-card-box py-5">
+            <i class="fas fa-exclamation-circle fa-4x text-danger mb-4 opacity-25"></i>
+            <h2 class="fw-800 mb-3">Rất tiếc, không tìm thấy thông tin</h2>
+            <p class="text-muted mb-4">Địa điểm hoặc công việc bạn tìm kiếm không tồn tại hoặc đã bị gỡ bỏ.</p>
+            <a href="/Home/Listing" class="btn btn-primary px-5 py-3 rounded-pill fw-bold">Khám phá các tin khác</a>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <div class="row">
+            <!-- Cột trái: Media & Description -->
+            <div class="col-lg-7">
+                <div id="detail-skeleton-media" class="mb-4">
+                    <div class="skeleton-box" style="height: 480px; border-radius: var(--radius-lg);"></div>
+                </div>
+                
+                <div id="detail-media-content" class="d-none">
+                    <div class="luxury-card-box p-0 overflow-hidden mb-4">
+                        <img id="detail-img" src="/images/fallback-room.svg" class="w-100" style="height: 500px; object-fit: cover;" alt="Hero Image">
+                    </div>
+                    <div id="detail-media-strip" class="d-flex flex-wrap gap-3 mb-5"></div>
+                    
+                    <div class="luxury-card-box mb-5">
+                        <h3 class="fw-800 mb-4 d-flex align-items-center" style="color: var(--color-primary);">
+                            <span style="width: 4px; height: 24px; background: var(--color-accent); border-radius: 10px;" class="me-3"></span>
+                            Thông tin chi tiết
+                        </h3>
+                        <div id="detail-description" class="text-muted" style="line-height: 1.8; font-size: 1.1rem; white-space: pre-line;">
+                            ---
+                        </div>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div class="luxury-card-box mb-5">
+                         <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="fw-800 m-0" style="color: var(--color-primary);">Đánh giá cộng đồng</h3>
+                            <div class="d-flex align-items-center gap-2 px-3 py-2 bg-light rounded-pill">
+                                <span id="detail-review-avg" class="fw-800 fs-5">0.0</span>
+                                <span id="detail-review-stars" class="text-accent">★★★★★</span>
+                                <span id="detail-review-count" class="small text-muted">(0 đánh giá)</span>
+                            </div>
+                        </div>
+                        <div id="detail-review-list" class="text-muted py-3">Chưa có đánh giá nào.</div>
+                        <hr class="my-4">
+                        <div id="detail-review-form-wrap">
+                            <h5 class="fw-bold mb-3">Gửi đánh giá của bạn</h5>
+                            <textarea id="detail-review-comment" class="form-control p-3 mb-3" rows="3" placeholder="Bạn cảm thấy thế nào về địa điểm/công việc này?"></textarea>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="small text-muted fw-600">Đánh giá:</span>
+                                    <select id="detail-review-rating" class="form-select form-select-sm" style="width: 100px;">
+                                        <option value="5">5 Sao</option><option value="4">4 Sao</option><option value="3">3 Sao</option><option value="2">2 Sao</option><option value="1">1 Sao</option>
+                                    </select>
+                                </div>
+                                <button id="detail-review-submit" class="btn btn-primary btn-sm px-4 fw-bold">Gửi nhận xét</button>
+                            </div>
+                            <div id="detail-review-form-note" class="small text-muted mt-2 text-center"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Price, Stats & Contact -->
+            <div class="col-lg-5">
+                <div class="sticky-panel">
+                    <div id="detail-skeleton-stats" class="mb-4">
+                        <div class="skeleton-box" style="height: 500px; border-radius: var(--radius-lg);"></div>
+                    </div>
+
+                    <div id="detail-stats-content" class="d-none">
+                        <div class="luxury-card-box mb-4">
+                            <div class="price-display-luxury mb-4">
+                                <span class="small fw-600 text-uppercase opacity-75" style="letter-spacing: 1px;">Yêu cầu / Mức giá</span>
+                                <h2 id="detail-price" class="m-0 fw-900 mt-1">---</h2>
+                            </div>
+
+                            <div class="luxury-info-grid mb-4">
+                                <div class="info-item-luxury">
+                                    <div class="info-icon-box"><i class="fas fa-tag"></i></div>
+                                    <div>
+                                        <div class="small text-muted fw-600">Phân loại</div>
+                                        <div id="detail-category" class="fw-bold">---</div>
+                                    </div>
+                                </div>
+                                <div class="info-item-luxury">
+                                    <div class="info-icon-box"><i class="fas fa-layer-group"></i></div>
+                                    <div>
+                                        <div class="small text-muted fw-600">Khu vực</div>
+                                        <div id="detail-district" class="fw-bold">---</div>
+                                    </div>
+                                </div>
+                                <div id="detail-area-wrap" class="info-item-luxury">
+                                    <div class="info-icon-box"><i class="fas fa-expand-arrows-alt"></i></div>
+                                    <div>
+                                        <div class="small text-muted fw-600">Diện tích</div>
+                                        <div id="detail-area" class="fw-bold">---</div>
+                                    </div>
+                                </div>
+                                <div id="detail-jobtype-wrap" class="info-item-luxury">
+                                    <div class="info-icon-box"><i class="fas fa-clock"></i></div>
+                                    <div>
+                                        <div class="small text-muted fw-600">Hình thức</div>
+                                        <div id="detail-jobtype" class="fw-bold">---</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-3 mb-4 d-flex align-items-center">
+                                <div class="icon-circle bg-white text-accent shadow-sm me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 50%;">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="small text-muted fw-600">Liên hệ qua điện thoại</div>
+                                    <div id="detail-phone" class="fw-800" style="font-size: 1.1rem; color: var(--color-primary);">Chưa cập nhật</div>
+                                </div>
+                            </div>
+
+                            <button id="detail-contact-btn" class="btn btn-contact-luxury w-100 mb-3">
+                                <i class="fas fa-paper-plane me-2"></i> LIÊN HỆ NGAY
+                            </button>
+                            <button id="detail-chat-btn" class="btn btn-outline-secondary w-100 py-3 rounded-pill fw-bold mb-3" style="border-width: 2px;">
+                                <i class="fas fa-comments me-2"></i> Gửi tin nhắn trực tiếp
+                            </button>
+                            
+                            <div class="text-center mt-3 border-top pt-3">
+                                <button onclick="reportListing()" class="btn btn-link text-muted text-decoration-none small">
+                                    <i class="fas fa-flag text-danger opacity-75 me-1"></i> Báo cáo tin giả / Đã cho thuê
+                                </button>
+                            </div>
+                        </div>
+
+                        <script>
+                            async function reportListing() {
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const targetId = urlParams.get('id');
+                                const targetType = urlParams.get('type') === 'job' ? 'Job' : 'Room';
+
+                                if (!targetId) {
+                                    alert('Không tìm thấy thông tin bài đăng.');
+                                    return;
+                                }
+
+                                const reason = prompt("Vui lòng nhập lý do báo cáo (Tin giả, Đã cho thuê, Sai thông tin...):");
+                                if (reason && reason.trim() !== '') {
+                                    try {
+                                        const response = await fetch('/api/reports', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                targetType: targetType,
+                                                targetId: parseInt(targetId),
+                                                reason: reason
+                                            })
+                                        });
+
+                                        if (response.ok) {
+                                            alert("Cảm ơn bạn đã báo cáo. Quản trị viên sẽ kiểm tra lại nội dung này trong thời gian sớm nhất!");
+                                        } else {
+                                            alert("Có lỗi xảy ra khi gửi báo cáo. Vui lòng thử lại sau.");
+                                        }
+                                    } catch (err) {
+                                        console.error('Error reporting listing:', err);
+                                        alert("Không thể kết nối đến máy chủ.");
+                                    }
+                                }
+                            }
+                        </script>
+
+                    <!-- Mini Map Card -->
+                        <div class="luxury-card-box p-0 overflow-hidden mb-4">
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                                <span class="fw-800 small" style="color: var(--color-primary);">Vị trí trên bản đồ</span>
+                                <span class="badge bg-light text-muted border">V3.1 Static</span>
+                            </div>
+                            <div id="detail-mini-map" style="height:220px; width:100%;"></div>
+                            <div id="detail-mini-map-empty" class="d-none p-5 text-center text-muted bg-light">
+                                <i class="fas fa-map-marked-alt fa-3x mb-3 opacity-25"></i>
+                                <p class="small mb-0">Không có dữ liệu tọa độ cho vị trí này.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="detail-contact-note" class="small text-muted text-center mt-2"></div>
+                    <div id="detail-chat-note" class="small text-muted text-center mt-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đặt lịch xem phòng -->
+<div id="detail-appointment-modal" class="d-none" style="position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; padding:15px; backdrop-filter: blur(5px);">
+    <div id="detail-appointment-backdrop" style="position:absolute; inset:0;"></div>
+    <div class="luxury-card-box p-0 d-flex flex-column shadow-lg" style="position:relative; width:100%; max-width:480px; height: 600px; max-height:85vh; overflow:hidden; border-radius: 24px; border: none; background: #fff;">
+        <!-- Header Cố định -->
+        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white" style="z-index: 10; flex-shrink: 0;">
+            <h5 class="fw-900 m-0" style="color: var(--color-primary); letter-spacing: -0.5px; font-size: 1.1rem;">Đặt lịch xem phòng</h5>
+            <button id="detail-appointment-close" class="btn-close shadow-none" style="font-size: 0.8rem;"></button>
+        </div>
+
+        <!-- Vùng nội dung chính -->
+        <div class="flex-grow-1 d-flex flex-column" style="min-height: 0; overflow: hidden;">
+            
+            <!-- Vùng 1: Form Đặt Lịch (Chiếm max 55% không gian, có thể cuộn) -->
+            <div class="p-3 p-md-4 border-bottom bg-white" style="flex-shrink: 0; max-height: 55%; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+                <div class="mb-3">
+                    <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Thời gian dự kiến</label>
+                    <input type="datetime-local" id="detail-appointment-time" class="form-control rounded-3 border-2" style="font-size: 0.9rem; padding: 0.6rem;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Số điện thoại liên hệ</label>
+                    <input type="text" id="detail-appointment-phone" class="form-control rounded-3 border-2" style="padding: 0.6rem;" placeholder="0987xxxxxx">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Ghi chú (không bắt buộc)</label>
+                    <textarea id="detail-appointment-note" class="form-control rounded-3 border-2" rows="2" style="font-size: 0.9rem;" placeholder="Lời nhắn..."></textarea>
+                </div>
+                
+                <div id="detail-appointment-feedback" class="small mb-2 text-center"></div>
+                
+                <div class="d-flex gap-2">
+                    <button id="detail-appointment-cancel" class="btn btn-light flex-grow-1 fw-bold py-2 rounded-pill" style="font-size: 0.9rem;">Hủy</button>
+                    <button id="detail-appointment-submit" class="btn btn-primary flex-grow-1 fw-bold py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;">Gửi yêu cầu</button>
+                </div>
+            </div>
+
+            <!-- Vùng 2: Lịch sử (Chiếm phần còn lại, tối thiểu phải hiện được nội dung) -->
+            <div id="detail-appointment-history-wrap" class="d-none flex-grow-1 d-flex flex-column p-3 p-md-4 bg-light bg-opacity-50" style="min-height: 0; overflow: hidden;">
+                <h6 class="fw-900 mb-2 d-flex align-items-center" style="color: var(--color-primary); font-size: 0.8rem; text-transform: uppercase;">
+                    <i class="fas fa-history me-2 opacity-50"></i> Lịch sử yêu cầu
+                </h6>
+                <div id="detail-appointment-history-empty" class="small text-muted text-center py-3 bg-white border rounded-3 mb-0">Chưa có lịch sử.</div>
+                <div id="detail-appointment-history-list" class="d-flex flex-column gap-2 pe-1" style="overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ứng tuyển việc làm -->
+<div id="detail-job-apply-modal" class="d-none" style="position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; padding:15px; backdrop-filter: blur(5px);">
+    <div id="detail-job-apply-backdrop" style="position:absolute; inset:0;"></div>
+    <div class="luxury-card-box p-0 d-flex flex-column shadow-lg" style="position:relative; width:100%; max-width:500px; height: auto; max-height:85vh; overflow:hidden; border-radius: 24px; border: none; background: #fff;">
+        <!-- Header Cố định -->
+        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white" style="z-index: 10; flex-shrink: 0;">
+            <h5 class="fw-900 m-0" style="color: var(--color-primary); letter-spacing: -0.5px; font-size: 1.1rem;">Ứng tuyển công việc</h5>
+            <button id="detail-job-apply-close" class="btn-close shadow-none" style="font-size: 0.8rem;"></button>
+        </div>
+
+        <!-- Vùng nội dung có thể cuộn -->
+        <div class="p-4 flex-grow-1" style="overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">
+            <div class="mb-3">
+                <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Email liên hệ</label>
+                <input type="email" id="detail-job-apply-email" class="form-control rounded-3 border-2" style="font-size: 0.95rem;" placeholder="example@gmail.com">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Số điện thoại</label>
+                <input type="text" id="detail-job-apply-phone" class="form-control rounded-3 border-2" style="font-size: 0.95rem;" placeholder="0987xxxxxx">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Link CV (Google Drive/Dropbox...)</label>
+                <input type="text" id="detail-job-apply-cv-url" class="form-control rounded-3 border-2" style="font-size: 0.95rem;" placeholder="https://drive.google.com/...">
+            </div>
+            <div class="mb-4">
+                <label class="form-label small fw-800 text-muted text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Hoặc tải file CV (.pdf, .doc)</label>
+                <input type="file" id="detail-job-apply-cv-file" class="form-control rounded-3 border-2" style="font-size: 0.9rem;">
+            </div>
+            
+            <div id="detail-job-apply-feedback" class="small mb-3 text-center"></div>
+            
+            <div class="d-flex gap-3">
+                <button id="detail-job-apply-cancel" class="btn btn-light flex-grow-1 fw-bold py-2 rounded-pill">Hủy</button>
+                <button id="detail-job-apply-submit" class="btn btn-primary flex-grow-1 fw-bold py-2 rounded-pill shadow-sm">Gửi ứng tuyển</button>
+            </div>
+
+            <div class="mt-4 p-3 rounded-3 bg-light border border-dashed text-center">
+                <p class="small text-muted mb-0" style="font-size: 0.75rem;">Thông tin của bạn sẽ được bảo mật và gửi trực tiếp đến nhà tuyển dụng.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/detail.js" asp-append-version="true"></script>
+}
+
+
+
+
+
+
