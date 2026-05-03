@@ -34,6 +34,12 @@ try
     builder.Configuration.AddIniFile("secrets.ini", optional: true, reloadOnChange: true);
     builder.Configuration.AddEnvironmentVariables();
 
+    // Bật nén dữ liệu để tối ưu tốc độ cho Mobile
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+    });
+
 // Add services to the container.
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -148,6 +154,9 @@ else
 var app = builder.Build();
 
 app.UseMiddleware<TraceLoggingMiddleware>();
+
+// Kích hoạt nén dữ liệu
+app.UseResponseCompression();
 
 using (var scope = app.Services.CreateScope())
 {

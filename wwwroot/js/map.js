@@ -87,7 +87,8 @@ document.addEventListener('DOMContentLoaded', function () {
         disableClusteringAtZoom: 16, /* Khi zoom tới 16 trở lên, ngưng gom thành nhóm vòng tròn */
         spiderfyOnMaxZoom: false, /* Tắt bung hoa */
         showCoverageOnHover: false,
-        zoomToBoundsOnClick: true
+        zoomToBoundsOnClick: true,
+        chunkedLoading: true // GIÚP MOBILE KHÔNG BỊ TREO KHI VẼ NHIỀU MARKER
     });
 
     var markersMap = {};
@@ -123,14 +124,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         items.forEach((item, index) => {
             var itemType = item.type; 
-            var title = window.escapeHtml(itemType === 'room' ? item.title : item.jobTitle);
-            var address = window.escapeHtml(itemType === 'room' ? item.address : item.companyName);
-            var priceLabelRaw = itemType === 'room'
-                ? (listingMapUtils ? listingMapUtils.getFormattedPrice(item.priceStr) : (item.priceStr || 'Thỏa thuận'))
-                : (item.salary || 'Thỏa thuận');
-            var priceLabel = window.escapeHtml(priceLabelRaw);
+            var title = window.escapeHtml(item.title);
+            var address = window.escapeHtml(item.address);
+            var priceLabel = window.escapeHtml(item.price || 'Thỏa thuận');
             var fallbackImg = itemType === 'room' ? '/images/fallback-room.svg' : '/images/fallback-job.svg';
-            var imgUrl = window.escapeHtml(item.thumbnaiUrl || fallbackImg);
+            var imgUrl = window.escapeHtml(item.thumbnail || fallbackImg);
             var itemId = window.escapeHtml(item.id);
             
             // Icon Fa
@@ -151,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="item-img-wrapper">
                         <img src="${imgUrl}" alt="${title}" class="item-img"
                              data-item-id="${itemId}" data-item-type="${itemType}" data-img-attempt="0" data-fallback="${fallbackImg}"
-                             onerror="window.handleMapImageError(this)">
+                             onerror="window.handleMapImageError(this)" loading="lazy">
                     </div>
                     <div class="item-info">
                         <h4 class="item-title">${title}</h4>
@@ -189,8 +187,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 var jitterLat = (pseudoRandomLat - 0.5) * 0.0015;
                 var jitterLng = (pseudoRandomLng - 0.5) * 0.0015;
                 
-                var finalLat = item.latitude + jitterLat;
-                var finalLng = item.longitude + jitterLng;
+                var finalLat = item.lat + jitterLat;
+                var finalLng = item.lng + jitterLng;
 
                 var marker = L.marker([finalLat, finalLng], {
                     icon: customIcon,
@@ -203,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="text-center" style="width: 200px;">
                         <img src="${imgUrl}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;"
                              data-item-id="${itemId}" data-item-type="${itemType}" data-img-attempt="0" data-fallback="${fallbackImg}"
-                             onerror="window.handleMapImageError(this)">
+                             onerror="window.handleMapImageError(this)" loading="lazy">
                         <div style="font-size: 14px; font-weight: bold; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; text-align: left;">${title}</div>
                         <div class="${priceClass}" style="font-weight: 800; font-size: 15px;">${priceLabel}</div>
                     </div>

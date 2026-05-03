@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniMap360.Models;
 using UniMap360.Models.Api;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace UniMap360.Controllers.Api;
 
@@ -10,10 +11,13 @@ namespace UniMap360.Controllers.Api;
 public class MapApiController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
+    private readonly IMemoryCache _cache;
+    private const string MapFeedCacheKey = "GlobalMapFeed";
 
-    public MapApiController(UniMap360ProContext context)
+    public MapApiController(UniMap360ProContext context, IMemoryCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     [HttpGet("feed")]
@@ -32,6 +36,11 @@ public class MapApiController : ControllerBase
 
     private async Task<List<object>> BuildMapFeedAsync()
     {
+        if (_cache.TryGetValue(MapFeedCacheKey, out List<object> cachedFeed))
+        {
+            return cachedFeed;
+        }
+
         var feedItems = await _context.VGlobalMapFeeds
             .AsNoTracking()
             .ToListAsync();
@@ -103,20 +112,16 @@ public class MapApiController : ControllerBase
                 price = displayPrice,
                 lat = item.Latitude,
                 lng = item.Longitude,
-                latitude = item.Latitude,
-                longitude = item.Longitude,
                 address = item.AddressText,
                 category = item.CategoryName,
                 thumbnail = resolvedImage,
-                thumbnaiUrl = resolvedImage,
                 priceStr = item.ItemType == "Room" ? item.Value : null,
-                jobTitle = normalizedType == "job" ? title : null,
-                companyName = normalizedType == "job" ? item.AddressText : null,
-                salary = normalizedType == "job" ? displayPrice : null,
                 isExternal = item.IsExternal ?? false,
                 sourceUrl = item.SourceUrl
             };
         }).Cast<object>().ToList();
+
+        _cache.Set(MapFeedCacheKey, result, TimeSpan.FromMinutes(10));
 
         return result;
     }

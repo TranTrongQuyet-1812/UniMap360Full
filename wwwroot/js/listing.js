@@ -106,14 +106,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         items.forEach(function (item, index) {
             var itemType = item.type;
-            var title = window.escapeHtml(itemType === "room" ? item.title : item.jobTitle);
-            var address = window.escapeHtml(itemType === "room" ? item.address : item.companyName);
-            var priceLabelRaw = itemType === "room"
-                ? (listingMapUtils ? listingMapUtils.getFormattedPrice(item.priceStr) : (item.priceStr || "Thỏa thuận"))
-                : (item.salary || "Thỏa thuận");
-            var priceLabel = window.escapeHtml(priceLabelRaw);
+            var title = window.escapeHtml(item.title);
+            var address = window.escapeHtml(item.address);
+            var priceLabel = window.escapeHtml(item.price || "Thỏa thuận");
             var fallbackImg = itemType === "room" ? "/images/fallback-room.svg" : "/images/fallback-job.svg";
-            var imgUrl = window.escapeHtml(item.thumbnaiUrl || fallbackImg);
+            var imgUrl = window.escapeHtml(item.thumbnail || fallbackImg);
             var itemId = window.escapeHtml(item.id);
             var priceClass = itemType === "room" ? "price-room" : "price-job";
 
@@ -123,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
                      style="animation-delay: ${index * 50}ms; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: #fff; transition: all var(--motion-base) var(--ease-cinematic);">
                     <div class="item-img-wrapper" style="aspect-ratio: 16/10; overflow: hidden; position: relative;">
                         <img src="${imgUrl}" alt="${title}" class="item-img w-100 h-100" style="object-fit: cover; transition: transform 0.6s var(--ease-cinematic);"
-                             data-item-id="${itemId}" data-item-type="${itemType}" data-img-attempt="0" data-fallback="${fallbackImg}">
+                             data-item-id="${itemId}" data-item-type="${itemType}" data-img-attempt="0" data-fallback="${fallbackImg}" loading="lazy">
                         <div class="position-absolute top-0 end-0 m-3">
                             <span class="badge ${itemType === 'room' ? 'bg-maroon' : 'bg-gold'} px-3 py-2 shadow-sm" style="border-radius: 8px; font-weight: 700; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;">
                                 ${itemType === 'room' ? 'Phòng Trọ' : 'Việc Làm'}
