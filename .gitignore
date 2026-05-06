@@ -4,3 +4,6 @@ appsettings.Local.json
 bin/
 obj/
 .vs/
+Logs/
+.nuget/
+*.log
