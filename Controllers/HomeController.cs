@@ -127,6 +127,12 @@ namespace UniMap360.Controllers
             return View();
         }
 
+        public IActionResult Terms()
+        {
+            ViewData["ActivePage"] = "terms";
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         [Route("Home/Error/{statusCode?}")]
         public IActionResult Error(int? statusCode = null)

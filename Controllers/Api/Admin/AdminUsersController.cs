@@ -388,6 +388,7 @@ public sealed class AdminUsersController : ControllerBase
             account.IsLocked
         };
 
+        // 1. Xác định ID các thực thể liên quan
         var roomIds = Array.Empty<int>();
         if (account.HostProfile is not null)
         {
@@ -406,6 +407,38 @@ public sealed class AdminUsersController : ControllerBase
                 .ToArrayAsync(cancellationToken);
         }
 
+        // 2. Dọn dẹp Tin nhắn, Hội thoại, Thông báo và Lịch hẹn (XỬ LÝ TRƯỚC ĐỂ TRÁNH RESTRICT FK)
+        var messages = await _context.Messages
+            .Where(m => m.SenderAccountId == accountId)
+            .ToListAsync(cancellationToken);
+        _context.Messages.RemoveRange(messages);
+
+        var participants = await _context.ConversationParticipants
+            .Where(p => p.AccountId == accountId)
+            .ToListAsync(cancellationToken);
+        _context.ConversationParticipants.RemoveRange(participants);
+
+        var notifications = await _context.Notifications
+            .Where(n => n.RecipientAccountId == accountId)
+            .ToListAsync(cancellationToken);
+        _context.Notifications.RemoveRange(notifications);
+
+        if (account.StudentProfile != null)
+        {
+            var studentAppointments = await _context.RoomViewingAppointments
+                .Where(a => a.StudentId == account.StudentProfile.StudentId)
+                .ToListAsync(cancellationToken);
+            _context.RoomViewingAppointments.RemoveRange(studentAppointments);
+        }
+        if (account.HostProfile != null)
+        {
+            var hostAppointments = await _context.RoomViewingAppointments
+                .Where(a => a.HostId == account.HostProfile.HostId)
+                .ToListAsync(cancellationToken);
+            _context.RoomViewingAppointments.RemoveRange(hostAppointments);
+        }
+
+        // 3. Dọn dẹp Media (Cloudinary & Database)
         var mediaRows = await _context.Media
             .Where(m =>
                 (m.TargetType == "Account" && m.TargetId == accountId)
@@ -422,15 +455,16 @@ public sealed class AdminUsersController : ControllerBase
                 await _cloudinaryAssetPurger.TryPurgeByPublicIdAsync(publicId, cancellationToken);
             }
         }
-
         _context.Media.RemoveRange(mediaRows);
 
+        // 4. Dọn dẹp dữ liệu Host (Rooms)
         if (roomIds.Length > 0)
         {
             var rooms = await _context.Rooms.Where(r => roomIds.Contains(r.RoomId)).ToListAsync(cancellationToken);
             _context.Rooms.RemoveRange(rooms);
         }
 
+        // 5. Dọn dẹp dữ liệu Employer (Jobs & Applications)
         if (jobIds.Length > 0)
         {
             var applications = await _context.JobApplications.Where(a => jobIds.Contains(a.JobId)).ToListAsync(cancellationToken);
@@ -440,6 +474,7 @@ public sealed class AdminUsersController : ControllerBase
             _context.Jobs.RemoveRange(jobs);
         }
 
+        // 6. Dọn dẹp dữ liệu Student (Favorites, Reviews, v.v.)
         if (account.StudentProfile is not null)
         {
             var studentId = account.StudentProfile.StudentId;
@@ -458,18 +493,21 @@ public sealed class AdminUsersController : ControllerBase
             _context.StudentProfiles.Remove(account.StudentProfile);
         }
 
+        // 7. Xóa Profile còn lại
         if (account.HostProfile is not null)
             _context.HostProfiles.Remove(account.HostProfile);
 
         if (account.EmployerProfile is not null)
             _context.EmployerProfiles.Remove(account.EmployerProfile);
 
+        // 8. Xóa Log và Tài khoản chính
         var logs = await _context.SystemLogs.Where(l => l.AccountId == accountId).ToListAsync(cancellationToken);
         _context.SystemLogs.RemoveRange(logs);
 
         _context.Accounts.Remove(account);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // 9. Ghi log kiểm toán
         await _auditService.WriteAsync(
             adminId.Value,
             "account_hard_delete",

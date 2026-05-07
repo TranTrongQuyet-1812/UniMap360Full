@@ -132,6 +132,8 @@ var usePostgres = string.Equals(dbProvider, "PostgreSql", StringComparison.Ordin
     || string.Equals(dbProvider, "Postgres", StringComparison.OrdinalIgnoreCase)
     || string.Equals(dbProvider, "Npgsql", StringComparison.OrdinalIgnoreCase);
 
+Log.Information("Database Provider selected: {Provider} (UsePostgres: {UsePostgres})", dbProvider ?? "Default/SQLServer", usePostgres);
+
 if (usePostgres)
 {
     // PostgreSQL (Supabase) + PostGIS
@@ -222,3 +224,5 @@ finally
     Log.Information("Server đã tắt.");
     Log.CloseAndFlush();
 }
+
+public partial class Program { }

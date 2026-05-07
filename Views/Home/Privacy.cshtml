@@ -1,6 +1,100 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+@{
+    ViewData["Title"] = "Chính sách bảo mật";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="legal-page-wrapper py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header Card -->
+                <div class="legal-header-card p-5 mb-5 rounded-5 text-white position-relative overflow-hidden shadow-lg" style="background: linear-gradient(135deg, #780115 0%, #a8011d 100%);">
+                    <div class="position-relative z-index-2">
+                        <h6 class="text-uppercase fw-bold opacity-75 mb-2" style="letter-spacing: 2px;">Về dự án của chúng tôi</h6>
+                        <h1 class="display-4 fw-800 mb-4">Chính sách bảo mật</h1>
+                        <p class="lead opacity-90 mb-0">Chúng tôi cam kết bảo vệ quyền riêng tư và dữ liệu của sinh viên trong suốt quá trình sử dụng UniMap360.</p>
+                    </div>
+                    <div class="header-decoration">
+                        <i class="fas fa-shield-halved position-absolute" style="font-size: 15rem; right: -2rem; bottom: -3rem; opacity: 0.1; transform: rotate(-15deg);"></i>
+                    </div>
+                </div>
+
+                <div class="row gy-4">
+                    <!-- Sidebar Info -->
+                    <div class="col-md-4">
+                        <div class="sticky-top" style="top: 100px;">
+                            <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden">
+                                <div class="card-header bg-light border-0 py-3">
+                                    <h6 class="mb-0 fw-bold"><i class="fas fa-university me-2 text-maroon"></i> Đơn vị phát triển</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-1 fw-bold text-dark">Trường Đại học Lạc Hồng</p>
+                                    <p class="small text-muted mb-3">Lhu University - Đồng Nai</p>
+                                    <hr>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Quyet" class="rounded-circle bg-light" style="width: 48px; height: 48px;" alt="Author">
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-0 fw-bold text-maroon">Trần Trọng Quyết</h6>
+                                            <small class="text-muted">Sinh viên thực hiện</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 rounded-4 shadow-sm bg-maroon text-white p-4">
+                                <h6 class="fw-bold mb-3">Bạn có thắc mắc?</h6>
+                                <p class="small opacity-80 mb-4">Nếu có bất kỳ câu hỏi nào về chính sách này, hãy liên hệ trực tiếp với tác giả.</p>
+                                <a href="mailto:tqtq1812@gmail.com" class="btn btn-light rounded-pill btn-sm fw-bold px-4">Gửi Email</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="col-md-8">
+                        <div class="bg-white p-5 rounded-5 shadow-sm legal-content">
+                            <h4 class="fw-bold text-maroon mb-4">1. Giới thiệu dự án</h4>
+                            <p><strong>UniMap360</strong> là một sản phẩm đồ án sinh viên được phát triển nhằm hỗ trợ cộng đồng sinh viên trong việc tìm kiếm nhà trọ, việc làm và bạn ở ghép thông qua nền tảng bản đồ số thông minh. Dự án được thực hiện với mục tiêu phi lợi nhuận và phục vụ mục đích học tập, nghiên cứu.</p>
+
+                            <h4 class="fw-bold text-maroon mt-5 mb-4">2. Thông tin chúng tôi thu thập</h4>
+                            <p>Khi bạn sử dụng UniMap360, chúng tôi có thể thu thập một số thông tin cơ bản để phục vụ trải nghiệm người dùng:</p>
+                            <ul>
+                                <li><strong>Thông tin tài khoản:</strong> Email, tên hiển thị khi bạn đăng ký.</li>
+                                <li><strong>Dữ liệu vị trí:</strong> Để hiển thị các phòng trọ và việc làm xung quanh bạn trên bản đồ.</li>
+                                <li><strong>Dữ liệu tương tác:</strong> Các tin nhắn, thông báo liên quan đến việc đặt lịch hẹn hoặc ứng tuyển công việc.</li>
+                            </ul>
+
+                            <h4 class="fw-bold text-maroon mt-5 mb-4">3. Sử dụng dữ liệu</h4>
+                            <p>Chúng tôi chỉ sử dụng dữ liệu của bạn để:</p>
+                            <ul>
+                                <li>Vận hành các tính năng cốt lõi của ứng dụng.</li>
+                                <li>Kết nối giữa sinh viên và chủ trọ/nhà tuyển dụng.</li>
+                                <li>Nghiên cứu và cải thiện giao diện người dùng cho đồ án.</li>
+                            </ul>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .legal-page-wrapper {
+        background-color: #fcfcfc;
+    }
+    .fw-800 { font-weight: 800; }
+    .text-maroon { color: #780115; }
+    .bg-maroon { background-color: #780115; }
+    .legal-content h4 {
+        border-left: 4px solid #780115;
+        padding-left: 15px;
+    }
+    .legal-content p, .legal-content li {
+        line-height: 1.8;
+        color: #555;
+    }
+    .rounded-5 { border-radius: 2rem !important; }
+    .z-index-2 { z-index: 2; }
+</style>

@@ -445,7 +445,14 @@
                         </div>
                         <div class="auth-input-group" style="margin-bottom: 20px;">
                             <i class="fas fa-envelope"></i>
-                            <input type="email" name="Email" class="auth-input" placeholder="Địa chỉ Email" required>
+                            <input type="email" id="register-email" name="Email" class="auth-input" placeholder="Địa chỉ Email" required>
+                        </div>
+                        <div class="auth-input-group d-flex" style="margin-bottom: 20px; gap: 10px;">
+                            <div style="flex: 1; position: relative;">
+                                <i class="fas fa-shield-alt"></i>
+                                <input type="text" name="Otp" class="auth-input" placeholder="Mã OTP (6 số)" maxlength="6" required style="letter-spacing: 2px; font-weight: bold;">
+                            </div>
+                            <button type="button" id="btn-send-register-otp" class="btn btn-outline-danger fw-bold" style="border-radius: 12px; width: 130px; border-width: 2px;">Gửi mã</button>
                         </div>
                         <div class="auth-input-group" style="margin-bottom: 20px;">
                             <i class="fas fa-lock"></i>
@@ -755,11 +762,12 @@
             const formData = new FormData(form);
             const role = (formData.get('Role') || 'Student').toString();
             const email = (formData.get('Email') || '').toString().trim();
+            const otp = (formData.get('Otp') || '').toString().trim();
             const password = (formData.get('Password') || '').toString();
             const confirmPassword = (formData.get('ConfirmPassword') || '').toString();
 
-            if (!email || !password) {
-                showFeedback('registerFeedback', 'Vui lòng nhập đầy đủ email và mật khẩu.', 'error');
+            if (!email || !password || !otp) {
+                showFeedback('registerFeedback', 'Vui lòng nhập đầy đủ Email, Mã OTP và Mật khẩu.', 'error');
                 return;
             }
 
@@ -780,7 +788,7 @@
 
             setSubmitting(form, true);
             try {
-                await postJson('/api/auth/register', { email, password, role });
+                await postJson('/api/auth/register', { email, password, role, otp });
                 showFeedback('registerFeedback', 'Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.', 'success');
 
                 const loginEmailInput = document.querySelector('#loginForm input[name="Email"]');
@@ -797,6 +805,53 @@
         document.addEventListener('DOMContentLoaded', () => {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
+            const btnSendRegisterOtp = document.getElementById('btn-send-register-otp');
+
+            if (btnSendRegisterOtp) {
+                btnSendRegisterOtp.addEventListener('click', async () => {
+                    const emailInput = document.getElementById('register-email');
+                    const email = emailInput ? emailInput.value.trim() : '';
+
+                    if (!email) {
+                        showFeedback('registerFeedback', 'Vui lòng nhập Email trước khi lấy mã OTP.', 'error');
+                        return;
+                    }
+
+                    if (!email.toLowerCase().endsWith('@@gmail.com')) {
+                        showFeedback('registerFeedback', 'Xin lỗi, hệ thống chỉ hỗ trợ tài khoản @@gmail.com.', 'error');
+                        return;
+                    }
+
+                    btnSendRegisterOtp.disabled = true;
+                    btnSendRegisterOtp.textContent = 'Đang gửi...';
+                    clearFeedback('registerFeedback');
+
+                    try {
+                        await postJson('/api/auth/send-register-otp', { email });
+                        showFeedback('registerFeedback', 'Mã OTP đã được gửi đến email của bạn. Mã có hiệu lực trong 2 phút.', 'success');
+
+                        // Đếm ngược 120s
+                        let timeLeft = 120;
+                        btnSendRegisterOtp.textContent = `Chờ ${timeLeft}s`;
+                        
+                        const timer = setInterval(() => {
+                            timeLeft--;
+                            if (timeLeft <= 0) {
+                                clearInterval(timer);
+                                btnSendRegisterOtp.textContent = 'Gửi lại mã';
+                                btnSendRegisterOtp.disabled = false;
+                            } else {
+                                btnSendRegisterOtp.textContent = `Chờ ${timeLeft}s`;
+                            }
+                        }, 1000);
+
+                    } catch (error) {
+                        btnSendRegisterOtp.disabled = false;
+                        btnSendRegisterOtp.textContent = 'Gửi mã';
+                        showFeedback('registerFeedback', error.message || 'Không thể gửi mã OTP. Vui lòng thử lại.', 'error');
+                    }
+                });
+            }
 
             if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
             if (registerForm) registerForm.addEventListener('submit', handleRegisterSubmit);
