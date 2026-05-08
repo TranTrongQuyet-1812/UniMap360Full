@@ -447,14 +447,17 @@ public sealed class AdminUsersController : ControllerBase
                 || (m.TargetType == "Roommate" && _context.RoommatePosts.Where(r => r.Student.AccountId == accountId).Select(r => r.Id).Contains(m.TargetId)))
             .ToListAsync(cancellationToken);
 
+        var purgeTasks = new List<Task>();
         foreach (var media in mediaRows)
         {
             var publicId = _cloudinaryAssetPurger.TryExtractPublicIdFromUrl(media.MediaUrl);
             if (!string.IsNullOrWhiteSpace(publicId))
             {
-                await _cloudinaryAssetPurger.TryPurgeByPublicIdAsync(publicId, cancellationToken);
+                purgeTasks.Add(_cloudinaryAssetPurger.TryPurgeByPublicIdAsync(publicId, cancellationToken));
             }
         }
+        await Task.WhenAll(purgeTasks);
+        
         _context.Media.RemoveRange(mediaRows);
 
         // 4. Dọn dẹp dữ liệu Host (Rooms)
