@@ -36,7 +36,7 @@ public class MapApiController : ControllerBase
 
     private async Task<List<object>> BuildMapFeedAsync()
     {
-        if (_cache.TryGetValue(MapFeedCacheKey, out List<object> cachedFeed))
+        if (_cache.TryGetValue(MapFeedCacheKey, out List<object>? cachedFeed) && cachedFeed != null)
         {
             return cachedFeed;
         }

@@ -132,16 +132,27 @@ body {
         width: 100% !important;
         top: auto !important;
         bottom: 0 !important;
-        height: 40vh; /* Trạng thái mặc định trên mobile */
+        height: 70px; /* Siêu thu gọn: Chỉ chừa logo UniMap và nút mở rộng, tối ưu 95% diện tích cho Bản đồ */
         border-radius: 24px 24px 0 0 !important;
         border: none !important;
         box-shadow: 0 -10px 40px rgba(0,0,0,0.15) !important;
-        padding-bottom: env(safe-area-inset-bottom, 20px);
+        padding-bottom: env(safe-area-inset-bottom, 8px);
         transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* Ẩn toàn bộ Search Box và Filter Chips khi thu gọn để đạt độ tinh gọn tuyệt đối */
+    #floating-panel:not(.expanded) .search-box,
+    #floating-panel:not(.expanded) .filter-chips {
+        display: none !important;
+    }
+
+    /* Triệt tiêu margin thừa của logo khi thu gọn */
+    #floating-panel:not(.expanded) .panel-header .mb-3 {
+        margin-bottom: 0 !important;
+    }
+
     #floating-panel.expanded {
-        height: 85vh !important; /* Trạng thái mở rộng trên mobile */
+        height: 80vh !important; /* Trạng thái mở rộng trên mobile */
     }
     
     /* Hide scrollbar for cleaner UI */
@@ -150,26 +161,51 @@ body {
     }
 
     .panel-header {
-        padding: 20px 20px 10px;
+        padding: 22px 20px 10px;
         position: relative;
     }
     
-    /* Add a small drag handle pill for bottom sheet feel */
+    /* Add a small drag handle pill for bottom sheet feel - Gold themed */
     .panel-header::before {
         content: '';
         position: absolute;
         top: 8px;
         left: 50%;
         transform: translateX(-50%);
-        width: 40px;
-        height: 4px;
-        background-color: #ddd;
+        width: 50px;
+        height: 5px;
+        background-color: #ffb800;
+        opacity: 0.85;
         border-radius: 4px;
     }
 
     .panel-header h5 {
         margin-bottom: 12px !important;
         font-size: 1.1rem;
+    }
+
+    /* Thiết kế nút bấm Mũi tên Lên nổi bật hơn hẳn trên Mobile */
+    #btn-toggle-panel {
+        background-color: #780115 !important; /* Đỏ đô */
+        color: #ffb800 !important; /* Vàng Gold */
+        border-radius: 50% !important;
+        width: 36px !important;
+        height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 10px rgba(120, 1, 21, 0.35) !important;
+        border: 2px solid #ffb800 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding: 0 !important;
+    }
+    
+    #btn-toggle-panel i {
+        font-size: 14px !important;
+    }
+
+    #btn-toggle-panel:active {
+        transform: scale(0.88);
     }
 
     .panel-list {

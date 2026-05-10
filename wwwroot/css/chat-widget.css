@@ -381,19 +381,19 @@
 
 @media (max-width: 767.98px) {
     .um-chat-launcher {
-        right: 12px;
-        bottom: 12px;
-        width: 54px;
-        height: 54px;
+        right: 16px !important;
+        bottom: 85px !important; /* Ngồi ngay phía trên thanh 70px siêu thu gọn */
+        width: 52px !important;
+        height: 52px !important;
     }
 
     .um-chat-panel {
-        right: 6px;
-        left: 6px;
-        width: auto;
-        bottom: 74px;
-        height: calc(100dvh - 80px);
-        border-radius: 14px;
+        right: 12px !important;
+        left: 12px !important;
+        width: auto !important;
+        bottom: 145px !important; /* Nổi lên phía trên bong bóng chat */
+        height: calc(100dvh - 225px) !important; /* Đảm bảo đỉnh panel cách mép trên 80px, không bị header che khuất */
+        border-radius: 16px !important;
     }
 
     .um-chat-panel.open {
