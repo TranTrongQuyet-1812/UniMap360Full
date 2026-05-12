@@ -18,7 +18,7 @@ namespace UniMap360.Controllers.Api
 {
     [Route("api/ai-chat")]
     [ApiController]
-    [AllowAnonymous]
+    [Authorize]
     public class AiChatController : ControllerBase
     {
         private readonly UniMap360ProContext _context;

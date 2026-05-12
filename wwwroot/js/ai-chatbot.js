@@ -15,6 +15,19 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         initDOMElements();
+
+        // Kiểm tra JWT Token ở phía Client
+        const token = getToken();
+        if (!token) {
+            // Nếu chưa đăng nhập, ẩn hoàn toàn launcher và panel, không chạy tiếp các logic chatbot
+            if (launcherBtn) launcherBtn.style.display = "none";
+            if (chatPanel) chatPanel.style.display = "none";
+            return;
+        } else {
+            // Nếu đã đăng nhập, cho phép hiển thị
+            if (launcherBtn) launcherBtn.style.display = "flex";
+        }
+
         checkAndHarvestGeolocation();
         registerEvents();
         renderInitialWelcome();
@@ -46,16 +59,16 @@
             (position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
-                
+
                 // Lưu vào localStorage
                 localStorage.setItem("unimap360.userCoords", JSON.stringify({ lat, lng, timestamp: Date.now() }));
-                
+
                 chatState.userLat = lat;
                 chatState.userLng = lng;
-                
+
                 if (chatState.state === "waiting_location") {
                     chatState.state = "waiting_service";
-                    
+
                     // Nếu ô chat đang hiển thị lời chào chờ vị trí, cập nhật ngay lập tức sang trạng thái đã nhận vị trí
                     if (msgContainer && msgContainer.children.length <= 1) {
                         msgContainer.innerHTML = "";
@@ -117,8 +130,7 @@
     function togglePanel(open) {
         if (open) {
             chatPanel.classList.add("open");
-            chatInput.focus();
-            
+
             // Nếu click mở panel nhưng chưa có tọa độ trong state, thử load từ localStorage
             if (chatState.userLat === null) {
                 const cached = localStorage.getItem("unimap360.userCoords");
@@ -128,7 +140,7 @@
                         chatState.userLat = lat;
                         chatState.userLng = lng;
                         chatState.state = "waiting_service";
-                        
+
                         if (window.UniMap360Map && typeof window.UniMap360Map.drawUserLocationOnMap === "function") {
                             window.UniMap360Map.drawUserLocationOnMap(lat, lng);
                         }
@@ -149,7 +161,7 @@
 
         const bubble = document.createElement("div");
         bubble.className = `ai-chat-bubble ${sender}`;
-        
+
         // Render markdown-like simple line breaks
         const formattedText = text
             .replace(/\n/g, "<br/>")
@@ -161,7 +173,7 @@
             <div class="ai-chat-bubble-content">${formattedText}</div>
             <div class="ai-chat-bubble-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         `;
-        
+
         msgContainer.appendChild(bubble);
         msgContainer.scrollTop = msgContainer.scrollHeight;
     }
@@ -189,7 +201,7 @@
 
     function renderInitialWelcome() {
         if (!msgContainer) return;
-        
+
         // Chỉ vẽ chào mừng ban đầu nếu ô chat trống rỗng
         if (msgContainer.children.length > 0) {
             renderQuickChips();
@@ -209,7 +221,7 @@
     function renderQuickChips() {
         if (!quickChipsContainer) return;
         quickChipsContainer.innerHTML = "";
-        
+
         let chips = [];
         if (chatState.state === "waiting_location") {
             chips = [
@@ -241,7 +253,7 @@
                 { label: "🔄 Đổi Vị Trí", text: "Đổi Vị Trí" }
             ];
         }
-        
+
         // Luôn có nút "❌ Xóa Bộ Lọc" ở mọi trạng thái
         chips.push({
             label: "❌ Xóa Bộ Lọc",
@@ -254,7 +266,7 @@
                 chatState.userLng = null;
                 chatState.selectedService = null;
                 chatState.selectedRadius = null;
-                
+
                 // Xóa các tin nhắn cũ để làm sạch giao diện chat
                 if (msgContainer) {
                     msgContainer.innerHTML = "";
@@ -290,7 +302,7 @@
     function submitMessage(text) {
         addMessage(text, "user");
         chatInput.value = "";
-        
+
         showTypingIndicator();
 
         // Gửi API lên Backend
@@ -308,49 +320,49 @@
                 selectedRadius: chatState.selectedRadius
             })
         })
-        .then(res => res.json())
-        .then(data => {
-            removeTypingIndicator();
-            if (data.success) {
-                // Cập nhật trạng thái hội thoại
-                chatState.state = data.newState;
-                chatState.userLat = data.userLat;
-                chatState.userLng = data.userLng;
-                chatState.selectedService = data.selectedService;
-                chatState.selectedRadius = data.selectedRadius;
+            .then(res => res.json())
+            .then(data => {
+                removeTypingIndicator();
+                if (data.success) {
+                    // Cập nhật trạng thái hội thoại
+                    chatState.state = data.newState;
+                    chatState.userLat = data.userLat;
+                    chatState.userLng = data.userLng;
+                    chatState.selectedService = data.selectedService;
+                    chatState.selectedRadius = data.selectedRadius;
 
-                // Thêm câu trả lời của AI
-                addMessage(data.response, "ai");
+                    // Thêm câu trả lời của AI
+                    addMessage(data.response, "ai");
 
-                // Nếu Geocoding tìm được vị trí mới của người dùng
-                if (data.detectedLat && data.detectedLng) {
-                    if (window.UniMap360Map && typeof window.UniMap360Map.drawUserLocationOnMap === "function") {
-                        window.UniMap360Map.drawUserLocationOnMap(data.detectedLat, data.detectedLng);
+                    // Nếu Geocoding tìm được vị trí mới của người dùng
+                    if (data.detectedLat && data.detectedLng) {
+                        if (window.UniMap360Map && typeof window.UniMap360Map.drawUserLocationOnMap === "function") {
+                            window.UniMap360Map.drawUserLocationOnMap(data.detectedLat, data.detectedLng);
+                        }
                     }
-                }
 
-                // Nếu đã đủ thông tin và chạy tìm kiếm cận lộ thành công
-                if (data.newState === "ready" && chatState.userLat && chatState.userLng && chatState.selectedRadius) {
-                    if (window.UniMap360Map && typeof window.UniMap360Map.applyProximityFilterOnMap === "function") {
-                        window.UniMap360Map.applyProximityFilterOnMap(
-                            chatState.userLat,
-                            chatState.userLng,
-                            chatState.selectedRadius,
-                            chatState.selectedService
-                        );
+                    // Nếu đã đủ thông tin và chạy tìm kiếm cận lộ thành công
+                    if (data.newState === "ready" && chatState.userLat && chatState.userLng && chatState.selectedRadius) {
+                        if (window.UniMap360Map && typeof window.UniMap360Map.applyProximityFilterOnMap === "function") {
+                            window.UniMap360Map.applyProximityFilterOnMap(
+                                chatState.userLat,
+                                chatState.userLng,
+                                chatState.selectedRadius,
+                                chatState.selectedService
+                            );
+                        }
                     }
-                }
 
-                // Render lại gợi ý tương ứng với state mới
-                renderQuickChips();
-            } else {
-                addMessage("🤖 Có lỗi xảy ra trong quá trình trao đổi thông tin. Vui lòng thử lại.");
-            }
-        })
-        .catch(err => {
-            removeTypingIndicator();
-            console.error("Lỗi kết nối AI chatbot:", err);
-            addMessage("🤖 Kết nối máy chủ AI thất bại. Vui lòng kiểm tra lại đường truyền mạng.");
-        });
+                    // Render lại gợi ý tương ứng với state mới
+                    renderQuickChips();
+                } else {
+                    addMessage("🤖 Có lỗi xảy ra trong quá trình trao đổi thông tin. Vui lòng thử lại.");
+                }
+            })
+            .catch(err => {
+                removeTypingIndicator();
+                console.error("Lỗi kết nối AI chatbot:", err);
+                addMessage("🤖 Kết nối máy chủ AI thất bại. Vui lòng kiểm tra lại đường truyền mạng.");
+            });
     }
 })();
