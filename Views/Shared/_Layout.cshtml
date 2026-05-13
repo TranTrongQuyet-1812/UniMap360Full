@@ -56,7 +56,7 @@
 
                 <div class="d-flex align-items-center gap-2">
                     <!-- Notification Bell (Mobile Only) -->
-                    <div class="dropdown d-lg-none nav-notification-wrapper">
+                    <div class="dropdown mobile-only nav-notification-wrapper d-none">
                         <button class="btn btn-light rounded-circle position-relative border-0 shadow-sm" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--color-primary);" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell"></i>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-maroon shadow-sm d-none nav-notification-badge" style="font-size: 0.6rem; padding: 0.3em 0.45em; border: 2px solid white;">0</span>
@@ -104,7 +104,7 @@
                     </ul>
                     <ul class="navbar-nav ms-auto align-items-center gap-3">
                         <!-- Notification Bell (PC Only) -->
-                        <li class="nav-item dropdown d-none d-lg-block nav-notification-wrapper">
+                        <li class="nav-item dropdown pc-only nav-notification-wrapper d-none">
                             <button class="btn btn-light rounded-circle position-relative border-0 shadow-sm" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--color-primary);" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-bell"></i>
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-maroon shadow-sm d-none nav-notification-badge" style="font-size: 0.6rem; padding: 0.3em 0.45em; border: 2px solid white;">0</span>
@@ -136,6 +136,25 @@
                         <li class="nav-item dropdown d-none" id="nav-auth-user-item">
                             <style>
                                 #nav-auth-user-toggle::after { display: none !important; }
+                                
+                                /* Responsive Notification Bells */
+                                .nav-notification-wrapper.mobile-only {
+                                    display: none !important;
+                                }
+                                .nav-notification-wrapper.pc-only {
+                                    display: none !important;
+                                }
+                                @@media (max-width: 991.98px) {
+                                    .nav-notification-wrapper.mobile-only:not(.d-none) {
+                                        display: flex !important;
+                                    }
+                                }
+                                @@media (min-width: 992px) {
+                                    .nav-notification-wrapper.pc-only:not(.d-none) {
+                                        display: flex !important;
+                                    }
+                                }
+
                                 .luxury-user-menu {
                                     backdrop-filter: blur(15px);
                                     background: rgba(255, 255, 255, 0.95) !important;
