@@ -64,11 +64,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.head.appendChild(styleEl);
 
     var territoryLabels = [
-        { name: "Quần đảo Hoàng Sa<br>(Việt Nam)", pos: [16.52, 111.7], className: "national-territory-label" },
-        { name: "Quần đảo Trường Sa<br>(Việt Nam)", pos: [9.6, 113.2], className: "national-territory-label" },
         { name: "Đảo Phú Lâm", pos: [16.8396, 112.3347], className: "island-label" },
         { name: "Đảo Hoàng Sa", pos: [16.5338, 111.6094], className: "island-label" },
-        { name: "Đảo Trường Sa", pos: [8.6439, 111.9213], className: "island-label" },
+        { name: "Đảo Trường Sa", pos: [8.6417, 111.9319], className: "island-label" },
         { name: "Đảo Nam Yết", pos: [10.1818, 114.3644], className: "island-label" },
         { name: "Đảo Sinh Tồn", pos: [9.8833, 114.3211], className: "island-label" },
         { name: "Đảo Song Tử Tây", pos: [11.4382, 114.3314], className: "island-label" }
