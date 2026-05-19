@@ -132,6 +132,54 @@
             transform: none !important;
         }
     }
+
+    /* Premium Pagination UI */
+    .academic-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 40px;
+        margin-bottom: 20px;
+    }
+    .academic-pagination .page-btn {
+        min-width: 42px;
+        height: 42px;
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #ffffff;
+        color: var(--color-primary);
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+    .academic-pagination .page-btn:hover:not(:disabled):not(.active) {
+        border-color: var(--color-primary);
+        background: rgba(120, 1, 21, 0.04);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(120, 1, 21, 0.1);
+    }
+    .academic-pagination .page-btn.active {
+        background: var(--color-primary);
+        color: #ffffff !important;
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 12px rgba(120, 1, 21, 0.25);
+        transform: scale(1.05);
+        cursor: default;
+    }
+    .academic-pagination .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: #f3f4f6;
+        border-color: rgba(0, 0, 0, 0.05);
+        color: #9ca3af;
+    }
 </style>
 
 <div class="app-page-main-wrap" style="background-color: var(--color-bg); min-height: 100vh;">

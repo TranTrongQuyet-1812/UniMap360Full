@@ -18,24 +18,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function showSkeleton() {
         var gridContainer = document.getElementById("grid-items-list");
-        gridContainer.innerHTML = "";
+        gridContainer.innerHTML = `
+            <div class="text-center py-5 w-100" style="grid-column: 1 / -1;">
+                <div class="spinner-border" style="color: var(--color-primary) !important;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted fw-bold">Đang tải bảng tin...</p>
+            </div>
+        `;
 
         var paginationContainer = document.getElementById("grid-pagination-container");
         if (paginationContainer) paginationContainer.innerHTML = "";
-
-        for (var i = 0; i < 8; i++) {
-            gridContainer.insertAdjacentHTML(
-                "beforeend",
-                `
-                <div class="skeleton-card">
-                    <div class="skeleton-box skeleton-img"></div>
-                    <div class="skeleton-box skeleton-title mt-2"></div>
-                    <div class="skeleton-box skeleton-text"></div>
-                    <div class="skeleton-box skeleton-text-short mb-2"></div>
-                </div>
-            `
-            );
-        }
     }
 
     function renderEmptyState(isError) {
