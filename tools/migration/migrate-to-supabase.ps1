@@ -1,5 +1,5 @@
 # Script to apply migrations to Supabase PostgreSQL
-$env:ConnectionStrings__DefaultConnection = "Host=aws-1-ap-southeast-1.pooler.supabase.com;Port=6543;Database=postgres;Username=postgres.tnbkkezvvuecvmwcmknq;Password=tranquyet1812;SSL Mode=Require;Trust Server Certificate=true;Timeout=600;Command Timeout=600;Pooling=false;"
+$env:ConnectionStrings__DefaultConnection = "<YOUR_SUPABASE_CONNECTION_STRING>"
 $env:Database__Provider = "PostgreSql"
 
 Write-Host "== Applying UniMap360 Migrations to Supabase ==" -ForegroundColor Cyan
