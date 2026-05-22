@@ -82,6 +82,19 @@ namespace UniMap360.Controllers
 
         public IActionResult ManageRoommates()
         {
+            var isAuthenticated = User.Identity?.IsAuthenticated == true;
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value 
+                       ?? User.FindFirst("role")?.Value;
+
+            if (!isAuthenticated)
+            {
+                return RedirectToAction("Auth", "Home");
+            }
+            if (string.IsNullOrEmpty(role) || !role.Equals("Student", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
             ViewData["ActivePage"] = "manageroommates";
             return View();
         }
@@ -118,6 +131,19 @@ namespace UniMap360.Controllers
 
         public IActionResult Roommates()
         {
+            var isAuthenticated = User.Identity?.IsAuthenticated == true;
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value 
+                       ?? User.FindFirst("role")?.Value;
+
+            if (!isAuthenticated)
+            {
+                return RedirectToAction("Auth", "Home");
+            }
+            if (string.IsNullOrEmpty(role) || !role.Equals("Student", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
             ViewData["ActivePage"] = "roommates";
             return View();
         }

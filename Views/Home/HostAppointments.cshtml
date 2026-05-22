@@ -320,6 +320,14 @@
                           `
                         : '<span class="small text-muted">Yêu cầu đã được xử lý.</span>';
 
+                    const chatButton = item.studentAccountId
+                        ? `
+                            <button class="btn btn-outline-primary btn-sm js-chat-btn" data-account-id="${item.studentAccountId}" data-name="${escapeHtml(item.studentName || '')}">
+                                <i class="fas fa-comment-alt me-1"></i>Nhắn tin
+                            </button>
+                          `
+                        : '';
+
                     return `
                         <div class="appointment-card">
                             <div class="appointment-card-top">
@@ -355,7 +363,10 @@
                                     <div class="value">${formatDateTime(item.suggestedAt)}</div>
                                 </div>
                             </div>
-                            <div class="appointment-actions">${actionButtons}</div>
+                            <div class="appointment-actions">
+                                ${chatButton}
+                                ${actionButtons}
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -366,6 +377,25 @@
                         const action = button.dataset.action;
                         handleAction(appointmentId, action, button);
                     });
+                });
+
+                listWrap.querySelectorAll('.js-chat-btn').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        const accountId = Number(button.dataset.accountId);
+                        const name = button.dataset.name;
+                        openDirectChat(accountId, name);
+                    });
+                });
+            }
+
+            function openDirectChat(targetAccountId, name) {
+                const chatApi = window.UniMap360ChatWidget;
+                if (!chatApi || typeof chatApi.openDirectChat !== 'function') {
+                    alert('Không mở được hộp chat. Vui lòng tải lại trang hoặc đăng nhập lại.');
+                    return;
+                }
+                Promise.resolve(chatApi.openDirectChat(targetAccountId, name)).catch((err) => {
+                    alert(err?.message || 'Không mở được đoạn chat.');
                 });
             }
 

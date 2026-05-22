@@ -379,8 +379,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 var itemType = item.type;
                 var matchFilter = (currentFilter === 'all') || (currentFilter === itemType);
 
-                var title = itemType === 'room' ? (item.title || '') : (item.jobTitle || '');
-                var address = itemType === 'room' ? (item.address || '') : (item.companyName || '');
+                // Feed item from /api/feed is unified for both room/job:
+                // use title + address for both types (fallback to legacy fields if present).
+                var title = (item.title || item.jobTitle || '');
+                var address = (item.address || item.companyName || '');
                 var matchSearch = title.toLowerCase().includes(keyword) || address.toLowerCase().includes(keyword);
 
                 return matchFilter && matchSearch;

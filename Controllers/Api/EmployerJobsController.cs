@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 using UniMap360.Constants;
 using UniMap360.Models;
 using UniMap360.Services.Admin;
@@ -15,19 +15,23 @@ namespace UniMap360.Controllers.Api;
 public class EmployerJobsController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<EmployerJobsController> _logger;
     private readonly IManagePostsContextService _managePostsContextService;
     private readonly ILocationResolutionService _locationResolutionService;
     private readonly ICloudinaryAssetPurger _cloudinaryAssetPurger;
+    private const string MapFeedCacheKey = "GlobalMapFeed";
 
     public EmployerJobsController(
         UniMap360ProContext context,
+        IMemoryCache cache,
         ILogger<EmployerJobsController> logger,
         IManagePostsContextService managePostsContextService,
         ILocationResolutionService locationResolutionService,
         ICloudinaryAssetPurger cloudinaryAssetPurger)
     {
         _context = context;
+        _cache = cache;
         _logger = logger;
         _managePostsContextService = managePostsContextService;
         _locationResolutionService = locationResolutionService;
@@ -94,6 +98,7 @@ public class EmployerJobsController : ControllerBase
 
         _context.Jobs.Add(job);
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
 
         return Ok(new { message = "Tạo việc làm thành công.", jobId = job.JobId });
     }
@@ -123,6 +128,7 @@ public class EmployerJobsController : ControllerBase
         job.JobStatus = string.IsNullOrWhiteSpace(request.JobStatus) ? job.JobStatus : request.JobStatus.Trim();
 
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
         return Ok(new { message = "Cập nhật việc làm thành công.", jobId = job.JobId });
     }
 
@@ -147,6 +153,7 @@ public class EmployerJobsController : ControllerBase
 
         _context.Jobs.Remove(job);
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
         return Ok(new { message = "Xóa việc làm thành công.", jobId = id });
     }
 

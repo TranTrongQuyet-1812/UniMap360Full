@@ -776,21 +776,6 @@
         currentRole = (acc.role || '').toLowerCase();
         
         const btnNew = document.getElementById('btn-post-new');
-        const headerActionWrap = document.querySelector('.manage-header > div:last-child');
-        if (currentRole === 'host' && headerActionWrap) {
-            const btnRequests = document.createElement('a');
-            btnRequests.href = '/Home/HostAppointments';
-            btnRequests.className = 'btn btn-outline-secondary fw-bold me-2';
-            btnRequests.innerHTML = '<i class="fas fa-calendar-check me-1"></i> Yêu cầu xem phòng';
-            headerActionWrap.prepend(btnRequests);
-        }
-        if (currentRole === 'employer' && headerActionWrap) {
-            const btnApplications = document.createElement('a');
-            btnApplications.href = '/Home/EmployerApplications';
-            btnApplications.className = 'btn btn-outline-secondary fw-bold me-2';
-            btnApplications.innerHTML = '<i class="fas fa-file-signature me-1"></i> Hồ sơ ứng tuyển';
-            headerActionWrap.prepend(btnApplications);
-        }
         if (currentRole === 'host') {
             btnNew.href = '/Home/PostRoom';
             btnNew.style.display = 'inline-block';

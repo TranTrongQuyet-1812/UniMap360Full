@@ -237,7 +237,8 @@ public sealed class AppointmentService : IAppointmentService
                 a.SuggestedAt,
                 a.CreatedAt,
                 studentId = a.StudentId,
-                studentName = a.Student.FullName
+                studentName = a.Student.FullName,
+                studentAccountId = a.Student.AccountId
             })
             .ToListAsync(cancellationToken);
 

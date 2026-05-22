@@ -20,47 +20,11 @@
         const stopNotifications = options.stopNotifications;
 
         function ensureHostAppointmentsItem() {
-            const userMenu = document.querySelector("#nav-auth-user-item .auth-user-menu");
-            if (!userMenu) return null;
-
-            let item = document.getElementById("nav-host-appointments-link");
-            if (item) return item;
-
-            const divider = userMenu.querySelector(".dropdown-divider");
-            item = document.createElement("li");
-            item.id = "nav-host-appointments-link";
-            item.className = "d-none";
-            item.innerHTML = '<a class="dropdown-item" href="/Home/HostAppointments"><i class="fas fa-calendar-check me-2"></i>Yêu cầu xem phòng</a>';
-
-            if (divider && divider.parentElement) {
-                divider.parentElement.insertBefore(item, divider);
-            } else {
-                userMenu.appendChild(item);
-            }
-
-            return item;
+            return document.getElementById("nav-host-appointments-link");
         }
 
         function ensureEmployerApplicationsItem() {
-            const userMenu = document.querySelector("#nav-auth-user-item .auth-user-menu");
-            if (!userMenu) return null;
-
-            let item = document.getElementById("nav-employer-applications-link");
-            if (item) return item;
-
-            const divider = userMenu.querySelector(".dropdown-divider");
-            item = document.createElement("li");
-            item.id = "nav-employer-applications-link";
-            item.className = "d-none";
-            item.innerHTML = '<a class="dropdown-item" href="/Home/EmployerApplications"><i class="fas fa-file-signature me-2"></i>Hồ sơ ứng tuyển</a>';
-
-            if (divider && divider.parentElement) {
-                divider.parentElement.insertBefore(item, divider);
-            } else {
-                userMenu.appendChild(item);
-            }
-
-            return item;
+            return document.getElementById("nav-employer-applications-link");
         }
 
         function render(account) {
@@ -76,6 +40,7 @@
             const employerApplicationsLink = ensureEmployerApplicationsItem();
             const postRoomLink = document.getElementById("nav-post-room-link");
             const postJobLink = document.getElementById("nav-post-job-link");
+            const roommatesLink = document.getElementById("nav-roommates-link");
             const notificationItems = document.querySelectorAll(".nav-notification-wrapper");
 
             if (!loginItem || !userItem || !userName || !userRole) return;
@@ -86,6 +51,7 @@
             if (adminLink) adminLink.classList.add("d-none");
             if (postRoomLink) postRoomLink.classList.add("d-none");
             if (postJobLink) postJobLink.classList.add("d-none");
+            if (roommatesLink) roommatesLink.classList.add("d-none");
             notificationItems.forEach(item => item.classList.add("d-none"));
 
             if (!account || !account.email) {
@@ -115,6 +81,9 @@
             var role = (account.role || "").toLowerCase();
             if (role === "admin" && adminLink) {
                 adminLink.classList.remove("d-none");
+            }
+            if (role === "student" && roommatesLink) {
+                roommatesLink.classList.remove("d-none");
             }
             if (role === "host" || role === "employer" || role === "student") {
                 if (manageLink) {

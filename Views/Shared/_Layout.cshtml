@@ -99,7 +99,7 @@
                         <li class="nav-item">
                             <a class="nav-link px-3 rounded-pill transition-all @(((ViewData["ActivePage"] as string)?.ToLower() == "listing") ? "bg-light text-maroon fw-bold" : "")" asp-area="" asp-controller="Home" asp-action="Listing"><i class="fas fa-layer-group me-1"></i> Khám phá</a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item d-none" id="nav-roommates-link">
                             <a class="nav-link px-3 rounded-pill transition-all @(((ViewData["ActivePage"] as string)?.ToLower() == "roommates") ? "bg-light text-maroon fw-bold" : "")" asp-area="" asp-controller="Home" asp-action="Roommates"><i class="fa-solid fa-users me-1"></i> Ở ghép</a>
                         </li>
                     </ul>
@@ -279,6 +279,8 @@
                                 
                                 <li class="d-none" id="nav-admin-link"><a class="dropdown-item" asp-area="" asp-controller="Admin" asp-action="Index"><i class="fas fa-user-shield text-danger"></i><span>Quản trị hệ thống</span></a></li>
                                 <li class="d-none" id="nav-manage-link"><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Manage"><i class="fas fa-layer-group text-info"></i><span>Quản lý bài đăng</span></a></li>
+                                <li class="d-none" id="nav-host-appointments-link"><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="HostAppointments"><i class="fas fa-calendar-check text-primary"></i><span>Yêu cầu xem phòng</span></a></li>
+                                <li class="d-none" id="nav-employer-applications-link"><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="EmployerApplications"><i class="fas fa-file-signature text-success"></i><span>Hồ sơ ứng tuyển</span></a></li>
                                 <li class="d-none" id="nav-post-room-link"><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="PostRoom"><i class="fas fa-plus-circle text-warning"></i><span>Đăng phòng trọ</span></a></li>
                                 <li class="d-none" id="nav-post-job-link"><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="PostJob"><i class="fas fa-briefcase text-secondary"></i><span>Đăng việc làm</span></a></li>
                                 

@@ -213,6 +213,7 @@ public sealed class JobApplicationService : IJobApplicationService
                 a.Status,
                 studentId = a.StudentId,
                 studentName = a.Student.FullName,
+                studentAccountId = a.Student.AccountId,
                 studentEmail = a.Student.Account.Email,
                 studentUniversity = a.Student.University,
                 studentMajor = a.Student.Major,
