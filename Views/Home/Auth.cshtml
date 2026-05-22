@@ -1068,8 +1068,7 @@
                             showToast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
                             fpModal.hide();
                             // Chuyển form về trạng thái đăng nhập
-                            const loginTab = document.querySelector('.auth-tab[data-target="loginForm"]');
-                            if(loginTab) loginTab.click();
+                            toggleAuth('login');
                         }
                     } catch (err) {
                         showToast(err.message || 'Lỗi kết nối', 'error');
