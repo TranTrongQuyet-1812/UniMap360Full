@@ -52,7 +52,8 @@ public class EmailService : IEmailService
                 };
                 mailMessage.To.Add(toEmail);
 
-                await client.SendMailAsync(mailMessage);
+                // Thiết lập timeout 5 giây để tránh bị treo lâu khi nhà mạng/cloud chặn cổng 587
+                await client.SendMailAsync(mailMessage).WaitAsync(TimeSpan.FromSeconds(5));
                 return; // SMTP Success!
             }
             catch (Exception ex)
