@@ -131,6 +131,102 @@
         opacity: 0.7;
     }
 
+    .btn-change-password {
+        width: 100%;
+        padding: 12px;
+        background: #fff;
+        color: var(--color-primary);
+        border: 2px solid rgba(120, 1, 21, 0.25);
+        border-radius: 10px;
+        font-size: 0.98rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-change-password:hover {
+        background: rgba(120, 1, 21, 0.06);
+        border-color: var(--color-primary);
+        transform: translateY(-1px);
+    }
+
+    .profile-password-modal .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.14);
+    }
+
+    .profile-password-modal .modal-title {
+        color: var(--color-primary);
+        font-weight: 800;
+    }
+
+    .profile-password-modal .profile-auth-input-group {
+        margin-bottom: 14px;
+        position: relative;
+    }
+
+    .profile-password-modal .profile-auth-input-group i.field-icon {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+        color: #7a7a7a;
+    }
+
+    .profile-password-modal .profile-auth-input {
+        width: 100%;
+        padding: 12px 14px 12px 42px;
+        border: 2px solid var(--color-border);
+        border-radius: 10px;
+        outline: none;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        font-size: 0.95rem;
+        background: #fff;
+    }
+
+    .profile-password-modal .profile-auth-input:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(120, 1, 21, 0.1);
+    }
+
+    .profile-password-modal .btn-profile-primary {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        color: #fff;
+        padding: 12px;
+        background: linear-gradient(95deg, #780115, #b01b2f);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .profile-password-modal .btn-profile-primary:hover:not(:disabled) {
+        opacity: 0.92;
+        transform: translateY(-1px);
+    }
+
+    .profile-password-modal .btn-profile-primary:disabled {
+        opacity: 0.75;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .profile-password-modal .btn-profile-secondary {
+        width: 100%;
+        border: 1px solid #d8d8d8;
+        border-radius: 10px;
+        padding: 11px;
+        background: #fff;
+        font-weight: 700;
+        color: #444;
+    }
+
     /* Role Badges */
     .role-badge {
         display: inline-block;
@@ -164,6 +260,11 @@
         .btn-save-profile {
             padding: 12px;
             font-size: 1rem;
+        }
+
+        .btn-change-password {
+            padding: 11px;
+            font-size: 0.95rem;
         }
     }
 </style>
@@ -201,11 +302,52 @@
                 <button type="submit" class="btn-save-profile" id="btnSaveProfile" disabled>
                     <span>Lưu thay đổi</span>
                 </button>
+                <button type="button" class="btn-change-password" id="btnOpenProfilePasswordModal">
+                    <i class="fas fa-key"></i>
+                    <span>Đổi mật khẩu</span>
+                </button>
             </form>
         </div>
     </div>
 </div>
 
+<div id="profileForgotPasswordModal" class="modal fade profile-password-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="fas fa-key me-2"></i>Đổi mật khẩu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div id="ppStep1" class="px-2 pb-3">
+                    <p class="text-muted mb-3 text-center">Nhận mã OTP tới Gmail của bạn để xác minh đổi mật khẩu.</p>
+                    <div class="profile-auth-input-group">
+                        <i class="fas fa-envelope field-icon"></i>
+                        <input type="email" id="ppEmail" class="profile-auth-input" placeholder="Nhập địa chỉ Email" required />
+                    </div>
+                    <button id="btnPpSendOtp" type="button" class="btn-profile-primary mt-2">Nhận mã OTP</button>
+                </div>
+
+                <div id="ppStep2" class="px-2 pb-3" style="display: none;">
+                    <p class="text-muted mb-3 text-center">Nhập mã OTP và mật khẩu mới.</p>
+                    <div class="profile-auth-input-group">
+                        <i class="fas fa-shield-alt field-icon"></i>
+                        <input type="text" id="ppOtp" class="profile-auth-input" placeholder="Nhập mã OTP (6 số)" maxlength="6" required />
+                    </div>
+                    <div class="profile-auth-input-group">
+                        <i class="fas fa-lock field-icon"></i>
+                        <input type="password" id="ppNewPassword" class="profile-auth-input" placeholder="Nhập mật khẩu mới" required />
+                    </div>
+                    <button id="btnPpResetPassword" type="button" class="btn-profile-primary mb-2">Đặt lại mật khẩu</button>
+                    <button id="btnPpResendOtp" type="button" class="btn-profile-secondary mb-2">
+                        <i class="fas fa-rotate-right me-2"></i>Gửi lại OTP
+                    </button>
+                    <button id="btnPpBack" type="button" class="btn-profile-secondary"><i class="fas fa-arrow-left me-2"></i>Quay lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
 <script>
@@ -501,6 +643,166 @@
         }
     });
 
+    const profileForgotModalElement = document.getElementById('profileForgotPasswordModal');
+    const btnOpenProfilePasswordModal = document.getElementById('btnOpenProfilePasswordModal');
+    const btnPpSendOtp = document.getElementById('btnPpSendOtp');
+    const btnPpResetPassword = document.getElementById('btnPpResetPassword');
+    const btnPpResendOtp = document.getElementById('btnPpResendOtp');
+    const btnPpBack = document.getElementById('btnPpBack');
+    const ppStep1 = document.getElementById('ppStep1');
+    const ppStep2 = document.getElementById('ppStep2');
+    const ppEmail = document.getElementById('ppEmail');
+    const ppOtp = document.getElementById('ppOtp');
+    const ppNewPassword = document.getElementById('ppNewPassword');
+
+    const profileForgotModal = profileForgotModalElement
+        ? new bootstrap.Modal(profileForgotModalElement)
+        : null;
+
+    function resetProfilePasswordModal() {
+        if (ppStep1) ppStep1.style.display = 'block';
+        if (ppStep2) ppStep2.style.display = 'none';
+        if (ppOtp) ppOtp.value = '';
+        if (ppNewPassword) ppNewPassword.value = '';
+        if (btnPpSendOtp) {
+            btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+            btnPpSendOtp.disabled = false;
+        }
+        if (btnPpResetPassword) {
+            btnPpResetPassword.innerHTML = 'Đặt lại mật khẩu';
+            btnPpResetPassword.disabled = false;
+        }
+        if (btnPpResendOtp) {
+            btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+            btnPpResendOtp.disabled = false;
+        }
+    }
+
+    async function postJsonApi(url, payload) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        let data = null;
+        try {
+            data = await response.json();
+        } catch {
+            data = null;
+        }
+
+        if (!response.ok) {
+            const message = data?.error?.message || data?.message || data?.Message || 'Yêu cầu thất bại.';
+            throw new Error(message);
+        }
+
+        return data?.data || data || {};
+    }
+
+    if (btnOpenProfilePasswordModal) {
+        btnOpenProfilePasswordModal.addEventListener('click', function () {
+            const currentEmail = document.getElementById('inputEmail')?.value?.trim();
+            if (ppEmail && currentEmail) ppEmail.value = currentEmail;
+            resetProfilePasswordModal();
+            profileForgotModal?.show();
+        });
+    }
+
+    if (profileForgotModalElement) {
+        profileForgotModalElement.addEventListener('hidden.bs.modal', function () {
+            resetProfilePasswordModal();
+        });
+    }
+
+    if (btnPpSendOtp) {
+        btnPpSendOtp.addEventListener('click', async function () {
+            const email = ppEmail?.value?.trim();
+            if (!email) {
+                showToast('Vui lòng nhập Email.', 'warning');
+                return;
+            }
+
+            btnPpSendOtp.disabled = true;
+            btnPpSendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+
+            try {
+                await postJsonApi('/api/auth/forgot-password', { email });
+                if (ppStep1) ppStep1.style.display = 'none';
+                if (ppStep2) ppStep2.style.display = 'block';
+                showToast('Mã OTP đã được gửi đến Email của bạn.', 'success');
+            } catch (err) {
+                showToast(err.message || 'Không thể gửi OTP.', 'error');
+                btnPpSendOtp.disabled = false;
+                btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+            }
+        });
+    }
+
+    if (btnPpResendOtp) {
+        btnPpResendOtp.addEventListener('click', async function () {
+            const email = ppEmail?.value?.trim();
+            if (!email) {
+                showToast('Vui lòng nhập Email.', 'warning');
+                return;
+            }
+
+            btnPpResendOtp.disabled = true;
+            btnPpResendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+
+            try {
+                await postJsonApi('/api/auth/forgot-password', { email });
+                showToast('Đã gửi lại OTP. Vui lòng kiểm tra Email.', 'success');
+            } catch (err) {
+                showToast(err.message || 'Không thể gửi lại OTP.', 'error');
+            } finally {
+                btnPpResendOtp.disabled = false;
+                btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+            }
+        });
+    }
+
+    if (btnPpBack) {
+        btnPpBack.addEventListener('click', function () {
+            if (ppStep1) ppStep1.style.display = 'block';
+            if (ppStep2) ppStep2.style.display = 'none';
+            if (btnPpSendOtp) {
+                btnPpSendOtp.disabled = false;
+                btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+            }
+        });
+    }
+
+    if (btnPpResetPassword) {
+        btnPpResetPassword.addEventListener('click', async function () {
+            const email = ppEmail?.value?.trim();
+            const otp = ppOtp?.value?.trim();
+            const newPassword = ppNewPassword?.value || '';
+
+            if (!email || !otp || !newPassword) {
+                showToast('Vui lòng nhập đủ Email, OTP và mật khẩu mới.', 'warning');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showToast('Mật khẩu mới phải có ít nhất 6 ký tự.', 'warning');
+                return;
+            }
+
+            btnPpResetPassword.disabled = true;
+            btnPpResetPassword.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+            try {
+                await postJsonApi('/api/auth/reset-password', { email, otp, newPassword });
+                showToast('Đổi mật khẩu thành công!', 'success');
+                profileForgotModal?.hide();
+            } catch (err) {
+                showToast(err.message || 'Đổi mật khẩu thất bại.', 'error');
+                btnPpResetPassword.disabled = false;
+                btnPpResetPassword.innerHTML = 'Đặt lại mật khẩu';
+            }
+        });
+    }
 
 </script>
 }

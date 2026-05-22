@@ -343,6 +343,158 @@
             margin-bottom: 25px;
         }
     }
+    /* Google Role Modal - UniMap360 Burgundy/Gold */
+    .google-role-modal .modal-content {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        background:
+            radial-gradient(120% 120% at 10% 0%, rgba(247, 182, 56, 0.18) 0%, rgba(247, 182, 56, 0) 45%),
+            linear-gradient(180deg, #fffdf8 0%, #ffffff 100%);
+        box-shadow: 0 26px 52px rgba(120, 1, 21, 0.25);
+    }
+
+    .google-role-modal .modal-header {
+        border-bottom: none;
+        padding: 18px 20px 10px;
+    }
+
+    .google-role-modal .modal-body {
+        padding: 0 20px 20px;
+    }
+
+    #btnCompleteGoogleLogin {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #ffffff;
+        background: linear-gradient(95deg, #780115 0%, #9f0f2d 62%, #c57f14 100%);
+        box-shadow: 0 10px 24px rgba(120, 1, 21, 0.3);
+        transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    }
+
+    #btnCompleteGoogleLogin:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(120, 1, 21, 0.34);
+        filter: saturate(1.08);
+    }
+
+    #btnCompleteGoogleLogin:disabled {
+        opacity: 0.72;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+    /* Backward-compatible hooks for current Google role modal markup */
+    .google-role-modal .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-weight: 800;
+        color: #780115 !important;
+        letter-spacing: 0.2px;
+    }
+
+    .google-role-modal .modal-title i {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, rgba(120, 1, 21, 0.1), rgba(247, 182, 56, 0.22));
+        color: #780115;
+        margin: 0 !important;
+        border: 1px solid rgba(120, 1, 21, 0.12);
+    }
+
+    .google-role-modal .text-muted.mb-4 {
+        margin-bottom: 14px !important;
+        color: #5f6b7a !important;
+        font-size: 0.96rem;
+        line-height: 1.5;
+    }
+
+    .google-role-modal .auth-role-group {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px !important;
+    }
+
+    .google-role-modal .auth-role-option {
+        position: relative;
+        margin: 0;
+    }
+
+    .google-role-modal .auth-role-option input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .google-role-modal .auth-role-option span {
+        border: 1px solid #eadfcb;
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        cursor: pointer;
+        min-height: 104px;
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .google-role-modal .auth-role-option span i {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #780115;
+        background: rgba(120, 1, 21, 0.08);
+        font-size: 1rem;
+        transition: transform 180ms ease, background-color 180ms ease, color 180ms ease;
+    }
+
+    .google-role-modal .auth-role-option input:checked + span {
+        border-color: #780115;
+        background: linear-gradient(180deg, #fff6e6 0%, #ffffff 100%);
+        box-shadow: 0 10px 22px rgba(120, 1, 21, 0.18);
+        transform: translateY(-1px);
+    }
+
+    .google-role-modal .auth-role-option input:checked + span i {
+        background: linear-gradient(145deg, #780115, #a30b27);
+        color: #f7b638;
+        transform: scale(1.03);
+    }
+
+    @@media (max-width: 575.98px) {
+        .google-role-modal .auth-role-group {
+            grid-template-columns: 1fr;
+        }
+
+        .google-role-modal .auth-role-option span {
+            min-height: 84px;
+            flex-direction: row;
+            justify-content: flex-start;
+            text-align: left;
+            gap: 10px;
+        }
+    }
 </style>
 
 <div class="auth-page-wrapper">
@@ -483,14 +635,14 @@
 </div>
 
 <!-- Modal chọn Role cho Google Sign-In -->
-<div id="googleRoleModal" class="modal fade" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+<div id="googleRoleModal" class="modal fade google-role-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-            <div class="modal-header border-0 pb-0">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title fw-bold" style="color: var(--color-primary);"><i class="fab fa-google me-2"></i>Hoàn tất đăng ký</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-center pt-2">
+            <div class="modal-body">
                 <p class="text-muted mb-4">Chào mừng bạn mới! Vui lòng chọn vai trò để hoàn tất việc đăng ký tài khoản với Google.</p>
                 
                 <div class="auth-role-group mb-4" style="justify-content: center; gap: 10px;">
@@ -547,7 +699,10 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-                    <button id="btnFpResetPassword" class="auth-submit-btn w-100 mb-3" style="border-radius: 12px; font-size: 1rem; padding: 14px;">Đặt lại mật khẩu</button>
+                    <button id="btnFpResetPassword" class="auth-submit-btn w-100 mb-2" style="border-radius: 12px; font-size: 1rem; padding: 14px;">Đặt lại mật khẩu</button>
+                    <button id="btnFpResendOtp" type="button" class="btn btn-outline-secondary w-100 fw-bold mb-2" style="border-radius: 12px; padding: 12px;">
+                        <i class="fas fa-rotate-right me-2"></i> Gửi lại OTP
+                    </button>
                     <button id="btnFpBack" class="btn btn-light w-100 fw-bold" style="border-radius: 12px; color: #555; padding: 12px;"><i class="fas fa-arrow-left me-2"></i> Quay lại</button>
                 </div>
             </div>
@@ -943,6 +1098,19 @@
 
             // Xử lý nút hoàn tất đăng ký với Google Role
             const btnCompleteGoogleLogin = document.getElementById('btnCompleteGoogleLogin');
+            const googleRoleModalElement = document.getElementById('googleRoleModal');
+            const defaultGoogleRoleBtnHtml = 'Hoàn tất <i class="fas fa-arrow-right ms-2"></i>';
+            if (googleRoleModalElement) {
+                googleRoleModalElement.addEventListener('hidden.bs.modal', function () {
+                    const studentRoleInput = document.querySelector('input[name="GoogleRole"][value="Student"]');
+                    if (studentRoleInput) studentRoleInput.checked = true;
+                    if (btnCompleteGoogleLogin) {
+                        btnCompleteGoogleLogin.disabled = false;
+                        btnCompleteGoogleLogin.innerHTML = defaultGoogleRoleBtnHtml;
+                    }
+                });
+            }
+
             if (btnCompleteGoogleLogin) {
                 btnCompleteGoogleLogin.addEventListener('click', async function() {
                     if (!window.pendingGoogleCredential) return;
@@ -971,12 +1139,12 @@
                             setTimeout(() => redirectByRole(res.role), 1000);
                         } else {
                             showToast('Có lỗi xảy ra, vui lòng thử lại.', 'error');
-                            btn.innerHTML = 'Hoàn tất <i class="fas fa-arrow-right ms-2"></i>';
+                            btn.innerHTML = defaultGoogleRoleBtnHtml;
                             btn.disabled = false;
                         }
                     } catch (err) {
                         showToast(err.message || 'Lỗi kết nối. Vui lòng thử lại.', 'error');
-                        btn.innerHTML = 'Hoàn tất <i class="fas fa-arrow-right ms-2"></i>';
+                        btn.innerHTML = defaultGoogleRoleBtnHtml;
                         btn.disabled = false;
                     }
                 });
@@ -1003,41 +1171,52 @@
             });
 
             const btnFpSendOtp = document.getElementById('btnFpSendOtp');
+            const btnFpResendOtp = document.getElementById('btnFpResendOtp');
+            const fpOtpMessage = document.getElementById('fpOtpMessage');
+
+            async function sendForgotOtp(isResend = false) {
+                const email = document.getElementById('fpEmail').value.trim();
+                if (!email) {
+                    showToast('Vui lòng nhập Email', 'warning');
+                    return;
+                }
+
+                const actionBtn = isResend ? btnFpResendOtp : btnFpSendOtp;
+                if (!actionBtn) return;
+
+                const originalHtml = actionBtn.innerHTML;
+                actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+                actionBtn.disabled = true;
+
+                try {
+                    const res = await postJson('/api/auth/forgot-password', { email });
+                    if (res && res.message) {
+                        document.getElementById('fpStep1').style.display = 'none';
+                        document.getElementById('fpStep2').style.display = 'block';
+
+                        if (fpOtpMessage) {
+                            fpOtpMessage.innerHTML = 'Vui lòng nhập mã xác thực gồm 6 chữ số đã được gửi tới Email của bạn. Mã có hiệu lực 2 phút.';
+                        }
+
+                        showToast(isResend ? 'Đã gửi lại OTP. Vui lòng kiểm tra Email.' : 'Mã OTP đã được gửi đến Email của bạn.', 'success');
+                    }
+                } catch (err) {
+                    showToast(err.message || 'Lỗi gửi yêu cầu', 'error');
+                } finally {
+                    actionBtn.innerHTML = originalHtml;
+                    actionBtn.disabled = false;
+                }
+            }
+
             if (btnFpSendOtp) {
                 btnFpSendOtp.addEventListener('click', async function() {
-                    const email = document.getElementById('fpEmail').value.trim();
-                    if (!email) { showToast('Vui lòng nhập Email', 'warning'); return; }
-                    
-                    btnFpSendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
-                    btnFpSendOtp.disabled = true;
+                    await sendForgotOtp(false);
+                });
+            }
 
-                    try {
-                        const res = await postJson('/api/auth/forgot-password', { email });
-                        // Trong môi trường DEV, Backend trả về trực tiếp OTP trong payload.otp
-                        if (res && res.message) {
-                            document.getElementById('fpStep1').style.display = 'none';
-                            document.getElementById('fpStep2').style.display = 'block';
-                            
-                            // Hiển thị thông báo (Thực tế không hiện mã OTP nữa)
-                            if (window.Swal) {
-                                Swal.fire({
-                                    title: 'Đã gửi mã xác thực',
-                                    text: 'Vui lòng kiểm tra hòm thư Email của bạn để lấy mã OTP.',
-                                    icon: 'success',
-                                    confirmButtonText: 'Đóng',
-                                    confirmButtonColor: '#780115'
-                                });
-                            } else {
-                                showToast('Mã OTP đã được gửi đến Email của bạn.', 'success');
-                            }
-                            document.getElementById('fpOtpMessage').innerHTML = `Vui lòng nhập mã xác thực gồm 6 chữ số đã được gửi tới hòm thư của bạn.`;
-                        }
-                    } catch (err) {
-                        showToast(err.message || 'Lỗi gửi yêu cầu', 'error');
-                    } finally {
-                        btnFpSendOtp.innerHTML = 'Nhận mã OTP';
-                        btnFpSendOtp.disabled = false;
-                    }
+            if (btnFpResendOtp) {
+                btnFpResendOtp.addEventListener('click', async function () {
+                    await sendForgotOtp(true);
                 });
             }
 

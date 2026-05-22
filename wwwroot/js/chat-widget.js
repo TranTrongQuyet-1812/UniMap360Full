@@ -22,6 +22,10 @@
         return window.UniMap360AuthStore?.getStoredAccount?.() || null;
     }
 
+    function isAuthenticated() {
+        return !!getToken();
+    }
+
     function withNoCacheUrl(url) {
         const separator = url.includes("?") ? "&" : "?";
         return `${url}${separator}_chatTs=${Date.now()}`;
@@ -184,7 +188,30 @@
     }
 
     function togglePanel() {
+        if (!isAuthenticated()) return;
         setPanelOpen(!state.open);
+    }
+
+    function updateWidgetVisibility() {
+        const root = document.getElementById("um-chat-widget-root");
+        if (!root) return;
+
+        const authenticated = isAuthenticated();
+        root.style.display = authenticated ? "" : "none";
+
+        if (!authenticated) {
+            setPanelOpen(false);
+            stopConversationPolling();
+            stopMessagePolling();
+            state.activeConversationId = null;
+            state.conversations = [];
+            state.messages = [];
+            updateLauncherBadge(0);
+            return;
+        }
+
+        loadConversations(true);
+        if (!state.conversationPollTimer) startPolling();
     }
 
     function hasConversationListChanged(oldList, newList) {
@@ -543,11 +570,11 @@
     function boot() {
         ensureWidget();
         applyViewMode();
-        loadConversations(true);
-        startPolling();
+        updateWidgetVisibility();
 
         window.UniMap360ChatWidget = {
             openPanel: function () {
+                if (!isAuthenticated()) return;
                 setPanelOpen(true);
             },
             closePanel: function () {
@@ -557,6 +584,7 @@
         };
 
         document.addEventListener("visibilitychange", function () {
+            if (!isAuthenticated()) return;
             if (document.visibilityState === "visible") {
                 loadConversations(true);
                 if (state.open && state.activeConversationId) {
@@ -564,6 +592,15 @@
                     markConversationRead();
                 }
             }
+        });
+
+        window.addEventListener("unimap360:auth-changed", function () {
+            updateWidgetVisibility();
+        });
+
+        window.addEventListener("storage", function (event) {
+            if (!event || (event.key !== "unimap360.accessToken" && event.key !== "unimap360.account")) return;
+            updateWidgetVisibility();
         });
     }
 

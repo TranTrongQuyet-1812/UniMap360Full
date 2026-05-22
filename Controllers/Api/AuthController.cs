@@ -378,7 +378,7 @@ public class AuthController : ControllerBase
         var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 
         // Lưu OTP vào MemoryCache với thời hạn 5 phút
-        _cache.Set($"OTP_{email}", otp, TimeSpan.FromMinutes(5));
+        _cache.Set($"OTP_{email}", otp, TimeSpan.FromMinutes(2));
 
         try
         {
@@ -392,7 +392,7 @@ public class AuthController : ControllerBase
                     <div style='background: #f8f9fa; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #780115; border-radius: 5px;'>
                         {otp}
                     </div>
-                    <p style='margin-top: 20px;'>Mã này có hiệu lực trong vòng <b>5 phút</b>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                    <p style='margin-top: 20px;'>Mã này có hiệu lực trong vòng <b>2 phút</b>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
                     <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'>
                     <p style='font-size: 12px; color: #999;'>Đây là email tự động, vui lòng không phản hồi.</p>
                 </div>";
@@ -592,4 +592,4 @@ public class AuthController : ControllerBase
         };
         Response.Cookies.Append("unimap360.accessToken", token, cookieOptions);
     }
-}
+}
