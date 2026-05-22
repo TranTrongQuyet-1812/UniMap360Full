@@ -57,11 +57,11 @@
 /* 2. CHATBOT LAUNCHER BUBBLE */
 .ai-chat-launcher {
     position: fixed;
-    right: 22px;
-    bottom: 90px; /* Định vị cao hơn nút chat thông thường (nằm ở 18px) */
+    right: 18px; /* Đã căn chỉnh thẳng hàng với nút hỗ trợ (18px) */
+    bottom: 90px; /* Định vị cao hơn nút chat thông thường */
     z-index: 1950;
-    width: 60px;
-    height: 60px;
+    width: 58px; /* Cùng kích thước với nút hỗ trợ */
+    height: 58px;
     border: none;
     border-radius: 50%;
     background: linear-gradient(135deg, #780115, #b0002a, #4f46e5); /* Đỏ đô - Indigo */
@@ -70,7 +70,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -90,8 +90,8 @@
 /* 3. GLASSMORPHISM AI CHAT PANEL */
 .ai-chat-panel {
     position: fixed;
-    right: 22px;
-    bottom: 165px;
+    right: 18px; /* Căn chỉnh mép phải thẳng hàng với bong bóng chat (18px) */
+    bottom: 160px; /* Nằm ngay phía trên nút bấm AI với khoảng cách 12px hợp lý */
     z-index: 1950;
     width: min(420px, calc(100vw - 32px));
     height: min(580px, calc(100dvh - 195px));

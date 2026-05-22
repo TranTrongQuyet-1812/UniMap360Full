@@ -153,6 +153,12 @@
             showListView();
             loadConversations(true);
             startPolling();
+            
+            // Tự động đóng panel AI Chat để tránh chồng chéo giao diện
+            const aiPanel = document.getElementById("ai-chat-panel");
+            if (aiPanel && aiPanel.classList.contains("open")) {
+                aiPanel.classList.remove("open");
+            }
         } else {
             stopMessagePolling();
         }
@@ -543,6 +549,9 @@
         window.UniMap360ChatWidget = {
             openPanel: function () {
                 setPanelOpen(true);
+            },
+            closePanel: function () {
+                setPanelOpen(false);
             },
             openDirectChat: openDirectChat
         };

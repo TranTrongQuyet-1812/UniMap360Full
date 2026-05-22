@@ -131,6 +131,16 @@
         if (open) {
             chatPanel.classList.add("open");
 
+            // Tự động đóng panel hỗ trợ nếu đang mở để tránh chồng chéo
+            if (window.UniMap360ChatWidget && typeof window.UniMap360ChatWidget.closePanel === "function") {
+                window.UniMap360ChatWidget.closePanel();
+            } else {
+                const supportPanel = document.getElementById("um-chat-panel");
+                if (supportPanel && supportPanel.classList.contains("open")) {
+                    supportPanel.classList.remove("open");
+                }
+            }
+
             // Nếu click mở panel nhưng chưa có tọa độ trong state, thử load từ localStorage
             if (chatState.userLat === null) {
                 const cached = localStorage.getItem("unimap360.userCoords");

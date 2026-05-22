@@ -276,13 +276,25 @@ namespace UniMap360.Controllers.Api
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromSeconds(5); // Shorter timeout for much snappier UX fallback
+                client.Timeout = TimeSpan.FromSeconds(15); // Increased timeout to 15 seconds to allow Cloudflare Worker AI enough time for inference
 
-                // Ép buộc AI chỉ trả lời trong phạm vi dự án
-                string strictPrompt = $"Chỉ đóng vai là Trợ lý bản đồ UniMap360. Tuyệt đối KHÔNG trả lời kiến thức chung (như code, toán học, lịch sử...). Nếu người dùng hỏi ngoài lề, hãy trả lời: 'Xin lỗi, tôi chỉ hỗ trợ tìm kiếm Phòng Trọ và Việc Làm trên UniMap360.'. Câu hỏi của người dùng: {message}";
+                // Bổ sung ngữ cảnh thời gian thực tại Việt Nam để AI nhận biết thứ/ngày/giờ chính xác và trả lời bằng tiếng Việt
+                var nowVn = DateTime.UtcNow.AddHours(7);
+                var dayOfWeekVi = nowVn.DayOfWeek switch
+                {
+                    DayOfWeek.Sunday => "Chủ Nhật",
+                    DayOfWeek.Monday => "Thứ Hai",
+                    DayOfWeek.Tuesday => "Thứ Ba",
+                    DayOfWeek.Wednesday => "Thứ Tư",
+                    DayOfWeek.Thursday => "Thứ Năm",
+                    DayOfWeek.Friday => "Thứ Sáu",
+                    DayOfWeek.Saturday => "Thứ Bảy",
+                    _ => ""
+                };
+                string enrichedMessage = $"[Bối cảnh hệ thống: Hôm nay là {dayOfWeekVi}, ngày {nowVn:dd/MM/yyyy}, thời gian hiện tại ở Việt Nam là {nowVn:HH:mm}. Bạn là Trợ lý bản đồ UniMap360 AI. Vui lòng phản hồi thân thiện bằng tiếng Việt.]\nNgười dùng: {message}";
 
                 // Gửi JSON chuẩn REST API cực kỳ sạch sẽ
-                var payload = new { message = strictPrompt };
+                var payload = new { message = enrichedMessage };
                 var json = JsonSerializer.Serialize(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -301,9 +313,10 @@ namespace UniMap360.Controllers.Api
                     using var doc = JsonDocument.Parse(responseString);
                     if (doc.RootElement.TryGetProperty("response", out var respProp))
                     {
-                        return respProp.GetString() ?? "Xin lỗi, tôi gặp sự cố khi phản hồi câu hỏi của bạn.";
+                        string aiText = respProp.GetString() ?? "Xin lỗi, tôi gặp sự cố khi phản hồi câu hỏi của bạn.";
+                        return $"🤖 [AI] {aiText}";
                     }
-                    return responseString;
+                    return $"🤖 [AI] {responseString}";
                 }
             }
             catch (Exception ex)
