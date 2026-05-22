@@ -22,7 +22,6 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File("Logs/unimap360-log-.txt", rollingInterval: RollingInterval.Day)
     .CreateBootstrapLogger();
-
 try
 {
     var builder = WebApplication.CreateBuilder(args);

@@ -267,6 +267,48 @@
             font-size: 0.95rem;
         }
     }
+
+    .profile-password-modal .profile-auth-input.with-toggle {
+        padding-right: 48px;
+    }
+
+    .profile-password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 1px solid var(--color-border);
+        background: #ffffff;
+        color: var(--color-primary, #8b0000);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+        z-index: 5;
+    }
+
+    .profile-password-toggle i {
+        position: static;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin: 0;
+        font-size: 0.95rem;
+        color: inherit;
+    }
+
+    .profile-password-toggle:hover {
+        color: #ffffff;
+        background: var(--color-primary, #8b0000);
+        border-color: var(--color-primary, #8b0000);
+        box-shadow: 0 4px 10px rgba(128, 0, 0, 0.25);
+    }
 </style>
 
 <div class="profile-page-wrapper">
@@ -330,13 +372,21 @@
 
                 <div id="ppStep2" class="px-2 pb-3" style="display: none;">
                     <p class="text-muted mb-3 text-center">Nhập mã OTP và mật khẩu mới.</p>
+                    
+                    <!-- Dummy inputs to prevent browser autofill -->
+                    <input type="text" name="prevent_autofill_username_profile" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" tabindex="-1" />
+                    <input type="password" name="prevent_autofill_password_profile" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" tabindex="-1" autocomplete="new-password" />
+
                     <div class="profile-auth-input-group">
                         <i class="fas fa-shield-alt field-icon"></i>
-                        <input type="text" id="ppOtp" class="profile-auth-input" placeholder="Nhập mã OTP (6 số)" maxlength="6" required />
+                        <input type="text" id="ppOtp" class="profile-auth-input" placeholder="Nhập mã OTP (6 số)" maxlength="6" required autocomplete="off" />
                     </div>
                     <div class="profile-auth-input-group">
                         <i class="fas fa-lock field-icon"></i>
-                        <input type="password" id="ppNewPassword" class="profile-auth-input" placeholder="Nhập mật khẩu mới" required />
+                        <input type="password" id="ppNewPassword" class="profile-auth-input with-toggle" placeholder="Nhập mật khẩu mới" required autocomplete="new-password" />
+                        <button type="button" class="profile-password-toggle" data-target="ppNewPassword" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                     <button id="btnPpResetPassword" type="button" class="btn-profile-primary mb-2">Đặt lại mật khẩu</button>
                     <button id="btnPpResendOtp" type="button" class="btn-profile-secondary mb-2">
@@ -730,6 +780,10 @@
                 await postJsonApi('/api/auth/forgot-password', { email });
                 if (ppStep1) ppStep1.style.display = 'none';
                 if (ppStep2) ppStep2.style.display = 'block';
+                
+                // Reset input values to avoid browser autofill carrying over old values
+                if (ppOtp) ppOtp.value = '';
+                if (ppNewPassword) ppNewPassword.value = '';
                 showToast('Mã OTP đã được gửi đến Email của bạn.', 'success');
             } catch (err) {
                 showToast(err.message || 'Không thể gửi OTP.', 'error');
@@ -803,6 +857,25 @@
             }
         });
     }
+
+    // Wire up password toggles for profile modal
+    const profileToggleButtons = document.querySelectorAll('.profile-password-toggle');
+    profileToggleButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-target');
+            const input = targetId ? document.getElementById(targetId) : null;
+            const icon = button.querySelector('i');
+            if (!input || !icon) return;
+
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            icon.classList.toggle('fa-eye', !isHidden);
+            icon.classList.toggle('fa-eye-slash', isHidden);
+            const label = isHidden ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label);
+        });
+    });
 
 </script>
 }

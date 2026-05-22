@@ -688,13 +688,18 @@
                 <!-- Bước 2: Nhập OTP và Mật khẩu mới -->
                 <div id="fpStep2" class="px-3 pb-3" style="display: none;">
                     <p class="text-muted mb-4 text-center" id="fpOtpMessage">Mã xác thực đã được gửi.</p>
+                    
+                    <!-- Dummy inputs to prevent browser autofill -->
+                    <input type="text" name="prevent_autofill_username" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" tabindex="-1" />
+                    <input type="password" name="prevent_autofill_password" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" tabindex="-1" autocomplete="new-password" />
+
                     <div class="auth-input-group mb-3">
                         <i class="fas fa-shield-alt"></i>
-                        <input type="text" id="fpOtp" class="auth-input" placeholder="Nhập mã OTP (6 số)" maxlength="6" required style="letter-spacing: 2px; text-align: center; font-weight: bold; font-size: 1.2rem;" />
+                        <input type="text" id="fpOtp" class="auth-input" placeholder="Nhập mã OTP (6 số)" maxlength="6" required style="letter-spacing: 2px; text-align: center; font-weight: bold; font-size: 1.2rem;" autocomplete="off" />
                     </div>
                     <div class="auth-input-group mb-4">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="fpNewPassword" class="auth-input with-toggle" placeholder="Nhập mật khẩu mới" required />
+                        <input type="password" id="fpNewPassword" class="auth-input with-toggle" placeholder="Nhập mật khẩu mới" required autocomplete="new-password" />
                         <button type="button" class="auth-password-toggle" data-target="fpNewPassword" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -1193,6 +1198,12 @@
                     if (res && res.message) {
                         document.getElementById('fpStep1').style.display = 'none';
                         document.getElementById('fpStep2').style.display = 'block';
+                        
+                        // Reset input values to avoid browser autofill carrying over old values
+                        const fpOtpInput = document.getElementById('fpOtp');
+                        const fpNewPasswordInput = document.getElementById('fpNewPassword');
+                        if (fpOtpInput) fpOtpInput.value = '';
+                        if (fpNewPasswordInput) fpNewPasswordInput.value = '';
 
                         if (fpOtpMessage) {
                             fpOtpMessage.innerHTML = 'Vui lòng nhập mã xác thực gồm 6 chữ số đã được gửi tới Email của bạn. Mã có hiệu lực 2 phút.';
