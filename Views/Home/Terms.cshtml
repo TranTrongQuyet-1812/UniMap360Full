@@ -1,0 +1,90 @@
+@{
+    ViewData["Title"] = "Điều khoản sử dụng";
+}
+
+<div class="legal-page-wrapper py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header Card -->
+                <div class="legal-header-card p-5 mb-5 rounded-5 text-white position-relative overflow-hidden shadow-lg" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">
+                    <div class="position-relative z-index-2">
+                        <h6 class="text-uppercase fw-bold opacity-75 mb-2" style="letter-spacing: 2px;">Quy định & Thỏa thuận</h6>
+                        <h1 class="display-4 fw-800 mb-4">Điều khoản sử dụng</h1>
+                        <p class="lead opacity-90 mb-0">Vui lòng đọc kỹ các điều khoản này khi sử dụng nền tảng đồ án UniMap360 của chúng tôi.</p>
+                    </div>
+                    <div class="header-decoration">
+                        <i class="fas fa-file-contract position-absolute" style="font-size: 15rem; right: -2rem; bottom: -3rem; opacity: 0.1; transform: rotate(-15deg);"></i>
+                    </div>
+                </div>
+
+                <div class="row gy-4">
+                    <!-- Sidebar Info -->
+                    <div class="col-md-4">
+                        <div class="sticky-top" style="top: 100px;">
+                            <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden">
+                                <div class="card-header bg-light border-0 py-3">
+                                    <h6 class="mb-0 fw-bold"><i class="fas fa-code me-2 text-dark"></i> Thông tin học thuật</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-1 fw-bold text-dark">Đồ án tốt nghiệp / Niên luận</p>
+                                    <p class="small text-muted mb-3">Chuyên ngành CNTT</p>
+                                    <hr>
+                                    <p class="small text-muted mb-0">Phát triển bởi:</p>
+                                    <h6 class="fw-bold text-dark">Trần Trọng Quyết</h6>
+                                    <p class="small text-muted">ĐH Lạc Hồng (LHU)</p>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 rounded-4 shadow-sm bg-dark text-white p-4">
+                                <h6 class="fw-bold mb-3">Về bản quyền</h6>
+                                <p class="small opacity-80 mb-0">Tất cả mã nguồn và thiết kế giao diện thuộc bản quyền của sinh viên thực hiện và được bảo trợ bởi Đại học Lạc Hồng.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="col-md-8">
+                        <div class="bg-white p-5 rounded-5 shadow-sm legal-content">
+                            <h4 class="fw-bold text-dark mb-4">1. Chấp nhận điều khoản</h4>
+                            <p>Bằng việc truy cập và sử dụng UniMap360, bạn đồng ý tuân thủ các quy định dưới đây. Đây là một nền tảng thử nghiệm dành cho sinh viên, do đó các chức năng có thể được cập nhật thường xuyên mà không báo trước.</p>
+
+                            <h4 class="fw-bold text-dark mt-5 mb-4">2. Quy định đăng tin</h4>
+                            <p>Người dùng (Chủ trọ, Nhà tuyển dụng, Sinh viên) khi đăng tin trên UniMap360 phải cam kết:</p>
+                            <ul>
+                                <li>Nội dung tin đăng là chính xác, không lừa đảo.</li>
+                                <li>Không đăng tải các nội dung vi phạm pháp luật, thuần phong mỹ tục.</li>
+                                <li>Không sử dụng ngôn từ gây hằn thù hoặc xúc phạm người khác.</li>
+                            </ul>
+
+                            <h4 class="fw-bold text-dark mt-5 mb-4">3. Trách nhiệm của chúng tôi</h4>
+                            <p>UniMap360 cung cấp công cụ kết nối nhưng không chịu trách nhiệm về các giao dịch dân sự phát sinh ngoài ứng dụng giữa các bên. Chúng tôi khuyến khích người dùng kiểm tra thông tin kỹ lưỡng trước khi thực hiện thanh toán hoặc ký hợp đồng.</p>
+
+                            <div class="p-4 bg-light rounded-4 mt-5">
+                                <h6 class="fw-bold"><i class="fas fa-graduation-cap me-2"></i> Tuyên bố miễn trừ trách nhiệm</h6>
+                                <p class="small mb-0">Dự án này là một bài tập học thuật. Mọi sự tương đồng với các sản phẩm thương mại khác là ngẫu nhiên hoặc được sử dụng làm tài liệu tham khảo trong quá trình học tập.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .legal-page-wrapper {
+        background-color: #fcfcfc;
+    }
+    .fw-800 { font-weight: 800; }
+    .legal-content h4 {
+        border-left: 4px solid #0f172a;
+        padding-left: 15px;
+    }
+    .legal-content p, .legal-content li {
+        line-height: 1.8;
+        color: #555;
+    }
+    .rounded-5 { border-radius: 2rem !important; }
+    .z-index-2 { z-index: 2; }
+</style>

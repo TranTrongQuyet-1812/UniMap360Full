@@ -347,37 +347,25 @@
         <!-- Left Sidebar: Filters & Nav -->
         <div class="col-lg-3 d-none d-lg-block">
             <div class="sticky-top" style="top: 100px; z-index: 10;">
-                <div class="glass-card mb-4" style="padding: 8px;">
-                    <div class="sidebar-menu-item active">
+                <div class="glass-card mb-4" id="sidebarMenu" style="padding: 8px;">
+                    <div class="sidebar-menu-item active" data-filter="all">
                         <i class="fa-solid fa-house"></i>
                         Trang Chủ Ở Ghép
                     </div>
-                    <div class="sidebar-menu-item">
+                    <div class="sidebar-menu-item" data-filter="same-gender">
                         <i class="fa-solid fa-mars-and-venus"></i>
                         Tìm Cùng Giới
                     </div>
-                    <div class="sidebar-menu-item">
+                    <div class="sidebar-menu-item" data-filter="cheap">
                         <i class="fa-solid fa-wallet"></i>
                         Giá Dưới 2 Triệu
                     </div>
-                    <div class="sidebar-menu-item">
-                        <i class="fa-solid fa-map-location-dot"></i>
-                        Gần Trường Của Tôi
+                    <div class="sidebar-menu-item" data-filter="has-media">
+                        <i class="fa-solid fa-image"></i>
+                        Bài Có Ảnh/Video
                     </div>
                 </div>
 
-                <div class="glass-card p-3">
-                    <h6 class="mb-3 fw-bold" style="color: var(--color-text-muted); font-size: 0.9rem; text-transform: uppercase;">
-                        Thói quen nổi bật
-                    </h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        <span class="post-tag">#KhongHutThuoc</span>
-                        <span class="post-tag">#SachSe</span>
-                        <span class="post-tag">#ItTuTap</span>
-                        <span class="post-tag">#NuoiMeo</span>
-                        <span class="post-tag">#GiuImLangDem</span>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -905,6 +893,9 @@
                 });
             }
 
+            // Init Sidebar Filters
+            initSidebarFilters();
+
             if (window.timeRefreshTimer) clearInterval(window.timeRefreshTimer);
             window.timeRefreshTimer = setInterval(refreshRelativeTimes, 60000);
         });
@@ -925,98 +916,12 @@
                 window.feedPostsCache = Array.isArray(posts) ? posts : [];
 
                 feedLoading.style.display = 'none';
-
-                if (!posts || posts.length === 0) {
-                    feedContainer.innerHTML = `
-                        <div class="glass-card p-5 text-center">
-                            <i class="fa-solid fa-people-roof" style="font-size: 3rem; color: var(--color-primary); opacity: 0.5;"></i>
-                            <h5 class="mt-3 fw-bold">Chưa có bài đăng nào</h5>
-                            <p class="text-muted">Hãy là người đầu tiên đăng tin tìm bạn ở ghép!</p>
-                        </div>`;
-                    feedEnd.style.display = 'block';
-                    return;
-                }
-
-                feedPostsCache = Array.isArray(posts) ? posts : [];
-                let html = '';
-                posts.forEach(post => {
-                    const ownerAccountId = Number(post.authorAccountId || 0);
-                    const isOwnPost = ownerAccountId > 0 && ownerAccountId === Number(window.currentAccountId || 0);
-                    const timeAgo = moment.utc(post.createdAt).local().fromNow();
-                    const budgetText = post.budgetPerMonth ? Number(post.budgetPerMonth).toLocaleString('vi-VN') + ' VNĐ/tháng' : 'Thỏa thuận';
-                    const areaText = post.areaPreference ? `<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-map-location-dot" style="color: var(--color-primary);"></i> <strong>Khu vực:</strong> ${post.areaPreference}</div>` : '';
-                    
-                    let tagsHtml = '';
-                    if (post.habits) {
-                        tagsHtml = post.habits.split(',').map(h => h.trim()).filter(h => h).map(h => `<span class="post-tag">#${h}</span>`).join('');
-                    }
-
-                    let genderBadge = '';
-                    if (post.targetGender && post.targetGender !== 'Any') {
-                        const genderIcon = post.targetGender === 'Nam' ? 'fa-mars' : 'fa-venus';
-                        const genderColor = post.targetGender === 'Nam' ? '#4A90D9' : '#E75480';
-                        genderBadge = `<span class="badge" style="background: ${genderColor}; font-size: 0.75rem;"><i class="fa-solid ${genderIcon} me-1"></i>${post.targetGender}</span>`;
-                    }
-
-                    let mediaHtml = '';
-                    if (post.media && post.media.length > 0) {
-                        const showCount = Math.min(post.media.length, 4);
-                        const layoutCount = showCount >= 4 ? 4 : showCount;
-                        const colsClass = `count-${layoutCount}`;
-                        let tiles = '';
-                        for (let i = 0; i < showCount; i++) {
-                            const mediaUrl = post.media[i];
-                            const mediaIsVideo = isVideoUrl(mediaUrl);
-                            const mediaTag = mediaIsVideo
-                                ? `<video src="${mediaUrl}" muted playsinline preload="metadata"></video>`
-                                : `<img src="${mediaUrl}" alt="Roommate Post" loading="lazy">`;
-                            const moreOverlay = (i === showCount - 1 && post.media.length > showCount)
-                                ? `<div class="post-media-more">+${post.media.length - showCount}</div>`
-                                : '';
-                            tiles += `<div class="post-media-tile js-open-media" data-post-id="${post.id}" data-media-index="${i}">${mediaTag}${moreOverlay}</div>`;
-                        }
-                        mediaHtml = `<div class="post-media-grid ${colsClass}">${tiles}</div>`;
-                    }
-
-                    html += `
-                        <div class="glass-card post-card" id="post-${post.id}">
-                            <div class="post-header">
-                                <div class="post-author-info">
-                                    <img src="${post.authorAvatar}" class="composer-avatar" alt="Avatar" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(post.authorName)">
-                                    <div>
-                                        <div class="post-author-name">${post.authorName} ${genderBadge}</div>
-                                        <div class="post-meta">
-                                            <span class="js-post-time" data-created-at="${post.createdAt}">${timeAgo}</span> • <i class="fa-solid fa-earth-asia"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button class="btn btn-sm btn-light border shadow-none rounded-circle"><i class="fa-solid fa-ellipsis"></i></button>
-                            </div>
-                            
-                            <div class="post-content">
-                                <h5 class="fw-bold mb-2">${post.title}</h5>
-                                <p class="mb-2" style="white-space: pre-wrap;">${post.description || ''}</p>
-                                ${areaText}
-                                <div class="d-flex align-items-center gap-2 mb-1">
-                                    <i class="fa-solid fa-wallet text-accent"></i> <strong>Ngân sách:</strong> ${budgetText}
-                                </div>
-                                ${tagsHtml ? `<div class="post-tags">${tagsHtml}</div>` : ''}
-                            </div>
-
-                            ${mediaHtml}
-
-                            <div class="post-actions">
-                                <button type="button" class="action-btn ${isOwnPost ? 'action-disabled' : 'js-open-direct-chat'}" data-owner-account-id="${ownerAccountId}" data-owner-name="${(post.authorName || '').replaceAll('"', '&quot;')}">
-                                    <i class="fa-regular fa-comment-dots"></i> ${isOwnPost ? 'Bài của bạn' : 'Nhắn Tin'}
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
                 
-                feedContainer.innerHTML = html;
-                refreshRelativeTimes();
-                feedEnd.style.display = 'block';
+                // Initialize current filter state
+                window.currentFeedFilter = 'all';
+                window.currentTagFilter = null;
+
+                renderFeed(window.feedPostsCache);
             } catch (ex) {
                 feedLoading.style.display = 'none';
                 feedContainer.innerHTML = `
@@ -1027,11 +932,134 @@
                     </div>`;
             }
         }
+
+        function initSidebarFilters() {
+            const menuItems = document.querySelectorAll('#sidebarMenu .sidebar-menu-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    menuItems.forEach(m => m.classList.remove('active'));
+                    this.classList.add('active');
+                    window.currentFeedFilter = this.getAttribute('data-filter') || 'all';
+                    applyFilters();
+                });
+            });
+
+
+        }
+
+        function applyFilters() {
+            let filtered = window.feedPostsCache || [];
+            
+            // 1. Sidebar menu filter
+            if (window.currentFeedFilter === 'cheap') {
+                filtered = filtered.filter(p => p.budgetPerMonth && p.budgetPerMonth <= 2000000);
+            } else if (window.currentFeedFilter === 'has-media') {
+                filtered = filtered.filter(p => p.media && p.media.length > 0);
+            } else if (window.currentFeedFilter === 'same-gender') {
+                filtered = filtered.filter(p => p.targetGender && p.targetGender !== 'Any');
+            }
+
+
+
+            renderFeed(filtered);
+        }
+
+        function renderFeed(posts) {
+            const feedContainer = document.getElementById('feedContainer');
+            const feedEnd = document.getElementById('feedEnd');
+
+            if (!posts || posts.length === 0) {
+                feedContainer.innerHTML = `
+                    <div class="glass-card p-5 text-center">
+                        <i class="fa-solid fa-people-roof" style="font-size: 3rem; color: var(--color-primary); opacity: 0.5;"></i>
+                        <h5 class="mt-3 fw-bold">Không tìm thấy bài đăng nào phù hợp</h5>
+                        <p class="text-muted">Thử thay đổi bộ lọc hoặc quay lại Trang Chủ.</p>
+                    </div>`;
+                feedEnd.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            posts.forEach(post => {
+                const ownerAccountId = Number(post.authorAccountId || 0);
+                const isOwnPost = ownerAccountId > 0 && ownerAccountId === Number(window.currentAccountId || 0);
+                const timeAgo = moment.utc(post.createdAt).local().fromNow();
+                const budgetText = post.budgetPerMonth ? Number(post.budgetPerMonth).toLocaleString('vi-VN') + ' VNĐ/tháng' : 'Thỏa thuận';
+                const areaText = post.areaPreference ? `<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-map-location-dot" style="color: var(--color-primary);"></i> <strong>Khu vực:</strong> ${post.areaPreference}</div>` : '';
+                
+                let tagsHtml = '';
+                if (post.habits) {
+                    tagsHtml = post.habits.split(',').map(h => h.trim()).filter(h => h).map(h => `<span class="post-tag">#${h}</span>`).join('');
+                }
+
+                let genderBadge = '';
+                if (post.targetGender && post.targetGender !== 'Any') {
+                    const genderIcon = post.targetGender === 'Nam' ? 'fa-mars' : 'fa-venus';
+                    const genderColor = post.targetGender === 'Nam' ? '#4A90D9' : '#E75480';
+                    genderBadge = `<span class="badge" style="background: ${genderColor}; font-size: 0.75rem;"><i class="fa-solid ${genderIcon} me-1"></i>${post.targetGender}</span>`;
+                }
+
+                let mediaHtml = '';
+                if (post.media && post.media.length > 0) {
+                    const showCount = Math.min(post.media.length, 4);
+                    const layoutCount = showCount >= 4 ? 4 : showCount;
+                    const colsClass = `count-${layoutCount}`;
+                    let tiles = '';
+                    for (let i = 0; i < showCount; i++) {
+                        const mediaUrl = post.media[i];
+                        const mediaIsVideo = isVideoUrl(mediaUrl);
+                        const mediaTag = mediaIsVideo
+                            ? `<video src="${mediaUrl}" muted playsinline preload="metadata"></video>`
+                            : `<img src="${mediaUrl}" alt="Roommate Post" loading="lazy">`;
+                        const moreOverlay = (i === showCount - 1 && post.media.length > showCount)
+                            ? `<div class="post-media-more">+${post.media.length - showCount}</div>`
+                            : '';
+                        tiles += `<div class="post-media-tile js-open-media" data-post-id="${post.id}" data-media-index="${i}">${mediaTag}${moreOverlay}</div>`;
+                    }
+                    mediaHtml = `<div class="post-media-grid ${colsClass}">${tiles}</div>`;
+                }
+
+                html += `
+                    <div class="glass-card post-card" id="post-${post.id}">
+                        <div class="post-header">
+                            <div class="post-author-info">
+                                <img src="${post.authorAvatar}" class="composer-avatar" alt="Avatar" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(post.authorName)">
+                                <div>
+                                    <div class="post-author-name">${post.authorName} ${genderBadge}</div>
+                                    <div class="post-meta">
+                                        <span class="js-post-time" data-created-at="${post.createdAt}">${timeAgo}</span> • <i class="fa-solid fa-earth-asia"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-light border shadow-none rounded-circle"><i class="fa-solid fa-ellipsis"></i></button>
+                        </div>
+                        
+                        <div class="post-content">
+                            <h5 class="fw-bold mb-2">${post.title}</h5>
+                            <p class="mb-2" style="white-space: pre-wrap;">${post.description || ''}</p>
+                            ${areaText}
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fa-solid fa-wallet text-accent"></i> <strong>Ngân sách:</strong> ${budgetText}
+                            </div>
+                            ${tagsHtml ? `<div class="post-tags">${tagsHtml}</div>` : ''}
+                        </div>
+
+                        ${mediaHtml}
+
+                        <div class="post-actions">
+                            <button type="button" class="action-btn ${isOwnPost ? 'action-disabled' : 'js-open-direct-chat'}" data-owner-account-id="${ownerAccountId}" data-owner-name="${(post.authorName || '').replaceAll('"', '&quot;')}">
+                                <i class="fa-regular fa-comment-dots"></i> ${isOwnPost ? 'Bài của bạn' : 'Nhắn Tin'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            feedContainer.innerHTML = html;
+            refreshRelativeTimes();
+            feedEnd.style.display = 'block';
+        }
     </script>
 }
-
-
-
-
 
 

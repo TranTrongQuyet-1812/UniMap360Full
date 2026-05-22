@@ -15,7 +15,8 @@ public static class AdminSchemaBootstrapper
         var canConnect = await context.Database.CanConnectAsync(cancellationToken);
         if (!canConnect)
         {
-            throw new InvalidOperationException("Cannot connect to SQL Server database.");
+            var provider = context.Database.ProviderName;
+            throw new InvalidOperationException($"Cannot connect to database. Provider: {provider}");
         }
 
         var fallbackPassword = string.IsNullOrWhiteSpace(legacyHashFallbackPlainPassword)

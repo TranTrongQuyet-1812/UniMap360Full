@@ -1,5 +1,7 @@
 using System.Text;
+using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using UniMap360.Models;
@@ -33,6 +35,12 @@ try
 
     builder.Configuration.AddIniFile("secrets.ini", optional: true, reloadOnChange: true);
     builder.Configuration.AddEnvironmentVariables();
+
+    // Bật nén dữ liệu để tối ưu tốc độ cho Mobile
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+    });
 
 // Add services to the container.
 builder.Services.AddMemoryCache();
@@ -103,6 +111,55 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// Cấu hình Swagger API Documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "UniMap360 API", 
+        Version = "v1",
+        Description = "Tài liệu API cho hệ thống UniMap360",
+        Contact = new OpenApiContact { Name = "Trần Trọng Quyết", Email = "admin@unimap360.com" }
+    });
+
+    // Cấu hình JWT Auth cho Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header sử dụng scheme Bearer. Ví dụ: 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
+    // Đọc comment XML từ file C#
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+
+    // Giải quyết xung đột route trùng phương thức và đường dẫn (ví dụ: upload JSON vs upload Form)
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+});
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.Configure<AdminSecurityOptions>(builder.Configuration.GetSection("Admin"));
 builder.Services.AddHttpClient();
@@ -126,6 +183,8 @@ var usePostgres = string.Equals(dbProvider, "PostgreSql", StringComparison.Ordin
     || string.Equals(dbProvider, "Postgres", StringComparison.OrdinalIgnoreCase)
     || string.Equals(dbProvider, "Npgsql", StringComparison.OrdinalIgnoreCase);
 
+Log.Information("Database Provider selected: {Provider} (UsePostgres: {UsePostgres})", dbProvider ?? "Default/SQLServer", usePostgres);
+
 if (usePostgres)
 {
     // PostgreSQL (Supabase) + PostGIS
@@ -148,6 +207,9 @@ else
 var app = builder.Build();
 
 app.UseMiddleware<TraceLoggingMiddleware>();
+
+// Kích hoạt nén dữ liệu
+app.UseResponseCompression();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -173,6 +235,15 @@ else
     // Cố tình bật trang lỗi ở Dev để test, có thể bỏ sau
     app.UseExceptionHandler("/Home/Error/500");
     app.UseStatusCodePagesWithReExecute("/Home/Error/{0}");
+    
+    // Kích hoạt Swagger UI chỉ ở môi trường Development
+    app.UseSwagger();
+    app.UseSwaggerUI(c => 
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "UniMap360 API v1");
+        c.InjectStylesheet("/css/swagger-custom.css"); // Nhúng CSS tùy chỉnh Đỏ Đô/Vàng
+        c.DocumentTitle = "UniMap360 API Documentation";
+    });
 }
 
 app.Use(async (context, next) =>
@@ -198,7 +269,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Intro}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapHealthChecks("/health");
 
@@ -213,3 +284,5 @@ finally
     Log.Information("Server đã tắt.");
     Log.CloseAndFlush();
 }
+
+public partial class Program { }

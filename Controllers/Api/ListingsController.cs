@@ -145,15 +145,9 @@ public class ListingsController : ControllerBase
                 price = displayPrice,
                 lat = item.Latitude,
                 lng = item.Longitude,
-                latitude = item.Latitude,
-                longitude = item.Longitude,
                 thumbnail = string.IsNullOrWhiteSpace(selectedImage) ? fallbackImage : selectedImage,
-                thumbnaiUrl = string.IsNullOrWhiteSpace(selectedImage) ? fallbackImage : selectedImage,
                 category = item.CategoryName,
                 priceStr = isRoom ? item.Value : null,
-                jobTitle = isRoom ? null : item.Title,
-                companyName = isRoom ? null : item.AddressText,
-                salary = isRoom ? null : displayPrice,
                 isExternal = item.IsExternal ?? false,
                 sourceUrl = item.SourceUrl
             };

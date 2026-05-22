@@ -43,7 +43,7 @@
                 <option value="Admin">Quản trị viên</option>
                 <option value="Host">Chủ trọ</option>
                 <option value="Employer">Nhà tuyển dụng</option>
-                <option value="Student">Người tìm kiếm</option>
+                <option value="Student">Sinh viên</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -223,7 +223,7 @@
             const roleLabels = {
                 Host: 'Chủ trọ',
                 Employer: 'Nhà tuyển dụng',
-                Student: 'Người tìm kiếm'
+                Student: 'Sinh viên'
             };
 
             const roleOptions = ['Host', 'Employer', 'Student']
@@ -288,7 +288,7 @@
                 <div class="mb-3">
                     <label class="form-label text-muted fw-bold small text-uppercase">Vai trò</label>
                     <select class="form-select" id="createRole">
-                        <option value="Student">Người tìm kiếm</option>
+                        <option value="Student">Sinh viên</option>
                         <option value="Host">Chủ trọ</option>
                         <option value="Employer">Nhà tuyển dụng</option>
                     </select>
@@ -414,7 +414,7 @@
         if (role === 'Admin') return '<span class="badge bg-dark">Quản trị</span>';
         if (role === 'Host') return '<span class="badge bg-primary">Chủ trọ</span>';
         if (role === 'Employer') return '<span class="badge bg-secondary">Nhà tuyển dụng</span>';
-        return '<span class="badge bg-info text-dark">Người tìm kiếm</span>';
+        return '<span class="badge bg-info text-dark">Sinh viên</span>';
     }
 
     function escapeHtml(input) {

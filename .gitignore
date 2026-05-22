@@ -4,3 +4,12 @@ appsettings.Local.json
 bin/
 obj/
 .vs/
+Logs/
+.nuget/
+*.log
+*.bak
+*.sql
+node_modules/
+**/node_modules/
+docs/
+Database/

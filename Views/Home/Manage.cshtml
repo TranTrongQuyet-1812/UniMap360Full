@@ -526,9 +526,16 @@
         form._mapState = mapState;
 
         if (window.L && mapCanvas) {
+            const southwest = window.L.latLng(4.0, 99.0);
+            const northeast = window.L.latLng(24.5, 120.0);
+            const vietnamBounds = window.L.latLngBounds(southwest, northeast);
+
             mapState.map = window.L.map(mapCanvas, {
                 center: [10.7769, 106.7009],
                 zoom: 12,
+                minZoom: 6,
+                maxBounds: vietnamBounds,
+                maxBoundsViscosity: 0.8,
                 scrollWheelZoom: true
             });
 

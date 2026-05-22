@@ -475,9 +475,16 @@
             const canvas = document.getElementById('jobPinMap');
             if (!canvas || map) return;
 
+            const southwest = window.L.latLng(4.0, 99.0);
+            const northeast = window.L.latLng(24.5, 120.0);
+            const vietnamBounds = window.L.latLngBounds(southwest, northeast);
+
             map = window.L.map('jobPinMap', {
                 center: [10.7769, 106.7009],
                 zoom: 12,
+                minZoom: 6,
+                maxBounds: vietnamBounds,
+                maxBoundsViscosity: 0.8,
                 scrollWheelZoom: true
             });
 

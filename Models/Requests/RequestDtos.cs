@@ -58,6 +58,17 @@ public sealed class RegisterRequest
     [Required(ErrorMessage = "Role là bắt buộc.")]
     [RegularExpression("^(Student|Host|Employer)$", ErrorMessage = "Role phải là Student, Host hoặc Employer.")]
     public string Role { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Mã xác thực (OTP) là bắt buộc.")]
+    [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã OTP phải có đúng 6 chữ số.")]
+    public string Otp { get; set; } = string.Empty;
+}
+
+public sealed class SendRegisterOtpRequest
+{
+    [Required(ErrorMessage = "Email là bắt buộc.")]
+    [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+    public string Email { get; set; } = string.Empty;
 }
 
 public sealed class ChangePasswordRequest

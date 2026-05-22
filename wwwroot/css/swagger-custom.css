@@ -1,0 +1,134 @@
+/* 
+   UniMap360 Custom Swagger UI Theme (UX/UI Pro Max)
+   Chủ đạo: Đỏ Đô (Crimson Red) & Vàng (Gold)
+*/
+
+/* Đặt lại font chữ hiện đại */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.swagger-ui {
+    font-family: 'Inter', sans-serif !important;
+    background-color: #fcfcfc;
+}
+
+/* Ẩn Topbar mặc định của Swagger vì ta nhúng vào Admin */
+.swagger-ui .topbar {
+    display: none !important;
+}
+
+/* Kiểu chữ chung */
+.swagger-ui .info .title {
+    color: #8B0000 !important; /* Đỏ Đô */
+    font-weight: 700;
+}
+
+.swagger-ui .info p {
+    color: #4a4a4a !important;
+    font-size: 15px;
+}
+
+/* Header của mỗi nhóm API */
+.swagger-ui .opblock-tag {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #8B0000 !important;
+    border-bottom: 2px solid rgba(139, 0, 0, 0.1) !important;
+    padding-bottom: 8px !important;
+}
+
+/* Custom các khối API (GET, POST, PUT, DELETE) */
+.swagger-ui .opblock {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid rgba(0,0,0,0.05) !important;
+    margin-bottom: 15px !important;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.swagger-ui .opblock:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04) !important;
+    transform: translateY(-2px);
+}
+
+/* Màu viền và nền nhạt tùy theo phương thức */
+.swagger-ui .opblock.opblock-get { border-color: #61affe !important; background: rgba(97, 175, 254, 0.03) !important; }
+.swagger-ui .opblock.opblock-post { border-color: #49cc90 !important; background: rgba(73, 204, 144, 0.03) !important; }
+.swagger-ui .opblock.opblock-put { border-color: #fca130 !important; background: rgba(252, 161, 48, 0.03) !important; }
+.swagger-ui .opblock.opblock-delete { border-color: #f93e3e !important; background: rgba(249, 62, 62, 0.03) !important; }
+
+/* Custom nút Authorize (Vũ khí tối mật) */
+.swagger-ui .btn.authorize {
+    background: linear-gradient(135deg, #8B0000 0%, #B22222 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 20px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.swagger-ui .btn.authorize:hover {
+    background: linear-gradient(135deg, #B22222 0%, #8B0000 100%) !important;
+    box-shadow: 0 6px 16px rgba(139, 0, 0, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.swagger-ui .btn.authorize svg {
+    fill: white !important;
+}
+
+/* Custom các nút Try it out và Execute */
+.swagger-ui .btn.try-out__btn {
+    color: #F5C21B !important; /* Vàng UniMap360 */
+    border-color: #F5C21B !important;
+    border-radius: 6px !important;
+}
+
+.swagger-ui .btn.try-out__btn:hover {
+    background-color: #F5C21B !important;
+    color: #fff !important;
+}
+
+.swagger-ui .btn.execute {
+    background-color: #8B0000 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    border: none !important;
+    box-shadow: 0 4px 6px rgba(139, 0, 0, 0.15) !important;
+}
+
+.swagger-ui .btn.execute:hover {
+    background-color: #A52A2A !important;
+}
+
+/* Các trường input */
+.swagger-ui input[type=text], .swagger-ui input[type=password], .swagger-ui textarea {
+    border-radius: 6px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 8px 12px !important;
+}
+
+.swagger-ui input[type=text]:focus, .swagger-ui input[type=password]:focus, .swagger-ui textarea:focus {
+    border-color: #8B0000 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1) !important;
+}
+
+/* Khung hiển thị Response (Màu tối) */
+.swagger-ui .responses-wrapper {
+    background-color: #1e293b !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    margin-top: 10px !important;
+}
+
+.swagger-ui .response-col_status, .swagger-ui .response-col_description {
+    color: #fff !important;
+}
+
+/* Style cho các tham số Required */
+.swagger-ui .parameter__name.required:after {
+    color: #8B0000 !important;
+}

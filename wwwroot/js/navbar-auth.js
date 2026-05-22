@@ -4,7 +4,7 @@
             case "admin":
                 return "Quản trị viên";
             case "student":
-                return "Người tìm kiếm";
+                return "Sinh viên";
             case "host":
                 return "Chủ trọ";
             case "employer":

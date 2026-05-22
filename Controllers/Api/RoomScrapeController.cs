@@ -29,7 +29,7 @@ public class RoomScrapeController : ControllerBase
     /// Cào nhanh Rooms từ phongtro123 theo tỉnh/thành (slug) và chèn thẳng vào DB.
     /// Mục tiêu: đủ số lượng marker theo tỉnh để demo map.
     /// </summary>
-    /// <example>POST /api/scrape/rooms/phongtro123?provinceSlug=ha-noi&target=20</example>
+    /// <example>POST /api/scrape/rooms/phongtro123?provinceSlug=ha-noi&amp;target=20</example>
     [HttpPost("phongtro123")]
     public async Task<IActionResult> ScrapePhongtro123(
         [FromQuery] string provinceSlug,

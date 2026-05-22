@@ -4,6 +4,7 @@
 }
 
 <link rel="stylesheet" href="~/css/map.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/ai-chatbot.css" asp-append-version="true" />
 
 <div id="unimap-container" class="position-relative w-100 h-100">
     <!-- Map is now the foundational layer -->
@@ -52,20 +53,82 @@
 
         <!-- Scrollable List -->
         <div class="panel-list flex-grow-1 overflow-auto d-flex flex-column" id="items-list">
-            <!-- Rendered by map.js -->
+            <!-- Loading Spinner for Sidebar -->
+            <div id="sidebar-loading" class="text-center py-5 my-auto">
+                <div class="spinner-border" style="color: var(--color-primary) !important;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted fw-bold">Đang tải bảng tin...</p>
+            </div>
         </div>
+
+        <!-- Sidebar Collapse Toggle Button (Desktop & Tablet) -->
+        <button id="btn-toggle-sidebar" class="sidebar-toggle-btn d-none d-md-flex" type="button" aria-label="Toggle Sidebar">
+            <i class="fas fa-chevron-left"></i>
+        </button>
 
     </div>
 </div>
 
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <!-- ========================================== -->
+    <!-- TRỢ LÝ AI & PROXIMITY SPOTLIGHT WIDGET       -->
+    <!-- ========================================== -->
+    <button id="ai-chat-launcher" class="ai-chat-launcher" title="Hỏi Trợ Lý AI" style="display: none;">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div id="ai-chat-panel" class="ai-chat-panel">
+        <div class="ai-chat-header">
+            <div class="ai-chat-header-title">
+                <i class="fas fa-robot"></i> UniMap360 AI
+            </div>
+            <button class="ai-chat-close-btn" id="ai-chat-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ai-chat-messages" id="ai-chat-messages">
+            <!-- Messages will be injected here by ai-chatbot.js -->
+        </div>
+        <div class="ai-quick-chips" id="ai-quick-chips">
+            <!-- Chips will be injected here by ai-chatbot.js -->
+        </div>
+        <div class="ai-chat-input-wrap">
+            <input type="text" id="ai-chat-input" class="ai-chat-input" placeholder="Nhập câu hỏi hoặc địa điểm của bạn..." />
+            <button id="ai-chat-send-btn" class="ai-chat-send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <script src="~/js/map.js" asp-append-version="true"></script>
+    <script src="~/js/ai-chatbot.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const panel = document.getElementById('floating-panel');
             const header = document.getElementById('panel-drag-handle');
             const icon = document.getElementById('panel-toggle-icon');
             const searchInput = panel.querySelector('.search-input');
+
+            // Sidebar Collapse/Expand for Desktop & Tablet
+            const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+            if (btnToggleSidebar) {
+                // Read state from sessionStorage
+                const isCollapsed = sessionStorage.getItem('sidebar_collapsed') === 'true';
+                if (isCollapsed && window.innerWidth >= 768) {
+                    panel.classList.add('collapsed');
+                }
+
+                btnToggleSidebar.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Avoid triggering header click toggle on mobile
+                    panel.classList.toggle('collapsed');
+                    const currentCollapsed = panel.classList.contains('collapsed');
+                    sessionStorage.setItem('sidebar_collapsed', currentCollapsed);
+                });
+            }
 
             // Hàm mở rộng/thu gọn panel
             function togglePanel(expand) {
@@ -97,6 +160,13 @@
                     panel.classList.remove('expanded');
                     panel.style.height = '';
                     icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                    
+                    const isCollapsed = sessionStorage.getItem('sidebar_collapsed') === 'true';
+                    if (isCollapsed) {
+                        panel.classList.add('collapsed');
+                    }
+                } else {
+                    panel.classList.remove('collapsed');
                 }
             });
 

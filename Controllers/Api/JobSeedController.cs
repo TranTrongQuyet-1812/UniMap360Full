@@ -24,7 +24,7 @@ public class JobSeedController : ControllerBase
     /// <summary>
     /// Tạo dữ liệu Job demo theo từng tỉnh (không cần cào web) để phủ map nhanh.
     /// </summary>
-    /// <example>POST /api/seed/jobs/province?provinceSlug=ha-noi&target=10</example>
+    /// <example>POST /api/seed/jobs/province?provinceSlug=ha-noi&amp;target=10</example>
     [HttpPost("province")]
     public async Task<IActionResult> SeedJobsForProvince(
         [FromQuery] string provinceSlug,

@@ -4,6 +4,7 @@ using UniMap360.Models;
 
 namespace UniMap360.Controllers
 {
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -124,6 +125,12 @@ namespace UniMap360.Controllers
         public IActionResult Privacy()
         {
             ViewData["ActivePage"] = "privacy";
+            return View();
+        }
+
+        public IActionResult Terms()
+        {
+            ViewData["ActivePage"] = "terms";
             return View();
         }
 

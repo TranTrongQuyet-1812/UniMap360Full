@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - UniMap360</title>
+    <link class="favicon" rel="icon" type="image/png" href="https://res.cloudinary.com/dreyjycrh/image/upload/e_trim/ar_1:1,c_crop,g_north/v1776439376/LogoSQL.png?v=2" />
 
     <!-- SEO Meta Tags -->
     <meta name="description" content="@(ViewData["MetaDescription"] ?? "Nền tảng bản đồ thông minh kết nối sinh viên, chủ trọ và nhà tuyển dụng. Tìm kiếm phòng trọ, việc làm và ở ghép tại Tp. Hồ Chí Minh.")" />
@@ -56,7 +57,7 @@
 
                 <div class="d-flex align-items-center gap-2">
                     <!-- Notification Bell (Mobile Only) -->
-                    <div class="dropdown d-lg-none nav-notification-wrapper">
+                    <div class="dropdown mobile-only nav-notification-wrapper d-none">
                         <button class="btn btn-light rounded-circle position-relative border-0 shadow-sm" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--color-primary);" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell"></i>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-maroon shadow-sm d-none nav-notification-badge" style="font-size: 0.6rem; padding: 0.3em 0.45em; border: 2px solid white;">0</span>
@@ -104,7 +105,7 @@
                     </ul>
                     <ul class="navbar-nav ms-auto align-items-center gap-3">
                         <!-- Notification Bell (PC Only) -->
-                        <li class="nav-item dropdown d-none d-lg-block nav-notification-wrapper">
+                        <li class="nav-item dropdown pc-only nav-notification-wrapper d-none">
                             <button class="btn btn-light rounded-circle position-relative border-0 shadow-sm" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--color-primary);" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-bell"></i>
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-maroon shadow-sm d-none nav-notification-badge" style="font-size: 0.6rem; padding: 0.3em 0.45em; border: 2px solid white;">0</span>
@@ -136,6 +137,25 @@
                         <li class="nav-item dropdown d-none" id="nav-auth-user-item">
                             <style>
                                 #nav-auth-user-toggle::after { display: none !important; }
+                                
+                                /* Responsive Notification Bells */
+                                .nav-notification-wrapper.mobile-only {
+                                    display: none !important;
+                                }
+                                .nav-notification-wrapper.pc-only {
+                                    display: none !important;
+                                }
+                                @@media (max-width: 991.98px) {
+                                    .nav-notification-wrapper.mobile-only:not(.d-none) {
+                                        display: flex !important;
+                                    }
+                                }
+                                @@media (min-width: 992px) {
+                                    .nav-notification-wrapper.pc-only:not(.d-none) {
+                                        display: flex !important;
+                                    }
+                                }
+
                                 .luxury-user-menu {
                                     backdrop-filter: blur(15px);
                                     background: rgba(255, 255, 255, 0.95) !important;
@@ -320,8 +340,7 @@
                         <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
                             <li><a href="/Home/Auth" class="text-muted text-decoration-none hover-maroon">Đăng ký Chủ trọ</a></li>
                             <li><a href="/Home/Auth" class="text-muted text-decoration-none hover-maroon">Đăng ký Nhà tuyển dụng</a></li>
-                            <li><a href="#" class="text-muted text-decoration-none hover-maroon">Quy định đăng tin</a></li>
-                            <li><a href="#" class="text-muted text-decoration-none hover-maroon">Bảng giá dịch vụ</a></li>
+                            <li><a href="/Home/Terms" class="text-muted text-decoration-none hover-maroon">Quy định sử dụng</a></li>
                         </ul>
                     </div>
 
@@ -340,8 +359,8 @@
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center pt-2 pb-1 small text-muted">
                     <p class="mb-2 mb-md-0">&copy; 2026 UniMap360. Kết Nối Sinh Viên.</p>
                     <div class="d-flex gap-3">
-                        <a href="/Home/Privacy" class="text-muted text-decoration-none hover-maroon">Chính sách bảo mật</a>
-                        <a href="#" class="text-muted text-decoration-none hover-maroon">Điều khoản sử dụng</a>
+                        <a asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none hover-maroon">Chính sách bảo mật</a>
+                        <a asp-controller="Home" asp-action="Terms" class="text-muted text-decoration-none hover-maroon">Điều khoản sử dụng</a>
                     </div>
                 </div>
             </div>

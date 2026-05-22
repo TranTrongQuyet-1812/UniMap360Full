@@ -5,6 +5,7 @@ namespace UniMap360.Controllers
 {
     [Authorize(Roles = "Admin")]
     [Route("Admin")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class AdminController : Controller
     {
         // GET: /Admin/Login → Redirect về trang Auth chung của hệ thống
@@ -78,6 +79,22 @@ namespace UniMap360.Controllers
         {
             ViewData["IsAdminArea"] = true;
             ViewData["ActiveAdminPage"] = "mod-roommates";
+            return View();
+        }
+
+        // GET: /Admin/ApiDocs (Swagger)
+        [HttpGet("ApiDocs")]
+        public IActionResult ApiDocs()
+        {
+            // Bảo mật: Chỉ hiển thị trên môi trường Development (Chạy Local)
+            var env = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+            if (!env.IsDevelopment())
+            {
+                return NotFound();
+            }
+
+            ViewData["IsAdminArea"] = true;
+            ViewData["ActiveAdminPage"] = "api-docs";
             return View();
         }
     }

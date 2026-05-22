@@ -115,7 +115,7 @@
                         </div>
                         <div class="um-chat-thread-input-wrap">
                             <textarea id="um-chat-message-input" placeholder="Nhập tin nhắn..."></textarea>
-                            <button id="um-chat-send-btn" type="button">Gửi</button>
+                            <button id="um-chat-send-btn" type="button" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
                         </div>
                     </section>
                 </div>
@@ -181,6 +181,19 @@
         setPanelOpen(!state.open);
     }
 
+    function hasConversationListChanged(oldList, newList) {
+        if (oldList.length !== newList.length) return true;
+        for (let i = 0; i < oldList.length; i++) {
+            const o = oldList[i];
+            const n = newList[i];
+            if (o.conversationId !== n.conversationId) return true;
+            if (o.unreadCount !== n.unreadCount) return true;
+            if ((o.lastMessage?.messageId || 0) !== (n.lastMessage?.messageId || 0)) return true;
+            if ((o.lastMessage?.content || "") !== (n.lastMessage?.content || "")) return true;
+        }
+        return false;
+    }
+
     async function loadConversations(forceRefresh) {
         if (state.loadingConversations && !forceRefresh) return;
 
@@ -203,8 +216,11 @@
                 return;
             }
 
-            state.conversations = Array.isArray(payload?.items) ? payload.items : [];
-            renderConversationList();
+            const newConversations = Array.isArray(payload?.items) ? payload.items : [];
+            if (forceRefresh || hasConversationListChanged(state.conversations, newConversations)) {
+                state.conversations = newConversations;
+                renderConversationList();
+            }
             updateLauncherBadge(payload?.totalUnread || 0);
 
             if (!state.activeConversationId && state.conversations.length > 0) {
@@ -234,6 +250,7 @@
 
     function renderConversationList() {
         const listEl = document.getElementById("um-chat-list");
+        const account = getAccount();
         if (!listEl) return;
 
         if (state.conversations.length === 0) {
@@ -243,7 +260,13 @@
 
         const html = state.conversations.map(function (conversation) {
             const isActive = conversation.conversationId === state.activeConversationId;
-            const preview = conversation.lastMessage?.content || "Chưa có tin nhắn.";
+            
+            let preview = "Chưa có tin nhắn.";
+            if (conversation.lastMessage?.content) {
+                const isMine = account && Number(conversation.lastMessage.senderAccountId) === Number(account.accountId);
+                preview = isMine ? `Bạn: ${conversation.lastMessage.content}` : conversation.lastMessage.content;
+            }
+
             const time = conversation.lastMessage?.createdAt ? formatTime(conversation.lastMessage.createdAt) : "";
             const unread = Number(conversation.unreadCount || 0);
             return `
@@ -275,13 +298,18 @@
         const threadHeader = document.getElementById("um-chat-thread-title");
         if (threadHeader) threadHeader.textContent = conversation?.title || "Tin nhắn";
 
+        const messagesEl = document.getElementById("um-chat-thread-messages");
+        if (messagesEl) {
+            messagesEl.innerHTML = '<div class="um-chat-empty">Đang tải tin nhắn...</div>';
+        }
+
         showThreadView();
-        await loadMessages();
+        await loadMessages(true, true);
         await markConversationRead();
         await loadConversations(true);
     }
 
-    async function loadMessages() {
+    async function loadMessages(forceScrollToBottom = false, forceRebuild = false) {
         const token = getToken();
         if (!token || !state.activeConversationId) return;
 
@@ -298,14 +326,20 @@
                 return;
             }
 
-            state.messages = Array.isArray(payload?.items) ? payload.items : [];
-            renderMessages();
+            const newMessages = Array.isArray(payload?.items) ? payload.items : [];
+            const currentIds = state.messages.map(m => m.messageId).join(",");
+            const newIds = newMessages.map(m => m.messageId).join(",");
+
+            if (currentIds !== newIds || forceScrollToBottom || forceRebuild) {
+                state.messages = newMessages;
+                renderMessages(forceScrollToBottom, forceRebuild);
+            }
         } catch {
             messagesEl.innerHTML = '<div class="um-chat-empty">Lỗi kết nối khi tải tin nhắn.</div>';
         }
     }
 
-    function renderMessages() {
+    function renderMessages(forceScrollToBottom = false, forceRebuild = false) {
         const messagesEl = document.getElementById("um-chat-thread-messages");
         const account = getAccount();
         if (!messagesEl || !account) return;
@@ -315,18 +349,43 @@
             return;
         }
 
-        const html = state.messages.map(function (message) {
-            const mine = Number(message.senderAccountId) === Number(account.accountId);
-            return `
-                <div class="um-chat-bubble ${mine ? "mine" : "other"}">
+        const hasPlaceholder = messagesEl.querySelector(".um-chat-empty") !== null;
+
+        if (forceRebuild || hasPlaceholder || messagesEl.children.length === 0) {
+            const html = state.messages.map(function (message) {
+                const mine = Number(message.senderAccountId) === Number(account.accountId);
+                return `
+                    <div class="um-chat-bubble ${mine ? "mine" : "other"}" data-message-id="${message.messageId}">
+                        <div>${escapeHtml(message.content || "")}</div>
+                        <div class="um-chat-bubble-time">${escapeHtml(formatTime(message.createdAt))}</div>
+                    </div>
+                `;
+            }).join("");
+            messagesEl.innerHTML = html;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
+        }
+
+        const wasNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
+
+        state.messages.forEach(function (message) {
+            const existing = messagesEl.querySelector(`[data-message-id="${message.messageId}"]`);
+            if (!existing) {
+                const mine = Number(message.senderAccountId) === Number(account.accountId);
+                const tempDiv = document.createElement("div");
+                tempDiv.className = `um-chat-bubble ${mine ? "mine" : "other"} new-message`;
+                tempDiv.setAttribute("data-message-id", message.messageId);
+                tempDiv.innerHTML = `
                     <div>${escapeHtml(message.content || "")}</div>
                     <div class="um-chat-bubble-time">${escapeHtml(formatTime(message.createdAt))}</div>
-                </div>
-            `;
-        }).join("");
+                `;
+                messagesEl.appendChild(tempDiv);
+            }
+        });
 
-        messagesEl.innerHTML = html;
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        if (wasNearBottom || forceScrollToBottom) {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
     }
 
     async function onSendMessage() {
@@ -357,7 +416,7 @@
             }
 
             if (inputEl) inputEl.value = "";
-            await loadMessages();
+            await loadMessages(true, false);
             await markConversationRead();
             await loadConversations(true);
         } catch {

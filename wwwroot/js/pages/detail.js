@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     detailMiniMap = null;
                 }
 
+                var southwest = L.latLng(4.0, 99.0);
+                var northeast = L.latLng(24.5, 120.0);
+                var vietnamBounds = L.latLngBounds(southwest, northeast);
+
                 detailMiniMap = L.map('detail-mini-map', {
                     zoomControl: false,
                     attributionControl: false,
@@ -33,7 +37,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     scrollWheelZoom: false,
                     boxZoom: false,
                     keyboard: false,
-                    tap: false
+                    tap: false,
+                    minZoom: 6,
+                    maxBounds: vietnamBounds,
+                    maxBoundsViscosity: 0.8
                 }).setView([lat, lng], 15);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

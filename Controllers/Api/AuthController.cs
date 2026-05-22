@@ -50,6 +50,12 @@ public class AuthController : ControllerBase
         if (!email.EndsWith("@gmail.com"))
             return this.ApiBadRequest("Xin lỗi, hiện tại hệ thống chỉ hỗ trợ tài khoản @gmail.com.", "VALIDATION_ERROR");
 
+        // Xác thực mã OTP
+        if (!_cache.TryGetValue($"RegisterOTP_{email}", out object? savedOtpObj) || savedOtpObj?.ToString() != request.Otp)
+        {
+            return this.ApiBadRequest("Mã xác thực (OTP) không hợp lệ hoặc đã hết hạn.");
+        }
+
         var role = NormalizeRole(request.Role);
         if (role is null)
             return this.ApiBadRequest("Role không hợp lệ. Chỉ chấp nhận: Student, Host, Employer.", "VALIDATION_ERROR");
@@ -71,6 +77,9 @@ public class AuthController : ControllerBase
 
         _context.Accounts.Add(account);
         await _context.SaveChangesAsync();
+
+        // Xóa mã OTP khỏi Cache sau khi đăng ký thành công
+        _cache.Remove($"RegisterOTP_{email}");
 
         if (string.Equals(role, "Host", StringComparison.OrdinalIgnoreCase))
         {
@@ -397,6 +406,51 @@ public class AuthController : ControllerBase
             // Log lỗi nếu cần
             // SEC-07 FIX: Không tiết lộ chi tiết lỗi SMTP cho client
             _logger.LogError(ex, "Không thể gửi email OTP tới {Email}", email);
+            return this.ApiBadRequest("Không thể gửi Email. Vui lòng thử lại sau.");
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpPost("send-register-otp")]
+    public async Task<IActionResult> SendRegisterOtp([FromBody] SendRegisterOtpRequest request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+        
+        if (!email.EndsWith("@gmail.com"))
+            return this.ApiBadRequest("Xin lỗi, hệ thống chỉ hỗ trợ tài khoản @gmail.com.");
+
+        var exists = await _context.Accounts.AnyAsync(a => a.Email == email);
+        if (exists)
+            return this.ApiConflict("Email này đã được đăng ký.");
+
+        // Tạo OTP 6 số
+        var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+
+        // Lưu OTP vào MemoryCache với thời hạn 2 phút (như yêu cầu của bạn)
+        _cache.Set($"RegisterOTP_{email}", otp, TimeSpan.FromMinutes(2));
+
+        try
+        {
+            var subject = "[UniMap360] Mã xác thực đăng ký tài khoản";
+            var body = $@"
+                <div style='font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;'>
+                    <h2 style='color: #780115;'>UniMap360 Registration</h2>
+                    <p>Chào bạn,</p>
+                    <p>Bạn đang tiến hành đăng ký tài khoản tại UniMap360. Mã xác thực (OTP) của bạn là:</p>
+                    <div style='background: #f8f9fa; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #780115; border-radius: 5px;'>
+                        {otp}
+                    </div>
+                    <p style='margin-top: 20px;'>Mã này có hiệu lực trong vòng <b>2 phút</b>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                    <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'>
+                    <p style='font-size: 12px; color: #999;'>Đây là email tự động, vui lòng không phản hồi.</p>
+                </div>";
+
+            await _emailService.SendEmailAsync(email, subject, body);
+            return this.ApiOk(new { message = "Mã xác thực đã được gửi tới Email của bạn." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Không thể gửi email đăng ký tới {Email}", email);
             return this.ApiBadRequest("Không thể gửi Email. Vui lòng thử lại sau.");
         }
     }

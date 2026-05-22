@@ -55,6 +55,23 @@ body {
         margin-top: 12px;
         padding: 16px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        
+        /* Khóa chiều cao tối đa chống tràn màn hình điện thoại */
+        max-height: 75dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Tối ưu hóa thanh cuộn siêu mảnh cho menu mobile */
+    .navbar-collapse::-webkit-scrollbar {
+        width: 4px;
+    }
+    .navbar-collapse::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .navbar-collapse::-webkit-scrollbar-thumb {
+        background: rgba(120, 1, 21, 0.2);
+        border-radius: 10px;
     }
 
     .navbar-nav {
@@ -125,6 +142,84 @@ body {
     }
 }
 
+/* =========================================================================
+   Collapsible Sidebar (Desktop & Tablet)
+   ========================================================================= */
+@media (min-width: 768px) {
+    #floating-panel {
+        overflow: visible !important;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    #floating-panel.collapsed {
+        transform: translateX(calc(-100% - 24px));
+    }
+}
+
+@media (max-width: 1200px) and (min-width: 768px) {
+    #floating-panel.collapsed {
+        transform: translateX(calc(-100% - 16px));
+    }
+}
+
+@media (max-width: 991.98px) and (min-width: 768px) {
+    #floating-panel.collapsed {
+        transform: translateX(calc(-100% - 10px));
+    }
+}
+
+/* Toggle Button Styling */
+.sidebar-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: -28px; /* Stick out from the right edge */
+    transform: translateY(-50%);
+    width: 28px;
+    height: 56px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    box-shadow: 6px 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1005;
+    color: var(--color-text-secondary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    padding: 0;
+}
+
+.sidebar-toggle-btn:hover {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+    width: 32px; /* Slightly wider on hover for micro-interaction */
+    right: -32px;
+}
+
+.sidebar-toggle-btn i {
+    font-size: 13px;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#floating-panel.collapsed .sidebar-toggle-btn i {
+    transform: rotate(180deg);
+}
+
+/* Glassmorphic touch on toggle button */
+@supports (backdrop-filter: blur(10px)) {
+    .sidebar-toggle-btn {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+    }
+    .sidebar-toggle-btn:hover {
+        background: rgba(120, 1, 21, 0.95);
+    }
+}
+
 @media (max-width: 767.98px) {
     #floating-panel {
         left: 0 !important;
@@ -132,16 +227,31 @@ body {
         width: 100% !important;
         top: auto !important;
         bottom: 0 !important;
-        height: 40vh; /* Trạng thái mặc định trên mobile */
+        height: 70px; /* Siêu thu gọn: Chỉ chừa logo UniMap và nút mở rộng, tối ưu 95% diện tích cho Bản đồ */
         border-radius: 24px 24px 0 0 !important;
         border: none !important;
         box-shadow: 0 -10px 40px rgba(0,0,0,0.15) !important;
-        padding-bottom: env(safe-area-inset-bottom, 20px);
+        padding-bottom: env(safe-area-inset-bottom, 8px);
         transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    #floating-panel.collapsed {
+        transform: none !important;
+    }
+
+    /* Ẩn toàn bộ Search Box và Filter Chips khi thu gọn để đạt độ tinh gọn tuyệt đối */
+    #floating-panel:not(.expanded) .search-box,
+    #floating-panel:not(.expanded) .filter-chips {
+        display: none !important;
+    }
+
+    /* Triệt tiêu margin thừa của logo khi thu gọn */
+    #floating-panel:not(.expanded) .panel-header .mb-3 {
+        margin-bottom: 0 !important;
+    }
+
     #floating-panel.expanded {
-        height: 85vh !important; /* Trạng thái mở rộng trên mobile */
+        height: 80vh !important; /* Trạng thái mở rộng trên mobile */
     }
     
     /* Hide scrollbar for cleaner UI */
@@ -150,26 +260,51 @@ body {
     }
 
     .panel-header {
-        padding: 20px 20px 10px;
+        padding: 22px 20px 10px;
         position: relative;
     }
     
-    /* Add a small drag handle pill for bottom sheet feel */
+    /* Add a small drag handle pill for bottom sheet feel - Gold themed */
     .panel-header::before {
         content: '';
         position: absolute;
         top: 8px;
         left: 50%;
         transform: translateX(-50%);
-        width: 40px;
-        height: 4px;
-        background-color: #ddd;
+        width: 50px;
+        height: 5px;
+        background-color: #ffb800;
+        opacity: 0.85;
         border-radius: 4px;
     }
 
     .panel-header h5 {
         margin-bottom: 12px !important;
         font-size: 1.1rem;
+    }
+
+    /* Thiết kế nút bấm Mũi tên Lên nổi bật hơn hẳn trên Mobile */
+    #btn-toggle-panel {
+        background-color: #780115 !important; /* Đỏ đô */
+        color: #ffb800 !important; /* Vàng Gold */
+        border-radius: 50% !important;
+        width: 36px !important;
+        height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 10px rgba(120, 1, 21, 0.35) !important;
+        border: 2px solid #ffb800 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding: 0 !important;
+    }
+    
+    #btn-toggle-panel i {
+        font-size: 14px !important;
+    }
+
+    #btn-toggle-panel:active {
+        transform: scale(0.88);
     }
 
     .panel-list {

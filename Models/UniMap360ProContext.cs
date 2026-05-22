@@ -555,7 +555,7 @@ public partial class UniMap360ProContext : DbContext
             entity.Property(e => e.ItemType)
                 .HasMaxLength(4)
                 .IsUnicode(false);
-            entity.Property(e => e.SourceUrl).HasColumnName("SourceURL");
+            entity.Property(e => e.SourceUrl).HasColumnName("SourceUrl");
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.Value).HasColumnType("decimal(18, 2)");
         });
