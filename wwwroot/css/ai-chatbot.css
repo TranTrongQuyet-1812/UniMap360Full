@@ -92,7 +92,7 @@
     position: fixed;
     right: 18px; /* Căn chỉnh mép phải thẳng hàng với bong bóng chat (18px) */
     bottom: 160px; /* Nằm ngay phía trên nút bấm AI với khoảng cách 12px hợp lý */
-    z-index: 1950;
+    z-index: 5500;
     width: min(420px, calc(100vw - 32px));
     height: min(580px, calc(100dvh - 195px));
     background: rgba(255, 255, 255, 0.88); /* Premium Light theme frosted glass */

@@ -9,6 +9,7 @@ public sealed class GoogleLoginRequest
     [Required(ErrorMessage = "Credential là bắt buộc.")]
     public string Credential { get; set; } = string.Empty;
     public string? Role { get; set; }
+    public bool RememberMe { get; set; } = true; // Default to true for Google Login
 }
 
 public sealed class ForgotPasswordRequest
@@ -42,6 +43,8 @@ public sealed class LoginRequest
     [Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu từ 6–100 ký tự.")]
     public string Password { get; set; } = string.Empty;
+
+    public bool RememberMe { get; set; }
 }
 
 public sealed class RegisterRequest

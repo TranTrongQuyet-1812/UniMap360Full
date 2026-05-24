@@ -12,26 +12,47 @@
 
     // DOM Elements
     let launcherBtn, chatPanel, closeBtn, msgContainer, quickChipsContainer, chatInput, sendBtn;
+    let chatbotInitialized = false;
 
     document.addEventListener("DOMContentLoaded", () => {
         initDOMElements();
+        if (!launcherBtn || !chatPanel) return;
 
-        // Kiểm tra JWT Token ở phía Client
-        const token = getToken();
-        if (!token) {
-            // Nếu chưa đăng nhập, ẩn hoàn toàn launcher và panel, không chạy tiếp các logic chatbot
-            if (launcherBtn) launcherBtn.style.display = "none";
-            if (chatPanel) chatPanel.style.display = "none";
-            return;
-        } else {
-            // Nếu đã đăng nhập, cho phép hiển thị
-            if (launcherBtn) launcherBtn.style.display = "flex";
-        }
+        applyAuthVisibility();
 
+        window.addEventListener("unimap360:auth-changed", () => {
+            applyAuthVisibility();
+        });
+    });
+
+    function getCurrentAccount() {
+        return window.UniMap360AuthStore?.getStoredAccount?.() || null;
+    }
+
+    function canUseAiChat() {
+        const account = getCurrentAccount();
+        if (!account) return false;
+        return String(account.role || "").toLowerCase() === "student";
+    }
+
+    function ensureChatbotBootstrapped() {
+        if (chatbotInitialized) return;
         checkAndHarvestGeolocation();
         registerEvents();
         renderInitialWelcome();
-    });
+        chatbotInitialized = true;
+    }
+
+    function applyAuthVisibility() {
+        const allowed = canUseAiChat();
+        if (launcherBtn) launcherBtn.style.display = allowed ? "flex" : "none";
+        if (!allowed && chatPanel) {
+            chatPanel.classList.remove("open");
+        }
+        if (allowed) {
+            ensureChatbotBootstrapped();
+        }
+    }
 
     function initDOMElements() {
         launcherBtn = document.getElementById("ai-chat-launcher");

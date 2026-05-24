@@ -49,7 +49,7 @@
     position: fixed;
     right: 18px;
     bottom: 88px;
-    z-index: 1960;
+    z-index: 5500;
     width: min(420px, calc(100vw - 32px));
     height: min(580px, calc(100dvh - 110px));
     background: rgba(255, 255, 255, 0.88);
@@ -137,7 +137,7 @@
 .um-chat-list {
     height: 100%;
     overflow: auto;
-    padding: 12px;
+    padding: 12px 12px 80px 12px;
     scrollbar-width: thin;
     scrollbar-color: rgba(120, 1, 21, 0.2) transparent;
 }
@@ -152,6 +152,11 @@
     transition: all 0.2s ease;
     margin-bottom: 8px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    cursor: pointer;
 }
 
 .um-chat-list-item:hover {
@@ -463,3 +468,99 @@
         gap: 6px;
     }
 }
+
+/* Custom CSS cho nút 3 chấm và dropdown menu xóa cuộc trò chuyện */
+.um-chat-item-click-area {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.um-chat-item-action {
+    position: relative;
+    margin-left: 8px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.um-chat-item-more-btn {
+    background: transparent;
+    border: none;
+    color: #780115; /* Màu đỏ đô thương hiệu mặc định */
+    width: 32px; /* Tăng lên 32px để dễ chạm trên mobile */
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    font-size: 0.95rem;
+}
+
+.um-chat-item-more-btn:hover,
+.um-chat-item-more-btn.active {
+    background: rgba(120, 1, 21, 0.08);
+    color: #ffb800; /* Màu vàng Gold rực rỡ nổi bật khi hover/active */
+    transform: scale(1.08);
+}
+
+.um-chat-item-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 2100;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(120, 1, 21, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(120, 1, 21, 0.15), 0 4px 12px rgba(0,0,0,0.06);
+    padding: 4px;
+    min-width: 140px;
+    display: none;
+    transform-origin: top right;
+    animation: umDropdownIn 0.2s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes umDropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.um-chat-item-dropdown.show {
+    display: block;
+}
+
+.um-dropdown-action-btn {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 10px 14px; /* Padding rộng rãi cho mobile touch */
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #b0002a; /* Màu đỏ đô cảnh báo */
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.um-dropdown-action-btn:hover {
+    background: #fff1f2;
+    color: #ef4444; /* Màu đỏ tươi nổi bật khi hover */
+}
+

@@ -355,21 +355,25 @@ public sealed class ChatController : ControllerBase
 
         participant.LastReadMessageId = message.MessageId;
 
-        var recipientAccountIds = await _context.ConversationParticipants
+        var otherParticipants = await _context.ConversationParticipants
             .Where(p => p.ConversationId == conversationId && p.AccountId != accountId.Value)
-            .Select(p => p.AccountId)
             .ToListAsync(cancellationToken);
+
+        foreach (var p in otherParticipants)
+        {
+            p.IsArchived = false; // Tự động mở lại đoạn chat cho đối phương khi có tin nhắn mới
+        }
 
         var senderEmail = await _context.Accounts
             .Where(a => a.AccountId == accountId.Value)
             .Select(a => a.Email)
             .FirstOrDefaultAsync(cancellationToken);
 
-        foreach (var recipientAccountId in recipientAccountIds)
+        foreach (var p in otherParticipants)
         {
             _context.Notifications.Add(new Notification
             {
-                RecipientAccountId = recipientAccountId,
+                RecipientAccountId = p.AccountId,
                 Type = "chat_message",
                 Title = "Tin nhan moi",
                 Message = $"{senderEmail ?? "Nguoi dung"} vua gui tin nhan cho ban.",
@@ -467,6 +471,24 @@ public sealed class ChatController : ControllerBase
         var totalUnread = unreadCountByConversation.Sum(x => x.Count);
 
         return this.ApiOk(new { totalUnread });
+    }
+
+    [HttpPost("conversations/{conversationId:int}/archive")]
+    public async Task<IActionResult> ArchiveConversation(int conversationId, CancellationToken cancellationToken = default)
+    {
+        var accountId = GetCurrentAccountId();
+        if (!accountId.HasValue)
+            return this.ApiUnauthorized("Unauthorized.");
+
+        var participant = await _context.ConversationParticipants
+            .FirstOrDefaultAsync(p => p.ConversationId == conversationId && p.AccountId == accountId.Value, cancellationToken);
+        if (participant is null)
+            return Forbid();
+
+        participant.IsArchived = true;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return this.ApiOk(new { success = true, message = "Cuoc tro chuyen da duoc xoa (an)." });
     }
 
     private int? GetCurrentAccountId()

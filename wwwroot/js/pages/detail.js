@@ -67,37 +67,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             function getAccessToken() {
-                const possibleKeys = ['unimap360.accessToken', 'accessToken', 'token', 'jwtToken'];
-                for (const key of possibleKeys) {
-                    const value = localStorage.getItem(key);
-                    if (value && value.trim()) return value;
-                    const sessionValue = sessionStorage.getItem(key);
-                    if (sessionValue && sessionValue.trim()) return sessionValue;
+                if (window.UniMap360AuthStore && typeof window.UniMap360AuthStore.getStoredToken === 'function') {
+                    return window.UniMap360AuthStore.getStoredToken();
                 }
-                return null;
+                if (typeof window.getToken === 'function') return window.getToken();
+                return window.UniMap360Core?.getToken?.() || null;
             }
 
-            function parseJwtPayload(token) {
-                try {
-                    const payloadBase64 = token.split('.')[1];
-                    if (!payloadBase64) return null;
-                    const normalized = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-                    const decoded = atob(normalized);
-                    return JSON.parse(decoded);
-                } catch {
-                    return null;
-                }
+            function getCurrentAccount() {
+                return window.UniMap360AuthStore?.getStoredAccount?.() || null;
             }
 
-            function isStudentToken(token) {
-                if (!token) return false;
-                const payload = parseJwtPayload(token);
-                if (!payload) return false;
-
-                const role = payload.role
-                    || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-                    || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'];
-                return String(role || '').toLowerCase() === 'student';
+            function isStudentAccount(account) {
+                return String(account?.role || '').toLowerCase() === 'student';
             }
 
             function renderReviewList(items) {
@@ -151,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const note = document.getElementById('detail-review-form-note');
                 const submitBtn = document.getElementById('detail-review-submit');
 
-                if (!token || !isStudentToken(token)) {
+                if (!token || !isStudentAccount(getCurrentAccount())) {
                     submitBtn.disabled = true;
                     note.textContent = 'Bạn cần đăng nhập bằng tài khoản Student để gửi đánh giá.';
                     formWrap.classList.add('opacity-75');
@@ -168,8 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     fetch('/api/reviews', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
                             targetType: targetType,
@@ -258,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (jobApplyFeedbackEl) jobApplyFeedbackEl.textContent = '';
 
                 const token = getAccessToken();
-                const isStudent = isStudentToken(token);
+                const isStudent = isStudentAccount(getCurrentAccount());
                 const appointmentCooldownMs = 45000;
                 let hasPendingAppointment = false;
                 let lastAppointmentSentAt = 0;
@@ -369,9 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     historyListEl.innerHTML = '';
 
                     return fetch('/api/room-appointments/my?limit=100', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
+                        credentials: 'same-origin'
                     })
                     .then(function(res) {
                         if (!res.ok) throw new Error('Không tải được lịch sử yêu cầu.');
@@ -506,9 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         const loadMyJobApplications = function() {
                             return fetch('/api/job-applications/my?limit=200', {
-                                headers: {
-                                    'Authorization': `Bearer ${token}`
-                                }
+                                credentials: 'same-origin'
                             })
                             .then(function(res) {
                                 if (!res.ok) return null;
@@ -582,9 +559,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                 fetch('/api/job-applications', {
                                     method: 'POST',
-                                    headers: {
-                                        'Authorization': `Bearer ${token}`
-                                    },
+                                    credentials: 'same-origin',
                                     body: formData
                                 })
                                 .then(function(res) {
@@ -709,8 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         fetch('/api/room-appointments', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
                                 roomId: Number(itemId),

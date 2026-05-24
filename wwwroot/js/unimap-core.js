@@ -9,7 +9,11 @@ window.UniMap360Core.getToken = function () {
     if (window.UniMap360AuthStore && typeof window.UniMap360AuthStore.getStoredToken === 'function') {
         return window.UniMap360AuthStore.getStoredToken();
     }
-    return localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken');
+    const bootstrap = window.__UNIMAP360_AUTH_BOOTSTRAP__;
+    if (bootstrap && bootstrap.isAuthenticated === true && bootstrap.email) {
+        return "cookie-auth";
+    }
+    return null;
 };
 
 // 2. Hiển thị thông báo (Toast)
@@ -55,3 +59,39 @@ window.UniMap360Core.showToast = function (message, type = 'success') {
 // 3. Export thành các biến global để tương thích với các file js/cshtml cũ
 window.getToken = window.UniMap360Core.getToken;
 window.showToast = window.UniMap360Core.showToast;
+
+// 4. Global Fetch Interceptor để xóa header "Authorization: Bearer null/undefined"
+(function () {
+    const originalFetch = window.fetch;
+    window.fetch = async function (resource, options) {
+        options = options || {};
+        if (options.headers) {
+            let headersObj;
+            if (options.headers instanceof Headers) {
+                headersObj = options.headers;
+            } else if (Array.isArray(options.headers)) {
+                headersObj = new Headers(options.headers);
+            } else {
+                headersObj = new Headers();
+                for (const [key, value] of Object.entries(options.headers)) {
+                    headersObj.append(key, value);
+                }
+            }
+
+            const authHeader = headersObj.get('Authorization');
+            if (authHeader) {
+                const cleanAuth = authHeader.trim();
+                const normalized = cleanAuth.toLowerCase();
+                if (cleanAuth === 'Bearer null' ||
+                    cleanAuth === 'Bearer undefined' ||
+                    cleanAuth === 'Bearer' ||
+                    cleanAuth === 'Bearer ' ||
+                    normalized === 'bearer cookie-auth') {
+                    headersObj.delete('Authorization');
+                }
+            }
+            options.headers = headersObj;
+        }
+        return originalFetch(resource, options);
+    };
+})();

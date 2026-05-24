@@ -695,7 +695,9 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang gửi...';
 
-            var token = localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken');
+            var token = (window.UniMap360AuthStore && window.UniMap360AuthStore.getStoredToken)
+                ? window.UniMap360AuthStore.getStoredToken()
+                : (window.getToken ? window.getToken() : null);
             if (!token) {
                 showToast('Bạn cần đăng nhập trước khi đăng tin.', 'error');
                 btn.disabled = false;
@@ -744,8 +746,7 @@
                 var res = await fetch('/api/employer/jobs', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(body)
                 });

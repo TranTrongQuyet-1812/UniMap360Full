@@ -722,13 +722,7 @@
         const AUTH_COOKIE_TOKEN = 'unimap360.accessToken';
 
         function setTokenCookie(token, rememberMe) {
-            if (!token) return;
-
-            const attrs = ['path=/', 'SameSite=Lax'];
-            if (window.location.protocol === 'https:') attrs.push('Secure');
-            if (rememberMe) attrs.push('Max-Age=' + (60 * 60 * 24 * 7));
-
-            document.cookie = AUTH_COOKIE_TOKEN + '=' + encodeURIComponent(token) + '; ' + attrs.join('; ');
+            // Không làm gì cả - Server đã ghi nhận HttpOnly Cookie
         }
 
         function toggleAuth(type) {
@@ -815,29 +809,21 @@
         }
 
         function saveAuthSession(authData, rememberMe) {
-            const token = authData.accessToken;
-            if (!token) return;
-
-            setTokenCookie(token, rememberMe);
-
-            const accountData = JSON.stringify({
+            const account = {
                 accountId: authData.accountId,
                 email: authData.email,
                 role: authData.role
-            });
+            };
 
-            if (rememberMe) {
-                localStorage.setItem(STORAGE_KEY_TOKEN, token);
-                localStorage.setItem(STORAGE_KEY_ACCOUNT, accountData);
-                sessionStorage.removeItem(STORAGE_KEY_TOKEN);
-                sessionStorage.removeItem(STORAGE_KEY_ACCOUNT);
-                return;
+            if (window.UniMap360AuthStore) {
+                window.UniMap360AuthStore.saveAccount(account);
             }
 
-            sessionStorage.setItem(STORAGE_KEY_TOKEN, token);
-            sessionStorage.setItem(STORAGE_KEY_ACCOUNT, accountData);
-            localStorage.removeItem(STORAGE_KEY_TOKEN);
+            // Dọn dẹp triệt để các vết tích cũ nếu có
             localStorage.removeItem(STORAGE_KEY_ACCOUNT);
+            sessionStorage.removeItem(STORAGE_KEY_ACCOUNT);
+            localStorage.removeItem(STORAGE_KEY_TOKEN);
+            sessionStorage.removeItem(STORAGE_KEY_TOKEN);
         }
 
         function notifyAuthChanged(authData) {
@@ -902,7 +888,7 @@
 
             setSubmitting(form, true);
             try {
-                const authData = await postJson('/api/auth/login', { email, password });
+                const authData = await postJson('/api/auth/login', { email, password, rememberMe });
                 saveAuthSession(authData, rememberMe);
                 notifyAuthChanged(authData);
                 showFeedback('loginFeedback', 'Đăng nhập thành công. Đang chuyển trang...', 'success');

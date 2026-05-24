@@ -227,7 +227,7 @@
 
         try {
             const res = await fetch('/api/Roommates/me', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 const data = await res.json();
@@ -373,8 +373,7 @@
             const res = await fetch('/api/Roommates/' + id, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + getToken()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(body)
             });
@@ -408,7 +407,7 @@
         try {
             const res = await fetch('/api/Roommates/' + deleteTargetId, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 showToast('Đã xóa bài đăng thành công!', 'success');

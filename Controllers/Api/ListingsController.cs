@@ -51,24 +51,28 @@ public class ListingsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(province) && !string.Equals(province, "all", StringComparison.OrdinalIgnoreCase))
         {
-            var provinceKey = NormalizeText(province.Trim());
+            var provinceRaw = province.Trim();
+            var provinceRawLower = provinceRaw.ToLowerInvariant();
+            var provinceNormalized = NormalizeText(provinceRaw);
+            var escapedProvinceRawLower = EscapeLikePattern(provinceRawLower);
+            var escapedProvinceNormalized = EscapeLikePattern(provinceNormalized);
 
-            if (provinceKey.Contains("ho chi minh"))
+            if (provinceNormalized.Contains("ho chi minh"))
             {
                 query = query.Where(x =>
-                    x.AddressText.Contains("Hồ Chí Minh") ||
-                    x.AddressText.Contains("Ho Chi Minh") ||
-                    x.AddressText.Contains("TP.HCM") ||
-                    x.AddressText.Contains("TP HCM") ||
-                    x.AddressText.Contains("Thủ Đức") ||
-                    x.AddressText.Contains("Thu Duc") ||
-                    x.AddressText.Contains("Sài Gòn") ||
-                    x.AddressText.Contains("Sai Gon"));
+                    EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceRawLower}%", @"\")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceNormalized}%", @"\")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), "%tp.hcm%")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), "%tp hcm%")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), "%tp ho chi minh%")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), "%sai gon%")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), "%thu duc%"));
             }
             else
             {
-                var escapedProvince = EscapeLikePattern(province.Trim());
-                query = query.Where(x => EF.Functions.Like(x.AddressText, $"%{escapedProvince}%", @"\"));
+                query = query.Where(x =>
+                    EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceRawLower}%", @"\")
+                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceNormalized}%", @"\"));
             }
         }
 

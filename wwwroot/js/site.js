@@ -37,19 +37,12 @@ window.escapeHtml = function(unsafe) {
 
 	function getStoredToken() {
 		if (authStore) return authStore.getStoredToken();
-		return localStorage.getItem(STORAGE_KEY_TOKEN) || sessionStorage.getItem(STORAGE_KEY_TOKEN);
+		return null;
 	}
 
 	function getStoredAccount() {
 		if (authStore) return authStore.getStoredAccount();
-		const raw = localStorage.getItem(STORAGE_KEY_ACCOUNT) || sessionStorage.getItem(STORAGE_KEY_ACCOUNT);
-		if (!raw) return null;
-
-		try {
-			return JSON.parse(raw);
-		} catch {
-			return null;
-		}
+		return null;
 	}
 
 	function saveAccount(account) {
@@ -57,14 +50,10 @@ window.escapeHtml = function(unsafe) {
 			authStore.saveAccount(account);
 			return;
 		}
-		const serialized = JSON.stringify(account);
-		if (localStorage.getItem(STORAGE_KEY_TOKEN)) {
-			localStorage.setItem(STORAGE_KEY_ACCOUNT, serialized);
-			return;
-		}
-		if (sessionStorage.getItem(STORAGE_KEY_TOKEN)) {
-			sessionStorage.setItem(STORAGE_KEY_ACCOUNT, serialized);
-		}
+
+		window.dispatchEvent(new CustomEvent('unimap360:auth-changed', {
+			detail: { account: account || null }
+		}));
 	}
 
 	function clearStoredAuth() {
@@ -72,10 +61,11 @@ window.escapeHtml = function(unsafe) {
 			authStore.clearStoredAuth();
 			return;
 		}
-		localStorage.removeItem(STORAGE_KEY_TOKEN);
-		localStorage.removeItem(STORAGE_KEY_ACCOUNT);
-		sessionStorage.removeItem(STORAGE_KEY_TOKEN);
-		sessionStorage.removeItem(STORAGE_KEY_ACCOUNT);
+		fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => { });
+
+		window.dispatchEvent(new CustomEvent('unimap360:auth-changed', {
+			detail: { account: null }
+		}));
 	}
 
 	function stopNotificationPolling() {
@@ -92,23 +82,15 @@ window.escapeHtml = function(unsafe) {
 		if (notificationCenter) notificationCenter.wireEvents();
 	}
 
-	async function hydrateAccountFromApi(token) {
-		if (!token) return null;
-
+	async function hydrateAccountFromApi() {
 		try {
 			const requestResult = apiClient
 				? await apiClient.requestJson('/api/auth/me', {
-					method: 'GET',
-					headers: {
-						Authorization: `Bearer ${token}`
-					}
+					method: 'GET'
 				})
 				: null;
 			const response = requestResult ? requestResult.response : await fetch('/api/auth/me', {
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+				method: 'GET'
 			});
 
 			if (response.status === 401 || response.status === 403) {
@@ -156,30 +138,31 @@ window.escapeHtml = function(unsafe) {
 		wireAuthStateListeners();
 		wireNotificationEvents();
 
-		const token = getStoredToken();
 		const account = getStoredAccount();
 
-		renderAuthNavbar(account);
-
-		if (!token) {
-			renderAuthNavbar(null);
-			return;
-		}
-
 		if (account) {
-			if (notificationCenter) notificationCenter.startPolling(token);
-			return; // Đã có bộ nhớ đệm, KHÔNG gọi API nữa để chống 429
-		}
+			// Hiển thị ngay trạng thái đăng nhập từ cache
+			renderAuthNavbar(account);
+			if (notificationCenter) notificationCenter.startPolling("cookie-auth");
 
-		const freshAccount = await hydrateAccountFromApi(token);
-		if (freshAccount) {
-			renderAuthNavbar(freshAccount);
-			if (notificationCenter) notificationCenter.startPolling(token);
-			return;
+			// Kiểm tra âm thầm phiên đăng nhập thực tế
+			hydrateAccountFromApi().then(freshAccount => {
+				if (!freshAccount) {
+					renderAuthNavbar(null);
+					stopNotificationPolling();
+				} else {
+					renderAuthNavbar(freshAccount);
+				}
+			});
+		} else {
+			renderAuthNavbar(null);
+			// Kiểm tra xem có cookie đăng nhập hợp lệ không
+			hydrateAccountFromApi().then(freshAccount => {
+				if (freshAccount) {
+					renderAuthNavbar(freshAccount);
+					if (notificationCenter) notificationCenter.startPolling("cookie-auth");
+				}
+			});
 		}
-
-		// Keep current navbar state when API refresh fails due to transient network issues.
-		renderAuthNavbar(getStoredAccount());
-		if (notificationCenter) notificationCenter.startPolling(token);
 	});
 })();

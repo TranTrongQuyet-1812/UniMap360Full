@@ -303,22 +303,81 @@
             const time = conversation.lastMessage?.createdAt ? formatTime(conversation.lastMessage.createdAt) : "";
             const unread = Number(conversation.unreadCount || 0);
             return `
-                <button class="um-chat-list-item ${isActive ? "active" : ""}" type="button" data-conversation-id="${conversation.conversationId}">
-                    <div class="um-chat-item-title">${escapeHtml(conversation.title || "Cuộc trò chuyện")}</div>
-                    <div class="um-chat-item-preview">${escapeHtml(truncate(preview, 80))}</div>
-                    <div class="um-chat-item-meta">
-                        <span class="um-chat-item-time">${escapeHtml(time)}</span>
-                        ${unread > 0 ? `<span class="um-chat-item-unread">${unread}</span>` : ""}
+                <div class="um-chat-list-item ${isActive ? "active" : ""}" data-conversation-id="${conversation.conversationId}">
+                    <div class="um-chat-item-click-area">
+                        <div class="um-chat-item-title">${escapeHtml(conversation.title || "Cuộc trò chuyện")}</div>
+                        <div class="um-chat-item-preview">${escapeHtml(truncate(preview, 80))}</div>
+                        <div class="um-chat-item-meta">
+                            <span class="um-chat-item-time">${escapeHtml(time)}</span>
+                            ${unread > 0 ? `<span class="um-chat-item-unread">${unread}</span>` : ""}
+                        </div>
                     </div>
-                </button>
+                    <div class="um-chat-item-action">
+                        <button class="um-chat-item-more-btn" type="button" title="Thao tác" data-more-id="${conversation.conversationId}">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="um-chat-item-dropdown" id="um-dropdown-${conversation.conversationId}">
+                            <button class="um-dropdown-action-btn" type="button" data-delete-id="${conversation.conversationId}">
+                                <i class="fas fa-trash-alt"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `;
         }).join("");
 
         listEl.innerHTML = html;
-        listEl.querySelectorAll("[data-conversation-id]").forEach(function (button) {
-            button.addEventListener("click", async function () {
-                const conversationId = Number(button.getAttribute("data-conversation-id"));
+
+        // Gắn sự kiện click mở chat
+        listEl.querySelectorAll(".um-chat-item-click-area").forEach(function (clickArea) {
+            clickArea.addEventListener("click", async function () {
+                const item = clickArea.closest("[data-conversation-id]");
+                const conversationId = Number(item.getAttribute("data-conversation-id"));
                 if (conversationId > 0) await openConversation(conversationId);
+            });
+        });
+
+        // Gắn sự kiện click nút 3 chấm toggle dropdown
+        listEl.querySelectorAll(".um-chat-item-more-btn").forEach(function (btn) {
+            btn.addEventListener("click", function (event) {
+                event.stopPropagation(); // Ngăn kích hoạt click area mở chat
+                const conversationId = btn.getAttribute("data-more-id");
+                
+                // Đóng tất cả dropdown khác và xoá class active của các nút khác
+                listEl.querySelectorAll(".um-chat-item-dropdown").forEach(function (drop) {
+                    if (drop.id !== `um-dropdown-${conversationId}`) {
+                        drop.classList.remove("show");
+                    }
+                });
+                listEl.querySelectorAll(".um-chat-item-more-btn").forEach(function (otherBtn) {
+                    if (otherBtn !== btn) {
+                        otherBtn.classList.remove("active");
+                    }
+                });
+ 
+                const dropdown = document.getElementById(`um-dropdown-${conversationId}`);
+                if (dropdown) {
+                    const isShowing = dropdown.classList.toggle("show");
+                    btn.classList.toggle("active", isShowing);
+                }
+            });
+        });
+
+        // Gắn sự kiện click nút Xóa cuộc trò chuyện
+        listEl.querySelectorAll("[data-delete-id]").forEach(function (btn) {
+            btn.addEventListener("click", async function (event) {
+                event.stopPropagation(); // Ngăn kích hoạt click area mở chat
+                const conversationId = Number(btn.getAttribute("data-delete-id"));
+                
+                // Đóng dropdown trước
+                const dropdown = btn.closest(".um-chat-item-dropdown");
+                if (dropdown) dropdown.classList.remove("show");
+
+                if (conversationId > 0) {
+                    if (window.confirm("Bạn có chắc chắn muốn xóa cuộc trò chuyện này?")) {
+                        await deleteConversation(conversationId);
+                    }
+                }
             });
         });
     }
@@ -340,6 +399,33 @@
         await loadMessages(true, true);
         await markConversationRead();
         await loadConversations(true);
+    }
+
+    async function deleteConversation(conversationId) {
+        const token = getToken();
+        if (!token) return;
+
+        try {
+            const { response, payload } = await fetchJson(`/api/chat/conversations/${conversationId}/archive`, {
+                method: "POST"
+            });
+
+            if (!response.ok) {
+                window.alert(payload?.message || "Không thể xóa cuộc trò chuyện.");
+                return;
+            }
+
+            // Nếu cuộc trò chuyện bị xóa đang là cuộc trò chuyện active, đóng khung chat thread
+            if (state.activeConversationId === conversationId) {
+                state.activeConversationId = null;
+                showListView();
+            }
+
+            // Load lại danh sách chat
+            await loadConversations(true);
+        } catch {
+            window.alert("Lỗi kết nối khi xóa cuộc trò chuyện.");
+        }
     }
 
     async function loadMessages(forceScrollToBottom = false, forceRebuild = false) {
@@ -582,6 +668,18 @@
             },
             openDirectChat: openDirectChat
         };
+
+        document.addEventListener("click", function (event) {
+            // Nếu click không nằm trong nút 3 chấm và dropdown, đóng hết dropdowns đang mở
+            if (!event.target.closest(".um-chat-item-action")) {
+                document.querySelectorAll(".um-chat-item-dropdown").forEach(function (drop) {
+                    drop.classList.remove("show");
+                });
+                document.querySelectorAll(".um-chat-item-more-btn").forEach(function (btn) {
+                    btn.classList.remove("active");
+                });
+            }
+        });
 
         document.addEventListener("visibilitychange", function () {
             if (!isAuthenticated()) return;

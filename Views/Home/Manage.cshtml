@@ -402,9 +402,10 @@
     const wardCache = new Map();
 
     function getAccount() {
-        try {
-            return JSON.parse(localStorage.getItem('unimap360.account') || sessionStorage.getItem('unimap360.account'));
-        } catch { return null; }
+        if (window.UniMap360AuthStore && typeof window.UniMap360AuthStore.getStoredAccount === 'function') {
+            return window.UniMap360AuthStore.getStoredAccount();
+        }
+        return null;
     }
     
 
@@ -730,10 +731,9 @@
 
     async function loadLookupData() {
         try {
-            const token = getToken();
             const [metaRes, provinceRes] = await Promise.all([
                 fetch('/api/manage-posts/metadata', {
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    credentials: 'same-origin'
                 }),
                 fetch('/api/locations/provinces')
             ]);
@@ -805,7 +805,6 @@
     });
 
     async function fetchListings() {
-        const token = getToken();
         if (currentRole !== 'host' && currentRole !== 'employer') {
             document.getElementById('manageResults').innerHTML = '<div class="empty-state">Tài khoản của bạn không có quyền đăng bài.</div>';
             return;
@@ -813,7 +812,7 @@
 
         try {
             const res = await fetch('/api/manage-posts/items', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 const data = await readJsonSafe(res);
@@ -1027,8 +1026,7 @@
             const res = await fetch(endpoint, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + getToken()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(body)
             });
@@ -1069,7 +1067,7 @@
         try {
             const res = await fetch(endpoint, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 showToast('Đã xóa thành công', 'success');

@@ -741,7 +741,9 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang gửi...';
 
-            var token = localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken');
+            var token = (window.UniMap360AuthStore && window.UniMap360AuthStore.getStoredToken)
+                ? window.UniMap360AuthStore.getStoredToken()
+                : (window.getToken ? window.getToken() : null);
             if (!token) {
                 showToast('Bạn cần đăng nhập trước khi đăng tin.', 'error');
                 btn.disabled = false;
@@ -805,9 +807,7 @@
             try {
                 var res = await fetch('/api/host/rooms/with-images', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    },
+                    credentials: 'same-origin',
                     body: body
                 });
                 var data = await readJsonSafe(res);

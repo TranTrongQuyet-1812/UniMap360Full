@@ -405,11 +405,11 @@
     let currentRole = '';
 
     document.addEventListener('DOMContentLoaded', async () => {
-        const token = window.UniMap360AuthStore 
-            ? window.UniMap360AuthStore.getStoredToken() 
-            : (localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken'));
-            
-        if (!token) {
+        const authStore = window.UniMap360AuthStore;
+        const token = authStore ? authStore.getStoredToken() : getToken();
+        const account = authStore ? authStore.getStoredAccount() : null;
+
+        if (!token || !account || !account.email) {
             window.location.href = '/Home/Auth';
             return;
         }
@@ -417,7 +417,7 @@
         try {
             // Fetch detailed profile data
             const res = await fetch('/api/profile', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                credentials: 'same-origin'
             });
             
             if (!res.ok) {
@@ -462,7 +462,6 @@
                     if (nameToSave && account.fullName !== nameToSave) {
                         account.fullName = nameToSave;
                         window.UniMap360AuthStore.saveAccount(account);
-                        window.dispatchEvent(new Event('unimap360-auth-changed'));
                     }
                 }
             }
@@ -573,7 +572,7 @@
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const token = window.UniMap360AuthStore ? window.UniMap360AuthStore.getStoredToken() : localStorage.getItem('unimap360.accessToken');
+        const token = window.UniMap360AuthStore ? window.UniMap360AuthStore.getStoredToken() : getToken();
         const btnSave = document.getElementById('btnSaveProfile');
         
         // Prepare payload
@@ -605,8 +604,7 @@
             const res = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });
@@ -629,7 +627,7 @@
                     window.UniMap360AuthStore.saveAccount(account);
                     // Cập nhật lại UI navbar nếu cần (tùy vào luồng hiện tại)
                     // Trigger custom event để navbar cập nhật
-                    window.dispatchEvent(new Event('unimap360-auth-changed'));
+                    window.dispatchEvent(new Event('unimap360:auth-changed'));
                 }
             }
         } catch (err) {
@@ -645,7 +643,7 @@
         if (!this.files || this.files.length === 0) return;
 
         const file = this.files[0];
-        const token = window.UniMap360AuthStore ? window.UniMap360AuthStore.getStoredToken() : localStorage.getItem('unimap360.accessToken');
+        const token = window.UniMap360AuthStore ? window.UniMap360AuthStore.getStoredToken() : getToken();
         const loadingOverlay = document.getElementById('avatarLoading');
         
         const formData = new FormData();
@@ -656,9 +654,7 @@
             
             const res = await fetch('/api/profile/avatar', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
+                credentials: 'same-origin',
                 body: formData
             });
 
@@ -680,7 +676,7 @@
                     window.UniMap360AuthStore.saveAccount(account);
                     
                     // Trigger navbar update
-                    window.dispatchEvent(new Event('unimap360-auth-changed'));
+                    window.dispatchEvent(new Event('unimap360:auth-changed'));
                 }
             }
             

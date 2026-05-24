@@ -107,13 +107,11 @@
             try {
                 const requestResult = apiClient
                     ? await apiClient.requestJson("/api/notifications?limit=10", {
-                        method: "GET",
-                        headers: { Authorization: `Bearer ${token}` }
+                        method: "GET"
                     })
                     : null;
                 const response = requestResult ? requestResult.response : await fetch("/api/notifications?limit=10", {
-                    method: "GET",
-                    headers: { Authorization: `Bearer ${token}` }
+                    method: "GET"
                 });
                 if (response.status === 401 || response.status === 403) return;
                 if (!response.ok) return;
@@ -152,8 +150,7 @@
                             if (!window.confirm("Bạn có chắc muốn xóa thông báo này không?")) return;
                             try {
                                 await fetch(`/api/notifications/${id}`, {
-                                    method: "DELETE",
-                                    headers: { Authorization: `Bearer ${token}` }
+                                    method: "DELETE"
                                 });
                             } finally {
                                 fetchNotifications(token);
@@ -161,8 +158,7 @@
                         } else if (action === "open") {
                             try {
                                 await fetch(`/api/notifications/${id}/read`, {
-                                    method: "POST",
-                                    headers: { Authorization: `Bearer ${token}` }
+                                    method: "POST"
                                 });
                             } catch {}
                         }
@@ -171,8 +167,7 @@
                     if (markAllBtn) {
                         try {
                             await fetch("/api/notifications/read-all", {
-                                method: "POST",
-                                headers: { Authorization: `Bearer ${token}` }
+                                method: "POST"
                             });
                         } finally {
                             fetchNotifications(token);
@@ -183,8 +178,7 @@
                         if (!window.confirm("Bạn có chắc muốn xóa toàn bộ thông báo không?")) return;
                         try {
                             await fetch("/api/notifications", {
-                                method: "DELETE",
-                                headers: { Authorization: `Bearer ${token}` }
+                                method: "DELETE"
                             });
                         } finally {
                             fetchNotifications(token);

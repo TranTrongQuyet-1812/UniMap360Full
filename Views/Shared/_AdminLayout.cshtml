@@ -1,4 +1,23 @@
+@using System.Security.Claims
+@using System.Text.Json
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+@{
+    var principal = User ?? new ClaimsPrincipal();
+    int? bootstrapAccountId = null;
+    if (int.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedAccountId))
+    {
+        bootstrapAccountId = parsedAccountId;
+    }
+
+    var bootstrapAuth = new
+    {
+        isAuthenticated = principal.Identity?.IsAuthenticated == true,
+        accountId = bootstrapAccountId,
+        email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email"),
+        role = principal.FindFirstValue(ClaimTypes.Role) ?? principal.FindFirstValue("role")
+    };
+    var bootstrapAuthJson = JsonSerializer.Serialize(bootstrapAuth);
+}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -214,6 +233,9 @@
     @RenderSection("Styles", required: false)
 </head>
 <body>
+    <script>
+        window.__UNIMAP360_AUTH_BOOTSTRAP__ = @Html.Raw(bootstrapAuthJson);
+    </script>
     <div id="adminSidebarMobileBackdrop" class="admin-sidebar-mobile-backdrop"></div>
     
     <!-- Sidebar -->
@@ -305,14 +327,29 @@
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function getStoredToken() {
-            return localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken');
+        function getBootstrapAccount() {
+            const boot = window.__UNIMAP360_AUTH_BOOTSTRAP__;
+            if (!boot || boot.isAuthenticated !== true || !boot.email) return null;
+            return boot;
         }
 
-        function clearTokenCookie() {
-            const attrs = ['path=/', 'Max-Age=0', 'SameSite=Lax'];
-            if (window.location.protocol === 'https:') attrs.push('Secure');
-            document.cookie = 'unimap360.accessToken=; ' + attrs.join('; ');
+        async function getAuthenticatedAccount() {
+            try {
+                const res = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+                if (!res.ok) return null;
+
+                let account = await res.json();
+                if (account && account.success === true && account.data !== undefined) {
+                    account = account.data;
+                }
+                return account;
+            } catch {
+                return null;
+            }
         }
 
         function openAdminSidebar() {
@@ -364,23 +401,16 @@
             setupResponsiveSidebar();
             if (!window.location.pathname.toLowerCase().includes('/admin/login') &&
                 !window.location.pathname.toLowerCase().includes('/home/auth')) {
-                const token = getStoredToken();
-                if (!token) {
-                    window.location.href = '/Home/Auth';
-                    return;
+                const bootstrap = getBootstrapAccount();
+                if (bootstrap?.email) {
+                    document.getElementById('adminEmailDisplay').innerText = bootstrap.email;
                 }
                 
                 try {
-                    const res = await fetch('/api/auth/me', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-                    if (!res.ok) {
+                    const account = await getAuthenticatedAccount();
+                    if (!account) {
                         logoutAdmin();
                         return;
-                    }
-                    let account = await res.json();
-                    if (account && account.success === true && account.data !== undefined) {
-                        account = account.data;
                     }
                     if ((account.role || '').toLowerCase() !== 'admin') {
                         logoutAdmin();
@@ -405,29 +435,26 @@
         });
 
         function logoutAdmin() {
-            localStorage.removeItem('unimap360.accessToken');
-            localStorage.removeItem('unimap360.account');
-            sessionStorage.removeItem('unimap360.accessToken');
-            sessionStorage.removeItem('unimap360.account');
-            clearTokenCookie();
+            if (window.UniMap360AuthStore && typeof window.UniMap360AuthStore.clearStoredAuth === 'function') {
+                window.UniMap360AuthStore.clearStoredAuth();
+            } else {
+                fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                }).catch(() => { });
+            }
             window.location.href = '/Home/Auth';
         }
 
         async function adminFetchJson(url, options = {}) {
-            const token = getStoredToken();
-            if (!token) {
-                logoutAdmin();
-                throw new Error('Không có access token.');
-            }
+            // Auth uses HttpOnly cookie; no token is read from browser storage.
 
             const headers = new Headers(options.headers || {});
-            headers.set('Authorization', 'Bearer ' + token);
-
             if (!headers.has('Content-Type') && options.body) {
                 headers.set('Content-Type', 'application/json');
             }
 
-            const res = await fetch(url, { ...options, headers });
+            const res = await fetch(url, { ...options, headers, credentials: 'same-origin' });
             const text = await res.text();
             let data = null;
             try {
@@ -451,16 +478,8 @@
         }
 
         async function adminFetchRaw(url, options = {}) {
-            const token = getStoredToken();
-            if (!token) {
-                logoutAdmin();
-                throw new Error('Không có access token.');
-            }
-
             const headers = new Headers(options.headers || {});
-            headers.set('Authorization', 'Bearer ' + token);
-
-            const res = await fetch(url, { ...options, headers });
+            const res = await fetch(url, { ...options, headers, credentials: 'same-origin' });
             if (!res.ok) {
                 const text = await res.text();
                 if (res.status === 401 || res.status === 403) {

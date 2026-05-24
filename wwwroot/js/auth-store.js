@@ -1,55 +1,74 @@
 (function () {
     const STORAGE_KEY_TOKEN = "unimap360.accessToken";
     const STORAGE_KEY_ACCOUNT = "unimap360.account";
-    const AUTH_COOKIE_TOKEN = "unimap360.accessToken";
 
-    function setTokenCookie(token, rememberMe) {
-        if (!token) return;
+    function parseBootstrapAccount() {
+        const bootstrap = window.__UNIMAP360_AUTH_BOOTSTRAP__;
+        if (!bootstrap || bootstrap.isAuthenticated !== true || !bootstrap.email) {
+            return null;
+        }
 
-        const attrs = ["path=/", "SameSite=Lax"];
-        if (location.protocol === "https:") attrs.push("Secure");
-        if (rememberMe) attrs.push("Max-Age=" + (60 * 60 * 24 * 7));
+        const accountId = Number(bootstrap.accountId);
+        return {
+            accountId: Number.isFinite(accountId) && accountId > 0 ? accountId : null,
+            email: String(bootstrap.email || "").trim(),
+            role: String(bootstrap.role || "").trim() || null
+        };
+    }
 
-        document.cookie = AUTH_COOKIE_TOKEN + "=" + encodeURIComponent(token) + "; " + attrs.join("; ");
+    // In-memory auth state only (token stays in HttpOnly cookie).
+    let _currentAccount = parseBootstrapAccount();
+
+    function emitAuthChanged(account) {
+        try {
+            window.dispatchEvent(new CustomEvent("unimap360:auth-changed", {
+                detail: { account: account || null }
+            }));
+        } catch {
+            // ignore
+        }
+    }
+
+    function setTokenCookie() {
+        // Server sets HttpOnly cookie on login/google/refresh.
     }
 
     function clearTokenCookie() {
-        const attrs = ["path=/", "Max-Age=0", "SameSite=Lax"];
-        if (location.protocol === "https:") attrs.push("Secure");
-        document.cookie = AUTH_COOKIE_TOKEN + "=; " + attrs.join("; ");
+        // Use /api/auth/logout so server removes HttpOnly cookie.
     }
 
     function getStoredToken() {
-        return localStorage.getItem(STORAGE_KEY_TOKEN) || sessionStorage.getItem(STORAGE_KEY_TOKEN);
+        // Compatibility sentinel for legacy pages that still gate on token presence.
+        return _currentAccount ? "cookie-auth" : null;
     }
 
     function getStoredAccount() {
-        const raw = localStorage.getItem(STORAGE_KEY_ACCOUNT) || sessionStorage.getItem(STORAGE_KEY_ACCOUNT);
-        if (!raw) return null;
-        try {
-            return JSON.parse(raw);
-        } catch {
-            return null;
-        }
+        return _currentAccount;
     }
 
     function saveAccount(account) {
-        const serialized = JSON.stringify(account);
-        if (localStorage.getItem(STORAGE_KEY_TOKEN)) {
-            localStorage.setItem(STORAGE_KEY_ACCOUNT, serialized);
+        if (!account || !account.email) {
+            _currentAccount = null;
+            emitAuthChanged(null);
             return;
         }
-        if (sessionStorage.getItem(STORAGE_KEY_TOKEN)) {
-            sessionStorage.setItem(STORAGE_KEY_ACCOUNT, serialized);
-        }
+
+        _currentAccount = Object.assign({}, _currentAccount || {}, account);
+        emitAuthChanged(_currentAccount);
     }
 
     function clearStoredAuth() {
+        _currentAccount = null;
+        emitAuthChanged(null);
+
+        // Cleanup old client-side traces if any remain from older versions.
         localStorage.removeItem(STORAGE_KEY_TOKEN);
         localStorage.removeItem(STORAGE_KEY_ACCOUNT);
         sessionStorage.removeItem(STORAGE_KEY_TOKEN);
         sessionStorage.removeItem(STORAGE_KEY_ACCOUNT);
-        clearTokenCookie();
+
+        // Ask server to remove HttpOnly cookie.
+        fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => { });
     }
 
     window.UniMap360AuthStore = {
@@ -63,4 +82,3 @@
         clearStoredAuth
     };
 })();
-

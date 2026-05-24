@@ -27,8 +27,9 @@ public class AuthController : ControllerBase
     private readonly IEmailService _emailService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AuthController> _logger;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthController(UniMap360ProContext context, IConfiguration configuration, IMemoryCache cache, IEmailService emailService, IHttpClientFactory httpClientFactory, ILogger<AuthController> logger)
+    public AuthController(UniMap360ProContext context, IConfiguration configuration, IMemoryCache cache, IEmailService emailService, IHttpClientFactory httpClientFactory, ILogger<AuthController> logger, IWebHostEnvironment environment)
     {
         _context = context;
         _configuration = configuration;
@@ -36,6 +37,7 @@ public class AuthController : ControllerBase
         _emailService = emailService;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _environment = environment;
     }
 
     [AllowAnonymous]
@@ -144,7 +146,7 @@ public class AuthController : ControllerBase
         await _context.SaveChangesAsync();
 
         var token = GenerateJwt(account);
-        SetTokenCookie(token);
+        SetTokenCookie(token, request.RememberMe);
 
         return this.ApiOk(new
         {
@@ -253,7 +255,7 @@ public class AuthController : ControllerBase
             await _context.SaveChangesAsync();
 
             var token = GenerateJwt(account);
-            SetTokenCookie(token);
+            SetTokenCookie(token, request.RememberMe);
 
             return this.ApiOk(new
             {
@@ -299,7 +301,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh()
+    public async Task<IActionResult> Refresh([FromQuery] bool rememberMe = true)
     {
         var accountIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(accountIdClaim, out var accountId))
@@ -313,7 +315,7 @@ public class AuthController : ControllerBase
             return this.ApiNotFound("Không tìm thấy tài khoản.");
 
         var token = GenerateJwt(account);
-        SetTokenCookie(token);
+        SetTokenCookie(token, rememberMe);
 
         return this.ApiOk(new
         {
@@ -328,10 +330,11 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
+        var secureCookie = ShouldUseSecureCookie();
         Response.Cookies.Delete("unimap360.accessToken", new CookieOptions
         {
             Path = "/",
-            Secure = true,
+            Secure = secureCookie,
             SameSite = SameSiteMode.Lax
         });
         return this.ApiOk(new { message = "Đã đăng xuất." });
@@ -579,17 +582,33 @@ public class AuthController : ControllerBase
         };
     }
 
-    private void SetTokenCookie(string token)
+    private bool ShouldUseSecureCookie()
     {
-        var expiresMinutes = int.TryParse(_configuration["Jwt:ExpiresMinutes"], out var minutes) ? minutes : 120;
+        if (_environment.IsDevelopment())
+        {
+            return Request.IsHttps;
+        }
+
+        // Production/staging should always use secure cookies.
+        return true;
+    }
+
+    private void SetTokenCookie(string token, bool rememberMe)
+    {
+        var secureCookie = ShouldUseSecureCookie();
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,       // Chống XSS: JS không thể đọc được
-            Secure = true,         // Yêu cầu HTTPS
+            Secure = secureCookie, // Bật Secure trong production/HTTPS
             SameSite = SameSiteMode.Lax, // Tránh CSRF cơ bản
-            Expires = DateTime.UtcNow.AddMinutes(expiresMinutes),
             Path = "/"
         };
+
+        if (rememberMe)
+        {
+            cookieOptions.Expires = DateTime.UtcNow.AddDays(7);
+        }
+
         Response.Cookies.Append("unimap360.accessToken", token, cookieOptions);
     }
 }

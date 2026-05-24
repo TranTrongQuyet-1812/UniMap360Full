@@ -524,7 +524,7 @@
             if (typeof UniMap360AuthStore !== 'undefined' && typeof UniMap360AuthStore.getStoredToken === 'function') {
                 return UniMap360AuthStore.getStoredToken();
             }
-            return localStorage.getItem('unimap360.accessToken') || sessionStorage.getItem('unimap360.accessToken');
+            return (typeof getToken === 'function') ? getToken() : null;
         }
 
         function getAuthAccount() {
@@ -755,7 +755,7 @@
 
                     const res = await fetch('/api/Roommates', {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
+                        credentials: 'same-origin',
                         body: formData
                     });
 

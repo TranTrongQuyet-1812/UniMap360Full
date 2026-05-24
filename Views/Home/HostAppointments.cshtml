@@ -233,24 +233,12 @@
                 return date.toLocaleTimeString('vi-VN');
             }
 
-            function decodeJwt(token) {
-                try {
-                    const payload = token.split('.')[1];
-                    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-                    const json = decodeURIComponent(atob(base64).split('').map(function (c) {
-                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                    }).join(''));
-                    return JSON.parse(json);
-                } catch {
-                    return null;
-                }
+            function getAuthAccount() {
+                return window.UniMap360AuthStore?.getStoredAccount?.() || null;
             }
 
-            function isHostToken(token) {
-                const payload = decodeJwt(token);
-                if (!payload) return false;
-                const roleRaw = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role || '';
-                return roleRaw.toString().toLowerCase() === 'host';
+            function isHostAccount(account) {
+                return String(account?.role || '').toLowerCase() === 'host';
             }
 
             function formatDateTime(value) {
@@ -405,7 +393,8 @@
                 if (isLoading) return;
 
                 const token = getToken();
-                if (!token || !isHostToken(token)) {
+                const account = getAuthAccount();
+                if (!token || !isHostAccount(account)) {
                     listWrap.innerHTML = '<div class="empty-box"><i class="fas fa-lock me-2"></i>Trang này chỉ dành cho tài khoản Chủ trọ đã đăng nhập.</div>';
                     setRealtimeStatus('Trang này chỉ dành cho tài khoản Chủ trọ đã đăng nhập.', 'error');
                     return;
@@ -422,9 +411,7 @@
 
                 try {
                     const response = await fetch('/api/host/room-appointments?limit=200', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
+                        credentials: 'same-origin'
                     });
 
                     let data = await response.json();
@@ -479,8 +466,7 @@
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ response: responseText })
                     });
