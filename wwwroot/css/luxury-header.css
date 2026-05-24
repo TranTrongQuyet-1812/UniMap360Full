@@ -1,0 +1,237 @@
+/* luxury-header.css - Luxury UX/UI Header Design for UniMap360 */
+
+/* Main Header Container - Glassmorphism effect */
+.app-main-header {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: none !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.015) !important;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    min-height: var(--app-nav-height, 70px) !important;
+    display: flex;
+    align-items: center;
+}
+
+.app-main-header > .navbar {
+    width: 100%;
+}
+
+/* Fade-out Border Bottom (UX/UI Promax) */
+.app-main-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        rgba(120, 1, 21, 0) 0%, 
+        rgba(120, 1, 21, 0) 10%,
+        var(--color-primary) 35%, 
+        var(--color-accent) 50%, 
+        var(--color-primary) 65%, 
+        rgba(120, 1, 21, 0) 90%, 
+        rgba(120, 1, 21, 0) 100%
+    );
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* Brand Logo Pulse Animation */
+.navbar-brand img {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    animation: logoPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes logoPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+        filter: drop-shadow(0 4px 8px rgba(255, 184, 0, 0.35));
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Luxury Interactive Navigation Links */
+.luxury-nav-link {
+    position: relative;
+    color: #475569 !important; /* Slate xám sẫm ấm tinh tế */
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 8px 16px !important;
+    display: inline-block;
+    text-decoration: none;
+    transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-nav-link:hover,
+.luxury-nav-link.active {
+    color: #780115 !important; /* Màu đỏ Burgundy thương hiệu */
+}
+
+.luxury-nav-link.active {
+    font-weight: 700;
+}
+
+/* Underline active/hover effect */
+.luxury-nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background-color: #ffb800; /* Màu vàng Gold */
+    border-radius: 99px;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-nav-link:hover::after,
+.luxury-nav-link.active::after {
+    transform: scaleX(1);
+}
+
+/* User Toggle Pill Minimal Styling */
+.user-toggle-pill {
+    background: linear-gradient(135deg, var(--color-primary), #a8011d) !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(120, 1, 21, 0.3) !important;
+    transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+}
+
+.user-toggle-pill:hover {
+    background: linear-gradient(135deg, var(--color-primary), #a8011d) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(120, 1, 21, 0.45) !important;
+}
+
+.user-toggle-pill span, .user-toggle-pill i {
+    color: white !important;
+}
+
+.user-toggle-pill:hover span, .user-toggle-pill:hover i {
+    color: white !important;
+}
+
+.user-toggle-pill .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.user-toggle-pill:hover .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Notification Bell Styling */
+.nav-notification-wrapper button {
+    background: transparent !important;
+    border: 1px solid rgba(120, 1, 21, 0.12) !important;
+    transition: none !important;
+}
+
+.nav-notification-wrapper button:hover {
+    background: rgba(120, 1, 21, 0.04) !important;
+    border-color: #780115 !important;
+}
+
+/* Luxury Sign In Button (Gradient & Ripple effect) */
+.luxury-login-btn {
+    background: linear-gradient(135deg, #780115, #a8011d) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50rem !important;
+    box-shadow: 0 4px 12px rgba(120, 1, 21, 0.2) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.luxury-login-btn:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px rgba(120, 1, 21, 0.3) !important;
+    filter: saturate(1.08);
+}
+
+.luxury-login-btn:active {
+    transform: translateY(0);
+}
+
+/* Luxury Dropdown Menu Style & Animations */
+.luxury-user-menu,
+.luxury-notif-menu {
+    border: 1px solid rgba(120, 1, 21, 0.08) !important;
+    box-shadow: 0 15px 35px rgba(120, 1, 21, 0.08), 0 5px 15px rgba(0, 0, 0, 0.04) !important;
+    animation: luxuryMenuIn 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards !important;
+}
+
+@keyframes luxuryMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+        filter: blur(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Mobile Responsive Navigation Overrides */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 10px;
+        box-shadow: 0 10px 25px rgba(120, 1, 21, 0.08);
+        border: 1px solid rgba(120, 1, 21, 0.08);
+    }
+    
+    .luxury-nav-link {
+        display: block;
+        padding: 12px 16px !important;
+        border-radius: 8px;
+    }
+    
+    .luxury-nav-link::after {
+        bottom: 8px;
+        left: 16px;
+        right: auto;
+        width: 30px;
+        transform-origin: left;
+    }
+    
+    .luxury-nav-link.active {
+        background: rgba(120, 1, 21, 0.05);
+    }
+}
+
+/* Desktop Absolute Centering (UX/UI Promax) */
+@media (min-width: 992px) {
+    .luxury-navbar-container {
+        position: relative !important;
+    }
+    
+    .navbar-collapse > ul.navbar-nav:first-child {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 10;
+    }
+    
+    .navbar-collapse {
+        display: flex !important;
+        justify-content: flex-end !important;
+        width: 100%;
+    }
+}

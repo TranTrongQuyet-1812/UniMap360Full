@@ -1,0 +1,64 @@
+<footer class="app-main-footer border-top pt-5 pb-3" style="background-color: #f8f9fa; margin-top: auto;">
+    <div class="container">
+        <div class="row gy-4 mb-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="https://res.cloudinary.com/dreyjycrh/image/upload/v1776439376/LogoSQL.png" alt="UniMap360" style="height: 36px; object-fit: contain; filter: grayscale(100%); opacity: 0.7;">
+                    <span class="ms-2 fw-bold text-secondary fs-5">UniMap360</span>
+                </div>
+                <p class="text-muted small mb-3 pe-lg-4">Nền tảng bản đồ thông minh kết nối sinh viên, chủ trọ và nhà tuyển dụng. Giải pháp tìm kiếm nhà ở và việc làm toàn diện nhất.</p>
+                <div class="d-flex gap-3">
+                    <a href="#" class="text-muted text-decoration-none fs-5 transition-all hover-maroon"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-muted text-decoration-none fs-5 transition-all hover-maroon"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-muted text-decoration-none fs-5 transition-all hover-maroon"><i class="fab fa-youtube"></i></a>
+                    <a href="#" class="text-muted text-decoration-none fs-5 transition-all hover-maroon"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-6">
+                <h6 class="fw-bold text-dark mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">Khám phá</h6>
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
+                    <li><a href="/Home/Index" class="text-muted text-decoration-none hover-maroon">Bản đồ khu vực</a></li>
+                    <li><a href="/Home/Listing" class="text-muted text-decoration-none hover-maroon">Danh sách phòng trọ</a></li>
+                    <li><a href="/Home/Listing" class="text-muted text-decoration-none hover-maroon">Việc làm sinh viên</a></li>
+                    <li><a href="/Home/Intro" class="text-muted text-decoration-none hover-maroon">Về chúng tôi</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <h6 class="fw-bold text-dark mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">Dành cho đối tác</h6>
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
+                    <li><a href="/Home/Auth" class="text-muted text-decoration-none hover-maroon">Đăng ký Chủ trọ</a></li>
+                    <li><a href="/Home/Auth" class="text-muted text-decoration-none hover-maroon">Đăng ký Nhà tuyển dụng</a></li>
+                    <li><a href="/Home/Terms" class="text-muted text-decoration-none hover-maroon">Quy định sử dụng</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <h6 class="fw-bold text-dark mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">Liên hệ</h6>
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small text-muted">
+                    <li class="d-flex"><i class="fas fa-map-marker-alt mt-1 me-2 text-accent"></i> <span>Khu Phố 28, Phường Biên Hòa, TP.Đồng Nai</span></li>
+                    <li class="d-flex"><i class="fas fa-phone mt-1 me-2 text-accent"></i> <span>012345679</span></li>
+                    <li class="d-flex"><i class="fas fa-envelope mt-1 me-2 text-accent"></i> <span>tqtq1812@gmail.com</span></li>
+                </ul>
+            </div>
+        </div>
+        
+        <hr class="border-secondary opacity-25">
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center pt-2 pb-1 small text-muted">
+            <p class="mb-2 mb-md-0">&copy; 2026 UniMap360. Kết Nối Sinh Viên.</p>
+            <div class="d-flex gap-3">
+                <a asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none hover-maroon">Chính sách bảo mật</a>
+                <a asp-controller="Home" asp-action="Terms" class="text-muted text-decoration-none hover-maroon">Điều khoản sử dụng</a>
+            </div>
+        </div>
+    </div>
+    <style>
+        .hover-maroon:hover { color: var(--color-primary) !important; }
+        .transition-all { transition: all 0.3s ease; }
+        .app-main-header .nav-link:hover { background-color: rgba(0,0,0,0.05); }
+        .dropdown-item:hover { background-color: #f8f9fa; border-radius: 6px; color: var(--color-primary) !important; }
+        .dropdown-item { transition: all 0.2s; margin: 0 8px; width: auto; border-radius: 6px; }
+    </style>
+</footer>
