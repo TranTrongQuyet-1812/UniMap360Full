@@ -232,9 +232,10 @@
         <section class="stack-card" id="card-1">
             <div class="card-bg">
                 <video class="cinematic-video" autoplay loop muted playsinline
-                       src="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700205/14455494_1280_720_60fps.mp4"
-                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700205/14455494_1280_720_60fps.mp4"
-                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700205/14455494_1280_720_60fps.mp4"></video>
+                       poster="https://res.cloudinary.com/dreyjycrh/video/upload/so_0/v1779700205/14455494_1280_720_60fps.jpg"
+                       src="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto:best/v1779700205/14455494_1280_720_60fps.mp4"
+                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto:best/v1779700205/14455494_1280_720_60fps.mp4"
+                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_1080,q_auto:eco/v1779700205/14455494_1280_720_60fps.mp4"></video>
                 <div class="card-overlay"></div>
             </div>
             <div class="card-content">
@@ -248,8 +249,9 @@
         <section class="stack-card" id="card-2">
             <div class="card-bg">
                 <video class="cinematic-video" autoplay loop muted playsinline
-                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700227/18088-288458760_medium.mp4"
-                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700227/18088-288458760_medium.mp4"></video>
+                       poster="https://res.cloudinary.com/dreyjycrh/video/upload/so_0/v1779700227/18088-288458760_medium.jpg"
+                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto:best/v1779700227/18088-288458760_medium.mp4"
+                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_1080,q_auto:eco/v1779700227/18088-288458760_medium.mp4"></video>
                 <div class="card-overlay"></div>
             </div>
             <div class="card-content">
@@ -263,8 +265,9 @@
         <section class="stack-card" id="card-3">
             <div class="card-bg">
                 <video class="cinematic-video" autoplay loop muted playsinline
-                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700233/0505.mp4"
-                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700233/0505.mp4"></video>
+                       poster="https://res.cloudinary.com/dreyjycrh/video/upload/so_0/v1779700233/0505.jpg"
+                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto:best/v1779700233/0505.mp4"
+                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_1080,q_auto:eco/v1779700233/0505.mp4"></video>
                 <div class="card-overlay"></div>
             </div>
             <div class="card-content">
@@ -284,8 +287,9 @@
                 <p>Khám phá mọi tiện ích quanh trường đại học với công nghệ định vị chính xác nhất.</p>
                 <div class="bento-video-bg">
                     <video class="cinematic-video" autoplay loop muted playsinline
-                           data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700235/7683392-hd_1280_720_30fps.mp4"
-                           data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700235/7683392-hd_1280_720_30fps.mp4"></video>
+                           poster="https://res.cloudinary.com/dreyjycrh/video/upload/so_0/v1779700235/7683392-hd_1280_720_30fps.jpg"
+                           data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto:best/v1779700235/7683392-hd_1280_720_30fps.mp4"
+                           data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_1080,q_auto:eco/v1779700235/7683392-hd_1280_720_30fps.mp4"></video>
                 </div>
             </div>
             <div class="bento-item wide gs-reveal">
@@ -404,6 +408,21 @@
         }, { threshold: 0.1 });
 
         lazyVideos.forEach(v => videoObserver.observe(v));
+
+        // Idle Preload Strategy: Tải trước ngầm Video 2 & 3 sau khi trang load xong 1.5 giây để tránh giật hình khi cuộn tới
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                lazyVideos.forEach(video => {
+                    if (!video.src) {
+                        const targetSrc = isMobile ? video.dataset.srcMobile : video.dataset.srcPc;
+                        video.src = targetSrc;
+                        video.load();
+                        // Pause ngay lập tức để không tự phát âm thầm ở background gây tốn tài nguyên
+                        video.pause();
+                    }
+                });
+            }, 1500);
+        });
 
         // Loader Timeout Guard
         let loaderDismissed = false;
