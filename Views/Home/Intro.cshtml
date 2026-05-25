@@ -201,8 +201,19 @@
         #loader {
             position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; align-items: center; justify-content: center;
+            transition: opacity 1s ease-out, visibility 1s;
+        }
+        #loader.loaded {
+            opacity: 0 !important;
+            pointer-events: none;
+            visibility: hidden;
         }
         .loader-text { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.5em; color: var(--color-accent); }
+        
+        /* Skeleton styling to avoid black screen and give feedback */
+        .stack-card {
+            background: #0d0d0d;
+        }
     </style>
 </head>
 <body>
@@ -220,7 +231,10 @@
         <!-- Card 1: Hero / Flag -->
         <section class="stack-card" id="card-1">
             <div class="card-bg">
-                <video src="/assets/videos/14455494_1280_720_60fps.mp4" autoplay loop muted playsinline></video>
+                <video class="cinematic-video" autoplay loop muted playsinline
+                       src="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700205/14455494_1280_720_60fps.mp4"
+                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700205/14455494_1280_720_60fps.mp4"
+                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700205/14455494_1280_720_60fps.mp4"></video>
                 <div class="card-overlay"></div>
             </div>
             <div class="card-content">
@@ -233,7 +247,9 @@
         <!-- Card 2: Discovery / Boat -->
         <section class="stack-card" id="card-2">
             <div class="card-bg">
-                <video src="/assets/videos/18088-288458760_medium.mp4" autoplay loop muted playsinline></video>
+                <video class="cinematic-video" autoplay loop muted playsinline
+                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700227/18088-288458760_medium.mp4"
+                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700227/18088-288458760_medium.mp4"></video>
                 <div class="card-overlay"></div>
             </div>
             <div class="card-content">
@@ -246,7 +262,9 @@
         <!-- Card 3: Community / Student -->
         <section class="stack-card" id="card-3">
             <div class="card-bg">
-                <video src="/assets/videos/0505.mp4" autoplay loop muted playsinline></video>
+                <video class="cinematic-video" autoplay loop muted playsinline
+                       data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700233/0505.mp4"
+                       data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700233/0505.mp4"></video>
                 <div class="card-overlay"></div>
             </div>
             <div class="card-content">
@@ -265,7 +283,9 @@
                 <h3>Bản Đồ<br>Đa Chiều</h3>
                 <p>Khám phá mọi tiện ích quanh trường đại học với công nghệ định vị chính xác nhất.</p>
                 <div class="bento-video-bg">
-                    <video src="/assets/videos/7683392-hd_1280_720_30fps.mp4" autoplay loop muted playsinline></video>
+                    <video class="cinematic-video" autoplay loop muted playsinline
+                           data-src-pc="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,q_auto/v1779700235/7683392-hd_1280_720_30fps.mp4"
+                           data-src-mobile="https://res.cloudinary.com/dreyjycrh/video/upload/vc_h264,c_limit,w_720,q_auto/v1779700235/7683392-hd_1280_720_30fps.mp4"></video>
                 </div>
             </div>
             <div class="bento-item wide gs-reveal">
@@ -334,11 +354,78 @@
             });
         });
 
-        // Loader
-        window.addEventListener('load', () => {
-            gsap.to('#loader', { duration: 1, opacity: 0, pointerEvents: 'none', delay: 1 });
-            gsap.from('.card-title', { duration: 1.5, y: 100, opacity: 0, skewY: 10, stagger: 0.3, ease: "power4.out", delay: 1.2 });
-        });
+        // Video Lazy Loading & Responsive Optimization
+        const isMobile = window.innerWidth < 768;
+        const cinematicVideos = document.querySelectorAll('video.cinematic-video');
+
+        // Immediate load for first card and bento card to avoid black screen on initial load
+        const card1Video = document.querySelector('#card-1 video.cinematic-video');
+        const bentoVideo = document.querySelector('.bento-video-bg video.cinematic-video');
+
+        if (card1Video) {
+            const targetSrc = isMobile ? card1Video.dataset.srcMobile : card1Video.dataset.srcPc;
+            if (card1Video.src !== targetSrc) {
+                card1Video.src = targetSrc;
+                card1Video.load();
+            }
+            card1Video.play().catch(() => {});
+        }
+
+        if (bentoVideo) {
+            const targetSrc = isMobile ? bentoVideo.dataset.srcMobile : bentoVideo.dataset.srcPc;
+            bentoVideo.src = targetSrc;
+            bentoVideo.load();
+            bentoVideo.play().catch(() => {});
+        }
+
+        // Lazy load for subsequent videos (Card 2, Card 3) using IntersectionObserver
+        const lazyVideos = [];
+        const card2Video = document.querySelector('#card-2 video.cinematic-video');
+        const card3Video = document.querySelector('#card-3 video.cinematic-video');
+        if (card2Video) lazyVideos.push(card2Video);
+        if (card3Video) lazyVideos.push(card3Video);
+
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    if (!video.src) {
+                        const targetSrc = isMobile ? video.dataset.srcMobile : video.dataset.srcPc;
+                        video.src = targetSrc;
+                        video.load();
+                    }
+                    video.play().catch(() => {});
+                } else {
+                    if (video.src) {
+                        video.pause();
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+
+        lazyVideos.forEach(v => videoObserver.observe(v));
+
+        // Loader Timeout Guard
+        let loaderDismissed = false;
+        function dismissLoader() {
+            if (loaderDismissed) return;
+            loaderDismissed = true;
+            
+            const loaderEl = document.getElementById('loader');
+            if (loaderEl) {
+                loaderEl.classList.add('loaded');
+            }
+            
+            gsap.to('#loader', { duration: 0.8, opacity: 0, pointerEvents: 'none' });
+            gsap.from('.card-title', { duration: 1.5, y: 100, opacity: 0, skewY: 10, stagger: 0.3, ease: "power4.out", delay: 0.2 });
+            
+            // Re-trigger play on first video just in case browser policy blocked it
+            if (card1Video) card1Video.play().catch(() => {});
+        }
+
+        window.addEventListener('load', dismissLoader);
+        // Tối đa 2.5 giây tự động ẩn loader
+        setTimeout(dismissLoader, 2500);
     </script>
 </body>
 </html>
