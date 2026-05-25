@@ -16,6 +16,12 @@
     display: none !important;
 }
 
+/* Ẩn link JSON spec và thông tin Contact theo yêu cầu */
+.swagger-ui .info .link,
+.swagger-ui .info .contact {
+    display: none !important;
+}
+
 /* Kiểu chữ chung */
 .swagger-ui .info .title {
     color: #8B0000 !important; /* Đỏ Đô */
