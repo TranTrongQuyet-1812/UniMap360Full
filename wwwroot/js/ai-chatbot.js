@@ -193,8 +193,12 @@
         const bubble = document.createElement("div");
         bubble.className = `ai-chat-bubble ${sender}`;
 
-        // Render markdown-like simple line breaks
-        const formattedText = text
+        // Chống lỗ hổng XSS bằng cách escape HTML trước khi định dạng Markdown
+        const escapedText = (window.escapeHtml && typeof window.escapeHtml === "function") 
+            ? window.escapeHtml(text) 
+            : text;
+
+        const formattedText = escapedText
             .replace(/\n/g, "<br/>")
             .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
             .replace(/\*(.*?)\*/g, "<em>$1</em>")
