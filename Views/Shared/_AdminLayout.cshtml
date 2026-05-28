@@ -262,6 +262,9 @@
             <a href="/Admin/Moderation/Roommates" class="sidebar-item @(ViewData["ActiveAdminPage"]?.ToString() == "mod-roommates" ? "active" : "")">
                 <i class="fas fa-user-friends"></i> Bài đăng ở ghép
             </a>
+            <a href="/Admin/Reports" class="sidebar-item @(ViewData["ActiveAdminPage"]?.ToString() == "reports" ? "active" : "")">
+                <i class="fas fa-flag"></i> Quản lý tố cáo
+            </a>
             
             <div class="px-4 mt-4 mb-2 text-uppercase" style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-weight: 700;">Hệ thống</div>
             <a href="/Admin/AuditLogs" class="sidebar-item @(ViewData["ActiveAdminPage"]?.ToString() == "audit-logs" ? "active" : "")">

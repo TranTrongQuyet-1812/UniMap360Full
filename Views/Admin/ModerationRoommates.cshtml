@@ -33,8 +33,9 @@
             <label class="filter-label">Trạng thái</label>
             <select class="form-select form-select-sm" id="roommateStatusFilter">
                 <option value="">Tất cả trạng thái</option>
-                <option value="true">Đang hiển thị</option>
-                <option value="false">Đang ẩn / Từ chối</option>
+                <option value="Active">Đang hiển thị (Active)</option>
+                <option value="Hidden">Đang ẩn (Hidden)</option>
+                <option value="Rejected">Bị từ chối (Rejected)</option>
             </select>
         </div>
         <div class="col-md-4 d-flex align-items-end gap-2">
@@ -121,7 +122,7 @@
         const status = document.getElementById('roommateStatusFilter').value;
 
         if (search) params.set('search', search);
-        if (status) params.set('isActive', status);
+        if (status) params.set('status', status);
         params.set('limit', '200');
 
         try {

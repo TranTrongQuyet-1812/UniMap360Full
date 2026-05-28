@@ -705,22 +705,59 @@
         ? new bootstrap.Modal(profileForgotModalElement)
         : null;
 
+    let ppTimer = null;
+    let ppTimeLeft = 0;
+
+    function startPpCooldown() {
+        if (ppTimer) clearInterval(ppTimer);
+        ppTimeLeft = 120;
+        
+        if (btnPpSendOtp) btnPpSendOtp.disabled = true;
+        if (btnPpResendOtp) btnPpResendOtp.disabled = true;
+        
+        if (btnPpSendOtp) btnPpSendOtp.innerHTML = `Chờ ${ppTimeLeft}s`;
+        if (btnPpResendOtp) btnPpResendOtp.innerHTML = `<i class="fas fa-rotate-right me-2"></i>Chờ ${ppTimeLeft}s`;
+
+        ppTimer = setInterval(() => {
+            ppTimeLeft--;
+            if (ppTimeLeft <= 0) {
+                clearInterval(ppTimer);
+                ppTimer = null;
+                
+                if (btnPpSendOtp) {
+                    btnPpSendOtp.disabled = false;
+                    btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+                }
+                if (btnPpResendOtp) {
+                    btnPpResendOtp.disabled = false;
+                    btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+                }
+            } else {
+                if (btnPpSendOtp) btnPpSendOtp.innerHTML = `Chờ ${ppTimeLeft}s`;
+                if (btnPpResendOtp) btnPpResendOtp.innerHTML = `<i class="fas fa-rotate-right me-2"></i>Chờ ${ppTimeLeft}s`;
+            }
+        }, 1000);
+    }
+
     function resetProfilePasswordModal() {
         if (ppStep1) ppStep1.style.display = 'block';
         if (ppStep2) ppStep2.style.display = 'none';
         if (ppOtp) ppOtp.value = '';
         if (ppNewPassword) ppNewPassword.value = '';
-        if (btnPpSendOtp) {
-            btnPpSendOtp.innerHTML = 'Nhận mã OTP';
-            btnPpSendOtp.disabled = false;
+        
+        if (!ppTimer) {
+            if (btnPpSendOtp) {
+                btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+                btnPpSendOtp.disabled = false;
+            }
+            if (btnPpResendOtp) {
+                btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+                btnPpResendOtp.disabled = false;
+            }
         }
         if (btnPpResetPassword) {
             btnPpResetPassword.innerHTML = 'Đặt lại mật khẩu';
             btnPpResetPassword.disabled = false;
-        }
-        if (btnPpResendOtp) {
-            btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
-            btnPpResendOtp.disabled = false;
         }
     }
 
@@ -772,6 +809,7 @@
             btnPpSendOtp.disabled = true;
             btnPpSendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
 
+            let success = false;
             try {
                 await postJsonApi('/api/auth/forgot-password', { email });
                 if (ppStep1) ppStep1.style.display = 'none';
@@ -781,10 +819,15 @@
                 if (ppOtp) ppOtp.value = '';
                 if (ppNewPassword) ppNewPassword.value = '';
                 showToast('Mã OTP đã được gửi đến Email của bạn.', 'success');
+                success = true;
+                startPpCooldown();
             } catch (err) {
                 showToast(err.message || 'Không thể gửi OTP.', 'error');
-                btnPpSendOtp.disabled = false;
-                btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+            } finally {
+                if (!success) {
+                    btnPpSendOtp.disabled = false;
+                    btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+                }
             }
         });
     }
@@ -800,14 +843,19 @@
             btnPpResendOtp.disabled = true;
             btnPpResendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
 
+            let success = false;
             try {
                 await postJsonApi('/api/auth/forgot-password', { email });
                 showToast('Đã gửi lại OTP. Vui lòng kiểm tra Email.', 'success');
+                success = true;
+                startPpCooldown();
             } catch (err) {
                 showToast(err.message || 'Không thể gửi lại OTP.', 'error');
             } finally {
-                btnPpResendOtp.disabled = false;
-                btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+                if (!success) {
+                    btnPpResendOtp.disabled = false;
+                    btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+                }
             }
         });
     }
@@ -816,10 +864,7 @@
         btnPpBack.addEventListener('click', function () {
             if (ppStep1) ppStep1.style.display = 'block';
             if (ppStep2) ppStep2.style.display = 'none';
-            if (btnPpSendOtp) {
-                btnPpSendOtp.disabled = false;
-                btnPpSendOtp.innerHTML = 'Nhận mã OTP';
-            }
+            // Không reset nút ở đây, để cooldown tự quản lý
         });
     }
 
@@ -845,6 +890,22 @@
             try {
                 await postJsonApi('/api/auth/reset-password', { email, otp, newPassword });
                 showToast('Đổi mật khẩu thành công!', 'success');
+                
+                // Clear cooldown timer on success
+                if (ppTimer) {
+                    clearInterval(ppTimer);
+                    ppTimer = null;
+                    ppTimeLeft = 0;
+                    if (btnPpSendOtp) {
+                        btnPpSendOtp.disabled = false;
+                        btnPpSendOtp.innerHTML = 'Nhận mã OTP';
+                    }
+                    if (btnPpResendOtp) {
+                        btnPpResendOtp.disabled = false;
+                        btnPpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Gửi lại OTP';
+                    }
+                }
+                
                 profileForgotModal?.hide();
             } catch (err) {
                 showToast(err.message || 'Đổi mật khẩu thất bại.', 'error');

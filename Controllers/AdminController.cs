@@ -82,6 +82,15 @@ namespace UniMap360.Controllers
             return View();
         }
 
+        // GET: /Admin/Reports
+        [HttpGet("Reports")]
+        public IActionResult Reports()
+        {
+            ViewData["IsAdminArea"] = true;
+            ViewData["ActiveAdminPage"] = "reports";
+            return View();
+        }
+
         // GET: /Admin/ApiDocs (Swagger)
         [HttpGet("ApiDocs")]
         public IActionResult ApiDocs()

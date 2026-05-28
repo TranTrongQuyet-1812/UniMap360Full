@@ -197,13 +197,6 @@
                 <input type="text" name="Habits" class="form-input" placeholder="VD: Sạch sẽ, không hút thuốc...">
             </div>
         </div>
-        <div>
-            <label class="form-label-custom">Trạng thái hiển thị</label>
-            <select name="IsActive" class="form-input">
-                <option value="true">Đang hiển thị</option>
-                <option value="false">Ẩn bài viết</option>
-            </select>
-        </div>
         <div class="action-bar">
             <button type="button" class="btn-action btn-edit js-action-btn" data-action="closeEdit">Hủy</button>
             <button type="submit" class="btn-action btn-save"><i class="fas fa-save me-1"></i> Lưu thay đổi</button>
@@ -268,9 +261,22 @@
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
             });
 
-            const statusBadge = item.isActive 
-                ? '<span class="badge bg-success bg-opacity-10 text-success ms-2">Đang hiển thị</span>'
-                : '<span class="badge bg-secondary bg-opacity-10 text-secondary ms-2">Đang ẩn</span>';
+            let statusBadge = '';
+            let editButton = `
+                <button class="btn-action btn-edit js-action-btn" data-action="toggleEdit" data-id="${item.id}">
+                    <i class="fas fa-pen"></i> Sửa
+                </button>
+            `;
+
+            if (item.status === 'Rejected') {
+                statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger ms-2">Bị từ chối bởi Admin</span>';
+            } else if (item.status === 'Hidden') {
+                statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning ms-2">Bị ẩn bởi Admin</span>';
+            } else if (item.status === 'Active') {
+                statusBadge = '<span class="badge bg-success bg-opacity-10 text-success ms-2">Đang hiển thị</span>';
+            } else {
+                statusBadge = `<span class="badge bg-secondary bg-opacity-10 text-secondary ms-2">${item.status || 'Không rõ'}</span>`;
+            }
 
             html += `
                 <div class="item-card" id="card-${item.id}">
@@ -283,9 +289,7 @@
                             <h4 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top:5px;">${item.description || 'Bài đăng không có nội dung...'}</h4>
                         </div>
                         <div class="item-summary-right">
-                            <button class="btn-action btn-edit js-action-btn" data-action="toggleEdit" data-id="${item.id}">
-                                <i class="fas fa-pen"></i> Sửa
-                            </button>
+                            ${editButton}
                             <button class="btn-action btn-delete js-action-btn" data-action="askDelete" data-id="${item.id}">
                                 <i class="fas fa-trash-alt"></i> Xóa
                             </button>
@@ -348,7 +352,6 @@
         form.TargetGender.value = item.targetGender || 'Any';
         form.AreaPreference.value = item.areaPreference || '';
         form.Habits.value = item.habits || '';
-        form.IsActive.value = item.isActive ? 'true' : 'false';
     }
 
     async function handleSave(e) {
@@ -365,8 +368,7 @@
             budgetPerMonth: parseFloat(form.BudgetPerMonth.value) || null,
             targetGender: form.TargetGender.value,
             areaPreference: form.AreaPreference.value.trim() || null,
-            habits: form.Habits.value.trim() || null,
-            isActive: form.IsActive.value === 'true'
+            habits: form.Habits.value.trim() || null
         };
 
         try {

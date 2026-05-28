@@ -32,6 +32,10 @@ public partial class RoommatePost
 
     public bool IsActive { get; set; } = true;
 
+    [Required]
+    [StringLength(20)]
+    public string Status { get; set; } = "Active";
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual StudentProfile Student { get; set; } = null!;

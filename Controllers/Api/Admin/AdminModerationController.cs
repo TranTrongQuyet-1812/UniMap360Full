@@ -1,10 +1,15 @@
+using System;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniMap360.Constants;
 using UniMap360.Models;
 using UniMap360.Services.Admin;
+using UniMap360.Services.Moderation;
 
 namespace UniMap360.Controllers.Api.Admin;
 
@@ -13,17 +18,14 @@ namespace UniMap360.Controllers.Api.Admin;
 public sealed class AdminModerationController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
-    private readonly IAdminAuditService _auditService;
-    private readonly ICloudinaryAssetPurger _cloudinaryAssetPurger;
+    private readonly IContentModerationService _moderationService;
 
     public AdminModerationController(
         UniMap360ProContext context,
-        IAdminAuditService auditService,
-        ICloudinaryAssetPurger cloudinaryAssetPurger)
+        IContentModerationService moderationService)
     {
         _context = context;
-        _auditService = auditService;
-        _cloudinaryAssetPurger = cloudinaryAssetPurger;
+        _moderationService = moderationService;
     }
 
     [HttpGet("api/admin/rooms")]
@@ -233,163 +235,108 @@ public sealed class AdminModerationController : ControllerBase
     }
 
     [HttpPost("api/admin/rooms/{roomId:int}/approve")]
-    public Task<IActionResult> ApproveRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoomStatus(roomId, "Available", "room_approve", request, cancellationToken);
+    public async Task<IActionResult> ApproveRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.ApproveAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Available" });
+    }
 
     [HttpPost("api/admin/rooms/{roomId:int}/reject")]
-    public Task<IActionResult> RejectRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoomStatus(roomId, "Rejected", "room_reject", request, cancellationToken);
+    public async Task<IActionResult> RejectRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.RejectAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Rejected" });
+    }
 
     [HttpPost("api/admin/rooms/{roomId:int}/hide")]
-    public Task<IActionResult> HideRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoomStatus(roomId, "Hidden", "room_hide", request, cancellationToken);
+    public async Task<IActionResult> HideRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.HideAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Hidden" });
+    }
 
     [HttpPost("api/admin/rooms/{roomId:int}/restore")]
-    public Task<IActionResult> RestoreRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoomStatus(roomId, "Available", "room_restore", request, cancellationToken);
+    public async Task<IActionResult> RestoreRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.RestoreAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Available" });
+    }
 
     [HttpDelete("api/admin/rooms/{roomId:int}")]
     public async Task<IActionResult> DeleteRoom(int roomId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
     {
         var adminId = GetCurrentAdminAccountId();
-        if (!adminId.HasValue)
-            return Unauthorized(new { message = "Token không hợp lệ." });
-
-        var room = await _context.Rooms
-            .FirstOrDefaultAsync(r => r.RoomId == roomId, cancellationToken);
-        if (room is null)
-            return NotFound(new { message = "Không tìm thấy phòng." });
-        var recipientAccountId = await _context.HostProfiles
-            .Where(h => h.HostId == room.HostId)
-            .Select(h => (int?)h.AccountId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var mediaRows = await _context.Media
-            .Where(m => m.TargetType == ContentTargetTypes.Room && m.TargetId == roomId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var media in mediaRows)
-        {
-            var publicId = _cloudinaryAssetPurger.TryExtractPublicIdFromUrl(media.MediaUrl);
-            if (!string.IsNullOrWhiteSpace(publicId))
-            {
-                await _cloudinaryAssetPurger.TryPurgeByPublicIdAsync(publicId, cancellationToken);
-            }
-        }
-
-        _context.Media.RemoveRange(mediaRows);
-        _context.Rooms.Remove(room);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        await _auditService.WriteAsync(
-            adminId.Value,
-            "room_delete",
-            ContentTargetTypes.Room,
-            roomId,
-            new { room.RoomId, room.Title, room.RoomStatus },
-            null,
-            request.Reason,
-            HttpContext,
-            cancellationToken);
-
-        if (recipientAccountId.HasValue)
-        {
-            await CreateModerationNotificationAsync(
-                recipientAccountId.Value,
-                "room_delete",
-                ContentTargetTypes.Room,
-                roomId,
-                room.Title,
-                request.Reason,
-                cancellationToken);
-        }
-
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.DeleteAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
         return Ok(new { message = "Đã xóa phòng.", roomId });
     }
 
     [HttpPost("api/admin/jobs/{jobId:int}/approve")]
-    public Task<IActionResult> ApproveJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetJobStatus(jobId, "Open", "job_approve", request, cancellationToken);
+    public async Task<IActionResult> ApproveJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.ApproveAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Open" });
+    }
 
     [HttpPost("api/admin/jobs/{jobId:int}/reject")]
-    public Task<IActionResult> RejectJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetJobStatus(jobId, "Rejected", "job_reject", request, cancellationToken);
+    public async Task<IActionResult> RejectJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.RejectAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Rejected" });
+    }
 
     [HttpPost("api/admin/jobs/{jobId:int}/hide")]
-    public Task<IActionResult> HideJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetJobStatus(jobId, "Hidden", "job_hide", request, cancellationToken);
+    public async Task<IActionResult> HideJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.HideAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Hidden" });
+    }
 
     [HttpPost("api/admin/jobs/{jobId:int}/restore")]
-    public Task<IActionResult> RestoreJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetJobStatus(jobId, "Open", "job_restore", request, cancellationToken);
+    public async Task<IActionResult> RestoreJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.RestoreAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Open" });
+    }
 
     [HttpDelete("api/admin/jobs/{jobId:int}")]
     public async Task<IActionResult> DeleteJob(int jobId, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
     {
         var adminId = GetCurrentAdminAccountId();
-        if (!adminId.HasValue)
-            return Unauthorized(new { message = "Token không hợp lệ." });
-
-        var job = await _context.Jobs
-            .FirstOrDefaultAsync(j => j.JobId == jobId, cancellationToken);
-        if (job is null)
-            return NotFound(new { message = "Không tìm thấy việc làm." });
-        var recipientAccountId = await _context.EmployerProfiles
-            .Where(e => e.EmployerId == job.EmployerId)
-            .Select(e => (int?)e.AccountId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var mediaRows = await _context.Media
-            .Where(m => m.TargetType == ContentTargetTypes.Job && m.TargetId == jobId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var media in mediaRows)
-        {
-            var publicId = _cloudinaryAssetPurger.TryExtractPublicIdFromUrl(media.MediaUrl);
-            if (!string.IsNullOrWhiteSpace(publicId))
-            {
-                await _cloudinaryAssetPurger.TryPurgeByPublicIdAsync(publicId, cancellationToken);
-            }
-        }
-
-        _context.Media.RemoveRange(mediaRows);
-
-        var applications = await _context.JobApplications
-            .Where(a => a.JobId == jobId)
-            .ToListAsync(cancellationToken);
-        _context.JobApplications.RemoveRange(applications);
-
-        _context.Jobs.Remove(job);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        await _auditService.WriteAsync(
-            adminId.Value,
-            "job_delete",
-            ContentTargetTypes.Job,
-            jobId,
-            new { job.JobId, job.JobTitle, job.JobStatus },
-            null,
-            request.Reason,
-            HttpContext,
-            cancellationToken);
-
-        if (recipientAccountId.HasValue)
-        {
-            await CreateModerationNotificationAsync(
-                recipientAccountId.Value,
-                "job_delete",
-                ContentTargetTypes.Job,
-                jobId,
-                job.JobTitle,
-                request.Reason,
-                cancellationToken);
-        }
-
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.DeleteAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
         return Ok(new { message = "Đã xóa việc làm.", jobId });
     }
 
     [HttpGet("api/admin/roommates")]
     public async Task<IActionResult> GetRoommates(
+        [FromQuery] string? status,
         [FromQuery] bool? isActive,
         [FromQuery] string? search,
         [FromQuery] int limit = 200,
@@ -403,8 +350,14 @@ public sealed class AdminModerationController : ControllerBase
             .ThenInclude(s => s.Account)
             .AsQueryable();
 
-        if (isActive.HasValue)
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            q = q.Where(r => r.Status == status.Trim());
+        }
+        else if (isActive.HasValue)
+        {
             q = q.Where(r => r.IsActive == isActive.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -419,7 +372,7 @@ public sealed class AdminModerationController : ControllerBase
             {
                 r.Id,
                 r.Title,
-                status = r.IsActive ? "Active" : "Hidden",
+                status = r.Status,
                 r.BudgetPerMonth,
                 r.TargetGender,
                 r.AreaPreference,
@@ -447,7 +400,9 @@ public sealed class AdminModerationController : ControllerBase
 
         var media = await _context.Media
             .AsNoTracking()
-            .Where(m => m.TargetType == "Roommate" && m.TargetId == id)
+            .Where(m =>
+                (m.TargetId == id && (m.TargetType == "Roommate" || m.TargetType == "RMP" || m.TargetType == "RoommatePost"))
+                || (m.TargetType == "Room" && m.TargetId == -id))
             .OrderByDescending(m => m.IsThumbnail)
             .ThenBy(m => m.MediaId)
             .Select(m => new { m.MediaId, m.MediaUrl, m.IsThumbnail })
@@ -457,7 +412,7 @@ public sealed class AdminModerationController : ControllerBase
         {
             post.Id,
             post.Title,
-            status = post.IsActive ? "Active" : "Hidden",
+            status = post.Status,
             post.BudgetPerMonth,
             post.TargetGender,
             post.AreaPreference,
@@ -478,305 +433,43 @@ public sealed class AdminModerationController : ControllerBase
     }
 
     [HttpPost("api/admin/roommates/{id:int}/hide")]
-    public Task<IActionResult> HideRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoommateStatus(id, false, "roommate_hide", request, cancellationToken);
+    public async Task<IActionResult> HideRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.HideAsync(adminId.Value, "Roommate", id, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
+        return Ok(new { message = "Cập nhật trạng thái ở ghép thành công.", id, status = "Hidden" });
+    }
 
     [HttpPost("api/admin/roommates/{id:int}/restore")]
-    public Task<IActionResult> RestoreRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoommateStatus(id, true, "roommate_restore", request, cancellationToken);
+    public async Task<IActionResult> RestoreRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.RestoreAsync(adminId.Value, "Roommate", id, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
+        return Ok(new { message = "Cập nhật trạng thái ở ghép thành công.", id, status = "Active" });
+    }
 
     [HttpPost("api/admin/roommates/{id:int}/reject")]
-    public Task<IActionResult> RejectRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
-        => SetRoommateStatus(id, false, "roommate_reject", request, cancellationToken);
+    public async Task<IActionResult> RejectRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
+    {
+        var adminId = GetCurrentAdminAccountId();
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.RejectAsync(adminId.Value, "Roommate", id, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
+        return Ok(new { message = "Cập nhật trạng thái ở ghép thành công.", id, status = "Rejected" });
+    }
 
     [HttpDelete("api/admin/roommates/{id:int}")]
     public async Task<IActionResult> DeleteRoommate(int id, [FromBody] ModerationActionRequest request, CancellationToken cancellationToken)
     {
         var adminId = GetCurrentAdminAccountId();
-        if (!adminId.HasValue)
-            return Unauthorized(new { message = "Token không hợp lệ." });
-
-        var post = await _context.RoommatePosts
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
-        if (post is null)
-            return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
-
-        var recipientAccountId = await _context.StudentProfiles
-            .Where(s => s.StudentId == post.StudentId)
-            .Select(s => (int?)s.AccountId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var mediaRows = await _context.Media
-            .Where(m => m.TargetType == "Roommate" && m.TargetId == id)
-            .ToListAsync(cancellationToken);
-
-        foreach (var media in mediaRows)
-        {
-            var publicId = _cloudinaryAssetPurger.TryExtractPublicIdFromUrl(media.MediaUrl);
-            if (!string.IsNullOrWhiteSpace(publicId))
-            {
-                await _cloudinaryAssetPurger.TryPurgeByPublicIdAsync(publicId, cancellationToken);
-            }
-        }
-
-        _context.Media.RemoveRange(mediaRows);
-        _context.RoommatePosts.Remove(post);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        await _auditService.WriteAsync(
-            adminId.Value,
-            "roommate_delete",
-            "Roommate",
-            id,
-            new { post.Id, post.Title, post.IsActive },
-            null,
-            request.Reason,
-            HttpContext,
-            cancellationToken);
-
-        if (recipientAccountId.HasValue)
-        {
-            await CreateModerationNotificationAsync(
-                recipientAccountId.Value,
-                "roommate_delete",
-                "Roommate",
-                id,
-                post.Title,
-                request.Reason,
-                cancellationToken);
-        }
-
+        if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
+        var success = await _moderationService.DeleteAsync(adminId.Value, "Roommate", id, request.Reason, HttpContext, cancellationToken);
+        if (!success) return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
         return Ok(new { message = "Đã xóa bài đăng ở ghép.", id });
-    }
-
-    private async Task<IActionResult> SetRoomStatus(
-        int roomId,
-        string newStatus,
-        string action,
-        ModerationActionRequest request,
-        CancellationToken cancellationToken)
-    {
-        var adminId = GetCurrentAdminAccountId();
-        if (!adminId.HasValue)
-            return Unauthorized(new { message = "Token không hợp lệ." });
-
-        var room = await _context.Rooms
-            .FirstOrDefaultAsync(r => r.RoomId == roomId, cancellationToken);
-        if (room is null)
-            return NotFound(new { message = "Không tìm thấy phòng." });
-        var recipientAccountId = await _context.HostProfiles
-            .Where(h => h.HostId == room.HostId)
-            .Select(h => (int?)h.AccountId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var before = new { room.RoomStatus };
-        room.RoomStatus = newStatus;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        await _auditService.WriteAsync(
-            adminId.Value,
-            action,
-            ContentTargetTypes.Room,
-            roomId,
-            before,
-            new { room.RoomStatus },
-            request.Reason,
-            HttpContext,
-            cancellationToken);
-
-        if (recipientAccountId.HasValue)
-        {
-            await CreateModerationNotificationAsync(
-                recipientAccountId.Value,
-                action,
-                ContentTargetTypes.Room,
-                roomId,
-                room.Title,
-                request.Reason,
-                cancellationToken);
-        }
-
-        return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = room.RoomStatus });
-    }
-
-    private async Task<IActionResult> SetJobStatus(
-        int jobId,
-        string newStatus,
-        string action,
-        ModerationActionRequest request,
-        CancellationToken cancellationToken)
-    {
-        var adminId = GetCurrentAdminAccountId();
-        if (!adminId.HasValue)
-            return Unauthorized(new { message = "Token không hợp lệ." });
-
-        var job = await _context.Jobs
-            .FirstOrDefaultAsync(j => j.JobId == jobId, cancellationToken);
-        if (job is null)
-            return NotFound(new { message = "Không tìm thấy việc làm." });
-        var recipientAccountId = await _context.EmployerProfiles
-            .Where(e => e.EmployerId == job.EmployerId)
-            .Select(e => (int?)e.AccountId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var before = new { job.JobStatus };
-        job.JobStatus = newStatus;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        await _auditService.WriteAsync(
-            adminId.Value,
-            action,
-            ContentTargetTypes.Job,
-            jobId,
-            before,
-            new { job.JobStatus },
-            request.Reason,
-            HttpContext,
-            cancellationToken);
-
-        if (recipientAccountId.HasValue)
-        {
-            await CreateModerationNotificationAsync(
-                recipientAccountId.Value,
-                action,
-                ContentTargetTypes.Job,
-                jobId,
-                job.JobTitle,
-                request.Reason,
-                cancellationToken);
-        }
-
-        return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = job.JobStatus });
-    }
-
-    private async Task<IActionResult> SetRoommateStatus(
-        int id,
-        bool isActive,
-        string action,
-        ModerationActionRequest request,
-        CancellationToken cancellationToken)
-    {
-        var adminId = GetCurrentAdminAccountId();
-        if (!adminId.HasValue)
-            return Unauthorized(new { message = "Token không hợp lệ." });
-
-        var post = await _context.RoommatePosts
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
-        if (post is null)
-            return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
-        
-        var recipientAccountId = await _context.StudentProfiles
-            .Where(s => s.StudentId == post.StudentId)
-            .Select(s => (int?)s.AccountId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var before = new { post.IsActive };
-        post.IsActive = isActive;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        await _auditService.WriteAsync(
-            adminId.Value,
-            action,
-            "Roommate",
-            id,
-            before,
-            new { post.IsActive },
-            request.Reason,
-            HttpContext,
-            cancellationToken);
-
-        if (recipientAccountId.HasValue)
-        {
-            await CreateModerationNotificationAsync(
-                recipientAccountId.Value,
-                action,
-                "Roommate",
-                id,
-                post.Title,
-                request.Reason,
-                cancellationToken);
-        }
-
-        var statusString = post.IsActive ? "Active" : "Hidden";
-        return Ok(new { message = "Cập nhật trạng thái ở ghép thành công.", id, status = statusString });
-    }
-
-    private async Task CreateModerationNotificationAsync(
-        int recipientAccountId,
-        string action,
-        string targetType,
-        int targetId,
-        string? targetTitle,
-        string? reason,
-        CancellationToken cancellationToken)
-    {
-        var normalizedAction = action.Trim().ToLowerInvariant();
-        var (title, message) = normalizedAction switch
-        {
-            "room_hide" => (
-                "Bài phòng trọ đã bị ẩn",
-                $"Bài phòng trọ \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên ẩn."
-            ),
-            "room_restore" => (
-                "Bài phòng trọ đã được hiển thị lại",
-                $"Bài phòng trọ \"{targetTitle ?? "N/A"}\" của bạn đã được hiển thị lại."
-            ),
-            "room_delete" => (
-                "Bài phòng trọ đã bị xóa",
-                $"Bài phòng trọ \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên xóa."
-            ),
-            "job_hide" => (
-                "Bài tuyển dụng đã bị ẩn",
-                $"Bài tuyển dụng \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên ẩn."
-            ),
-            "job_restore" => (
-                "Bài tuyển dụng đã được hiển thị lại",
-                $"Bài tuyển dụng \"{targetTitle ?? "N/A"}\" của bạn đã được hiển thị lại."
-            ),
-            "job_delete" => (
-                "Bài tuyển dụng đã bị xóa",
-                $"Bài tuyển dụng \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên xóa."
-            ),
-            "roommate_hide" => (
-                "Bài tìm ở ghép đã bị ẩn",
-                $"Bài tìm ở ghép \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên ẩn."
-            ),
-            "roommate_restore" => (
-                "Bài tìm ở ghép đã được hiển thị lại",
-                $"Bài tìm ở ghép \"{targetTitle ?? "N/A"}\" của bạn đã được hiển thị lại."
-            ),
-            "roommate_reject" => (
-                "Bài tìm ở ghép đã bị từ chối",
-                $"Bài tìm ở ghép \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên từ chối."
-            ),
-            "roommate_delete" => (
-                "Bài tìm ở ghép đã bị xóa",
-                $"Bài tìm ở ghép \"{targetTitle ?? "N/A"}\" của bạn đã bị quản trị viên xóa."
-            ),
-            _ => (
-                "Bài đăng có thay đổi từ quản trị viên",
-                $"Bài đăng \"{targetTitle ?? "N/A"}\" của bạn đã được quản trị viên cập nhật trạng thái."
-            )
-        };
-
-        var metaJson = string.IsNullOrWhiteSpace(reason)
-            ? null
-            : System.Text.Json.JsonSerializer.Serialize(new { reason = reason.Trim() });
-
-        _context.Notifications.Add(new Notification
-        {
-            RecipientAccountId = recipientAccountId,
-            Type = normalizedAction,
-            Title = title,
-            Message = message,
-            TargetType = targetType,
-            TargetId = targetId,
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow,
-            MetaJson = metaJson
-        });
-
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
     private int? GetCurrentAdminAccountId()

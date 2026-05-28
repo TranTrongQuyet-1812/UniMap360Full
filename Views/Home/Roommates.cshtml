@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "UniMap360 - Cộng Đồng Ở Ghép";
 }
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
     /* Facebook-like Feed Layout with Premium UI */
@@ -443,7 +444,7 @@
                 </div>
 
                 <form id="createPostForm">
-                    <textarea class="form-control border-0 px-0 shadow-none mb-2" id="postDescription" rows="4" placeholder="Bạn muốn tìm người ở ghép?" style="font-size: 24px; resize: none;"></textarea>
+                    <textarea class="form-control border-0 px-0 shadow-none mb-2" id="postDescription" rows="4" placeholder="Bạn muốn tìm người ở ghép?" style="font-size: 1.1rem; resize: none;"></textarea>
                     
                     <div id="locationInputContainer" class="mb-3" style="display: none;">
                         <div class="d-flex align-items-center border rounded px-3 py-2 bg-light">
@@ -453,11 +454,27 @@
                         </div>
                     </div>
 
-                    <!-- Hidden inputs for backend requirements -->
+                    <!-- Fields for backend requirements (Title is generated automatically) -->
                     <input type="hidden" id="postTitle" value="">
-                    <input type="hidden" id="postGender" value="Any">
-                    <input type="hidden" id="postBudget" value="">
-                    <input type="hidden" id="postHabits" value="">
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark mb-1" style="font-size: 0.85rem; color: #444;">Ngân sách (VNĐ/tháng)</label>
+                            <input type="number" id="postBudget" class="form-control form-control-sm" placeholder="VD: 1500000" style="border-radius: 6px; padding: 8px 12px; font-size: 0.9rem;">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark mb-1" style="font-size: 0.85rem; color: #444;">Giới tính tìm kiếm</label>
+                            <select id="postGender" class="form-select form-select-sm" style="border-radius: 6px; padding: 8px 12px; font-size: 0.9rem;">
+                                <option value="Any" selected>Bất kỳ</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark mb-1" style="font-size: 0.85rem; color: #444;">Thói quen / Tiêu chí</label>
+                        <input type="text" id="postHabits" class="form-control form-control-sm" placeholder="VD: Sạch sẽ, không hút thuốc, không tụ tập..." style="border-radius: 6px; padding: 8px 12px; font-size: 0.9rem;">
+                    </div>
 
                     <div id="mediaPreviewContainer" class="mb-3 d-flex flex-wrap gap-2 justify-content-center" style="display: none !important;"></div>
 
@@ -545,6 +562,21 @@
             }
             alert(message || 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
             window.location.href = '/Home/Auth';
+        }
+
+        async function readErrorMessage(res) {
+            const raw = await res.text();
+            if (!raw) return '';
+
+            try {
+                const json = JSON.parse(raw);
+                return json?.detail
+                    || json?.message
+                    || json?.error?.message
+                    || JSON.stringify(json);
+            } catch {
+                return raw;
+            }
         }
 
         function isVideoUrl(url) {
@@ -771,13 +803,7 @@
                     } else if (res.status === 401) {
                         handleUnauthorized('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để đăng bài.');
                     } else {
-                        let errMessage = '';
-                        try {
-                            const errJson = await res.json();
-                            errMessage = errJson?.detail || errJson?.message || JSON.stringify(errJson);
-                        } catch {
-                            errMessage = await res.text();
-                        }
+                        const errMessage = await readErrorMessage(res);
                         alert('Lỗi đăng bài: ' + (errMessage || 'Không xác định'));
                     }
                 } catch (ex) {
@@ -828,7 +854,68 @@
                 renderLightboxCurrentMedia();
             }
 
-            document.getElementById('feedContainer').addEventListener('click', (e) => {
+            document.getElementById('feedContainer').addEventListener('click', async (e) => {
+                const reportBtn = e.target.closest('.js-report-post');
+                if (reportBtn) {
+                    e.preventDefault();
+                    const postId = Number(reportBtn.getAttribute('data-post-id') || 0);
+                    if (postId <= 0) return;
+
+                    const token = getAuthToken();
+                    if (!token) {
+                        handleUnauthorized('Bạn cần đăng nhập để thực hiện báo cáo.');
+                        return;
+                    }
+
+                    const { value: reason } = await Swal.fire({
+                        title: 'Báo cáo bài viết',
+                        input: 'textarea',
+                        inputLabel: 'Lý do báo cáo vi phạm',
+                        inputPlaceholder: 'Nhập lý do chi tiết (VD: Lừa đảo, spam, thông tin không lành mạnh...)',
+                        showCancelButton: true,
+                        confirmButtonText: 'Gửi báo cáo',
+                        cancelButtonText: 'Hủy',
+                        confirmButtonColor: '#780115',
+                        inputValidator: (value) => {
+                            if (!value || !value.trim()) {
+                                return 'Vui lòng nhập lý do báo cáo!';
+                            }
+                        }
+                    });
+
+                    if (reason) {
+                        try {
+                            const res = await fetch('/api/reports', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({
+                                    targetType: 'Roommate',
+                                    targetId: postId,
+                                    reason: reason.trim()
+                                })
+                            });
+
+                            if (res.ok) {
+                                Swal.fire({
+                                    title: 'Thành công!',
+                                    text: 'Cảm ơn bạn đã gửi báo cáo. Admin sẽ xem xét xử lý bài đăng này.',
+                                    icon: 'success',
+                                    confirmButtonColor: '#780115'
+                                });
+                            } else {
+                                const errMessage = await readErrorMessage(res);
+                                Swal.fire('Lỗi', errMessage || 'Không thể gửi báo cáo.', 'error');
+                            }
+                        } catch (err) {
+                            Swal.fire('Lỗi', 'Lỗi mạng, không thể kết nối server.', 'error');
+                        }
+                    }
+                    return;
+                }
+
                 const messageBtn = e.target.closest('.js-open-direct-chat');
                 if (messageBtn) {
                     const ownerId = Number(messageBtn.getAttribute('data-owner-account-id') || 0);
@@ -1031,7 +1118,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <button class="btn btn-sm btn-light border shadow-none rounded-circle"><i class="fa-solid fa-ellipsis"></i></button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border shadow-none rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 8px;">
+                                    ${isOwnPost 
+                                        ? `<li><a class="dropdown-item fw-bold text-secondary" href="/Home/ManageRoommates"><i class="fa-solid fa-gear me-2"></i>Quản lý bài viết</a></li>` 
+                                        : `<li><a class="dropdown-item fw-bold text-danger js-report-post" href="#" data-post-id="${post.id}"><i class="fa-solid fa-triangle-exclamation me-2"></i>Báo cáo bài viết</a></li>`}
+                                </ul>
+                            </div>
                         </div>
                         
                         <div class="post-content">

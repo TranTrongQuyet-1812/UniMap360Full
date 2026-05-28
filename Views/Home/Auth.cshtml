@@ -787,7 +787,13 @@
 
         function extractErrorMessage(payload, fallbackMessage) {
             if (!payload) return fallbackMessage;
-            if (typeof payload === 'string') return payload;
+            if (typeof payload === 'string') {
+                const trimmed = payload.trim();
+                if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.includes('</div>')) {
+                    return fallbackMessage;
+                }
+                return trimmed;
+            }
             if (payload.error && typeof payload.error.message === 'string') return payload.error.message;
             if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
             if (typeof payload.title === 'string' && payload.title.trim()) return payload.title;
@@ -801,6 +807,10 @@
                 body: JSON.stringify(data)
             });
 
+            if (response.status === 429) {
+                throw new Error('Yêu cầu quá nhanh hoặc quá nhiều. Vui lòng đợi một lát rồi thử lại.');
+            }
+
             const payload = await readResponsePayload(response);
             if (!response.ok) {
                 throw new Error(extractErrorMessage(payload, 'Có lỗi xảy ra, vui lòng thử lại.'));
@@ -812,7 +822,9 @@
             const account = {
                 accountId: authData.accountId,
                 email: authData.email,
-                role: authData.role
+                role: authData.role,
+                fullName: authData.fullName,
+                avatarUrl: authData.avatarUrl
             };
 
             if (window.UniMap360AuthStore) {
@@ -830,7 +842,9 @@
             const account = {
                 accountId: authData.accountId,
                 email: authData.email,
-                role: authData.role
+                role: authData.role,
+                fullName: authData.fullName,
+                avatarUrl: authData.avatarUrl
             };
 
             window.dispatchEvent(new CustomEvent('unimap360:auth-changed', {
@@ -907,13 +921,14 @@
             const form = event.currentTarget;
             const formData = new FormData(form);
             const role = (formData.get('Role') || 'Student').toString();
+            const fullName = (formData.get('FullName') || '').toString().trim();
             const email = (formData.get('Email') || '').toString().trim();
             const otp = (formData.get('Otp') || '').toString().trim();
             const password = (formData.get('Password') || '').toString();
             const confirmPassword = (formData.get('ConfirmPassword') || '').toString();
 
-            if (!email || !password || !otp) {
-                showFeedback('registerFeedback', 'Vui lòng nhập đầy đủ Email, Mã OTP và Mật khẩu.', 'error');
+            if (!fullName || !email || !password || !otp) {
+                showFeedback('registerFeedback', 'Vui lòng nhập đầy đủ Họ tên, Email, Mã OTP và Mật khẩu.', 'error');
                 return;
             }
 
@@ -934,7 +949,7 @@
 
             setSubmitting(form, true);
             try {
-                await postJson('/api/auth/register', { email, password, role, otp });
+                await postJson('/api/auth/register', { email, password, role, otp, fullName });
                 showFeedback('registerFeedback', 'Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.', 'success');
 
                 const loginEmailInput = document.querySelector('#loginForm input[name="Email"]');
@@ -1165,6 +1180,37 @@
             const btnFpResendOtp = document.getElementById('btnFpResendOtp');
             const fpOtpMessage = document.getElementById('fpOtpMessage');
 
+            let fpTimer = null;
+            let fpTimeLeft = 0;
+
+            function startFpCooldown() {
+                if (fpTimer) clearInterval(fpTimer);
+                fpTimeLeft = 120;
+                
+                btnFpSendOtp.disabled = true;
+                btnFpResendOtp.disabled = true;
+                
+                btnFpSendOtp.innerHTML = `Chờ ${fpTimeLeft}s`;
+                btnFpResendOtp.innerHTML = `<i class="fas fa-rotate-right me-2"></i> Chờ ${fpTimeLeft}s`;
+
+                fpTimer = setInterval(() => {
+                    fpTimeLeft--;
+                    if (fpTimeLeft <= 0) {
+                        clearInterval(fpTimer);
+                        fpTimer = null;
+                        
+                        btnFpSendOtp.disabled = false;
+                        btnFpResendOtp.disabled = false;
+                        
+                        btnFpSendOtp.innerHTML = 'Nhận mã OTP';
+                        btnFpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i> Gửi lại OTP';
+                    } else {
+                        btnFpSendOtp.innerHTML = `Chờ ${fpTimeLeft}s`;
+                        btnFpResendOtp.innerHTML = `<i class="fas fa-rotate-right me-2"></i> Chờ ${fpTimeLeft}s`;
+                    }
+                }, 1000);
+            }
+
             async function sendForgotOtp(isResend = false) {
                 const email = document.getElementById('fpEmail').value.trim();
                 if (!email) {
@@ -1179,6 +1225,7 @@
                 actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
                 actionBtn.disabled = true;
 
+                let success = false;
                 try {
                     const res = await postJson('/api/auth/forgot-password', { email });
                     if (res && res.message) {
@@ -1196,12 +1243,16 @@
                         }
 
                         showToast(isResend ? 'Đã gửi lại OTP. Vui lòng kiểm tra Email.' : 'Mã OTP đã được gửi đến Email của bạn.', 'success');
+                        success = true;
+                        startFpCooldown();
                     }
                 } catch (err) {
                     showToast(err.message || 'Lỗi gửi yêu cầu', 'error');
                 } finally {
-                    actionBtn.innerHTML = originalHtml;
-                    actionBtn.disabled = false;
+                    if (!success) {
+                        actionBtn.innerHTML = originalHtml;
+                        actionBtn.disabled = false;
+                    }
                 }
             }
 
@@ -1242,6 +1293,18 @@
                         const res = await postJson('/api/auth/reset-password', { email, otp, newPassword });
                         if (res && res.message) {
                             showToast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+                            
+                            // Clear cooldown timer if running
+                            if (fpTimer) {
+                                clearInterval(fpTimer);
+                                fpTimer = null;
+                                fpTimeLeft = 0;
+                                btnFpSendOtp.disabled = false;
+                                btnFpResendOtp.disabled = false;
+                                btnFpSendOtp.innerHTML = 'Nhận mã OTP';
+                                btnFpResendOtp.innerHTML = '<i class="fas fa-rotate-right me-2"></i> Gửi lại OTP';
+                            }
+                            
                             fpModal.hide();
                             // Chuyển form về trạng thái đăng nhập
                             toggleAuth('login');

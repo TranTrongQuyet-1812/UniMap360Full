@@ -1,8 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using UniMap360.Models;
 using UniMap360.Models.Api;
+using UniMap360.Models.Requests;
+using UniMap360.Services.Reports;
 
 namespace UniMap360.Controllers.Api;
 
@@ -10,17 +15,17 @@ namespace UniMap360.Controllers.Api;
 [ApiController]
 public class ReportsController : ControllerBase
 {
-    private readonly UniMap360ProContext _context;
+    private readonly IContentReportService _reportService;
 
-    public ReportsController(UniMap360ProContext context)
+    public ReportsController(IContentReportService reportService)
     {
-        _context = context;
+        _reportService = reportService;
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> ReportListing(
-        [FromBody] ReportRequest request,
+        [FromBody] CreateReportRequest request,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.TargetType) || request.TargetId <= 0)
@@ -29,42 +34,45 @@ public class ReportsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Reason))
             return this.ApiBadRequest("Vui lòng nhập lý do báo cáo.");
 
-        // Tìm tất cả tài khoản Admin
-        var adminIds = await _context.Accounts
-            .AsNoTracking()
-            .Where(a => a.UserRole == "Admin")
-            .Select(a => a.AccountId)
-            .ToListAsync(cancellationToken);
+        var accountIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(accountIdClaim, out var reporterAccountId))
+            return this.ApiUnauthorized("Vui lòng đăng nhập để gửi báo cáo.");
 
-        if (adminIds.Count == 0)
-            return this.ApiOk(new { message = "Đã ghi nhận báo cáo." });
-
-        var title = request.TargetType == "Room"
-            ? $"Báo cáo phòng trọ #{request.TargetId}"
-            : $"Báo cáo việc làm #{request.TargetId}";
-
-        var notifications = adminIds.Select(adminId => new Notification
+        try
         {
-            RecipientAccountId = adminId,
-            Type = "report",
-            Title = title,
-            Message = $"Lý do: {request.Reason}",
-            TargetType = request.TargetType,
-            TargetId = request.TargetId,
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow
-        }).ToList();
+            await _reportService.CreateReportAsync(
+                reporterAccountId,
+                request.TargetType,
+                request.TargetId,
+                request.Reason,
+                cancellationToken);
 
-        _context.Notifications.AddRange(notifications);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return this.ApiOk(new { message = "Cảm ơn bạn đã báo cáo. Quản trị viên sẽ xem xét trong thời gian sớm nhất." });
+            return this.ApiOk(new { message = "Cảm ơn bạn đã báo cáo. Quản trị viên sẽ xem xét trong thời gian sớm nhất." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return this.ApiNotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return this.ApiBadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return this.ApiBadRequest(ex.Message);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            var msg = ex.InnerException?.Message ?? "";
+            if (msg.Contains("UQ_ContentReports_Reporter_Target_Active") || msg.Contains("23505"))
+            {
+                return this.ApiBadRequest("Bạn đã gửi báo cáo cho bài viết này và đang chờ quản trị viên xem xét.");
+            }
+            return StatusCode(500, new { message = "Lỗi hệ thống khi gửi báo cáo.", detail = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi hệ thống khi gửi báo cáo.", detail = ex.Message });
+        }
     }
-}
-
-public class ReportRequest
-{
-    public string TargetType { get; set; } = "";
-    public int TargetId { get; set; }
-    public string Reason { get; set; } = "";
 }

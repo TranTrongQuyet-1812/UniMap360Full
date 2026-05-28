@@ -9,11 +9,24 @@
         }
 
         const accountId = Number(bootstrap.accountId);
-        return {
+        const base = {
             accountId: Number.isFinite(accountId) && accountId > 0 ? accountId : null,
             email: String(bootstrap.email || "").trim(),
             role: String(bootstrap.role || "").trim() || null
         };
+
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_ACCOUNT);
+            if (raw) {
+                const stored = JSON.parse(raw);
+                if (stored && stored.accountId === base.accountId) {
+                    base.fullName = stored.fullName;
+                    base.avatarUrl = stored.avatarUrl;
+                }
+            }
+        } catch (_) {}
+
+        return base;
     }
 
     // In-memory auth state only (token stays in HttpOnly cookie).
@@ -49,11 +62,17 @@
     function saveAccount(account) {
         if (!account || !account.email) {
             _currentAccount = null;
+            try {
+                localStorage.removeItem(STORAGE_KEY_ACCOUNT);
+            } catch (_) {}
             emitAuthChanged(null);
             return;
         }
 
         _currentAccount = Object.assign({}, _currentAccount || {}, account);
+        try {
+            localStorage.setItem(STORAGE_KEY_ACCOUNT, JSON.stringify(_currentAccount));
+        } catch (_) {}
         emitAuthChanged(_currentAccount);
     }
 

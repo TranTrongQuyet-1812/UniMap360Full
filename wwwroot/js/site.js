@@ -98,7 +98,9 @@ window.escapeHtml = function(unsafe) {
 				return null;
 			}
 
-			if (!response.ok) return null;
+			if (!response.ok) {
+				throw new Error("HTTP-ERROR-" + response.status);
+			}
 
 			let me = requestResult ? requestResult.payload : await response.json();
 			if (me && me.success === true && me.data !== undefined) me = me.data;
@@ -107,13 +109,17 @@ window.escapeHtml = function(unsafe) {
 			const account = {
 				accountId: me.accountId,
 				email: me.email,
-				role: me.role
+				role: me.role,
+				fullName: me.fullName,
+				avatarUrl: me.avatarUrl
 			};
 
 			saveAccount(account);
 			return account;
-		} catch {
-			return null;
+		} catch (err) {
+			// Chỉ logout nếu có bằng chứng rõ ràng là lỗi 401 hoặc 403.
+			// Nếu lỗi mạng, 429 hoặc 5xx, chúng ta giữ nguyên thông tin tài khoản cũ đã lưu.
+			return getStoredAccount();
 		}
 	}
 

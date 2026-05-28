@@ -53,6 +53,8 @@ public partial class UniMap360ProContext : DbContext
 
     public virtual DbSet<RoommatePost> RoommatePosts { get; set; }
 
+    public virtual DbSet<ContentReport> ContentReports { get; set; }
+
     public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
 
     public virtual DbSet<SystemLog> SystemLogs { get; set; }
@@ -537,11 +539,55 @@ public partial class UniMap360ProContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql(currentTimestampSql);
             entity.Property(e => e.AreaPreference).HasMaxLength(255);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
 
             entity.HasOne(d => d.Student).WithMany(p => p.RoommatePosts)
                 .HasForeignKey(d => d.StudentId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_RoommatePosts_StudentProfile");
+        });
+
+        modelBuilder.Entity<ContentReport>(entity =>
+        {
+            entity.ToTable("ContentReports");
+
+            entity.HasKey(e => e.ReportId);
+
+            entity.Property(e => e.ReportId).HasColumnName("ReportID");
+            entity.Property(e => e.TargetType).HasMaxLength(20);
+            entity.Property(e => e.TargetId).HasColumnName("TargetID");
+            entity.Property(e => e.ReporterAccountId).HasColumnName("ReporterAccountID");
+            entity.Property(e => e.Reason).HasMaxLength(1000);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
+            entity.Property(e => e.ResolutionAction).HasMaxLength(20);
+            entity.Property(e => e.ResolutionNote).HasMaxLength(1000);
+            entity.Property(e => e.ReviewedByAdminAccountId).HasColumnName("ReviewedByAdminAccountID");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(currentTimestampSql);
+            entity.Property(e => e.ReviewedAt);
+            entity.Property(e => e.TargetTitleSnapshot).HasMaxLength(255);
+            entity.Property(e => e.OwnerAccountIdSnapshot);
+
+            entity.HasIndex(e => new { e.Status, e.CreatedAt }, "IX_ContentReports_Status_CreatedAt");
+            entity.HasIndex(e => new { e.TargetType, e.TargetId }, "IX_ContentReports_TargetType_TargetId");
+            entity.HasIndex(e => new { e.ReporterAccountId, e.CreatedAt }, "IX_ContentReports_ReporterAccountId_CreatedAt");
+            entity.HasIndex(e => new { e.TargetType, e.TargetId, e.Status }, "IX_ContentReports_TargetType_TargetId_Status");
+            entity.HasIndex(e => new { e.ReporterAccountId, e.TargetType, e.TargetId }, "UQ_ContentReports_Reporter_Target_Active")
+                .IsUnique()
+                .HasFilter(isPostgres ? "\"Status\" IN ('Pending', 'Reviewing')" : "[Status] IN ('Pending', 'Reviewing')");
+
+            entity.HasOne(d => d.ReporterAccount)
+                .WithMany()
+                .HasForeignKey(d => d.ReporterAccountId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ContentReports_ReporterAccount");
+
+            entity.HasOne(d => d.ReviewedByAdminAccount)
+                .WithMany()
+                .HasForeignKey(d => d.ReviewedByAdminAccountId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_ContentReports_ReviewedByAdminAccount");
         });
 
         modelBuilder.Entity<VGlobalMapFeed>(entity =>

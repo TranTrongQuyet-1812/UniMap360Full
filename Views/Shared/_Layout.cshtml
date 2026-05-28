@@ -13,7 +13,9 @@
         isAuthenticated = principal.Identity?.IsAuthenticated == true,
         accountId = bootstrapAccountId,
         email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email"),
-        role = principal.FindFirstValue(ClaimTypes.Role) ?? principal.FindFirstValue("role")
+        role = principal.FindFirstValue(ClaimTypes.Role) ?? principal.FindFirstValue("role"),
+        fullName = principal.Identity?.IsAuthenticated == true ? (principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue("name") ?? principal.FindFirstValue("unique_name")) : null,
+        avatarUrl = principal.Identity?.IsAuthenticated == true ? (principal.FindFirstValue("avatarUrl") ?? principal.FindFirstValue("avatar")) : null
     };
     var bootstrapAuthJson = JsonSerializer.Serialize(bootstrapAuth);
 }

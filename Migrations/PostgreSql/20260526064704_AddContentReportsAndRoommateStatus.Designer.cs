@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using UniMap360.Models;
 namespace UniMap360.Migrations.PostgreSql
 {
     [DbContext(typeof(UniMap360PostgresContext))]
-    partial class UniMap360PostgresContextModelSnapshot : ModelSnapshot
+    [Migration("20260526064704_AddContentReportsAndRoommateStatus")]
+    partial class AddContentReportsAndRoommateStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -261,10 +264,6 @@ namespace UniMap360.Migrations.PostgreSql
                     b.HasIndex(new[] { "TargetType", "TargetId" }, "IX_ContentReports_TargetType_TargetId");
 
                     b.HasIndex(new[] { "TargetType", "TargetId", "Status" }, "IX_ContentReports_TargetType_TargetId_Status");
-
-                    b.HasIndex(new[] { "ReporterAccountId", "TargetType", "TargetId" }, "UQ_ContentReports_Reporter_Target_Active")
-                        .IsUnique()
-                        .HasFilter("\"Status\" IN ('Pending', 'Reviewing')");
 
                     b.ToTable("ContentReports", (string)null);
                 });

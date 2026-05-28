@@ -13,6 +13,7 @@ using UniMap360.Models;
 using UniMap360.Options;
 using UniMap360.Services.Admin;
 using UniMap360.Services.Posts;
+using UniMap360.Constants;
 
 namespace UniMap360.Controllers.Api;
 
@@ -53,7 +54,7 @@ public class RoommatesController : ControllerBase
                 .AsNoTracking()
                 .Include(p => p.Student)
                 .ThenInclude(s => s.Account)
-                .Where(p => p.IsActive);
+                .Where(p => p.Status == RoommateStatuses.Active);
 
             var totalCount = await query.CountAsync();
 
@@ -167,6 +168,7 @@ public class RoommatesController : ControllerBase
                 Habits = request.Habits,
                 AreaPreference = request.AreaPreference,
                 IsActive = true,
+                Status = RoommateStatuses.Active,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -505,8 +507,14 @@ public class RoommatesController : ControllerBase
                     p.BudgetPerMonth,
                     p.Habits,
                     p.AreaPreference,
-                    p.IsActive,
-                    p.CreatedAt
+                    IsActive = p.Status == RoommateStatuses.Active,
+                    Status = p.Status,
+                    p.CreatedAt,
+                    IsAdminLocked = p.Status == RoommateStatuses.Rejected || (p.Status == RoommateStatuses.Hidden && _context.ContentReports
+                        .Where(r => r.TargetType == "Roommate" && r.TargetId == p.Id && r.Status == ContentReportStatuses.Resolved)
+                        .OrderByDescending(r => r.ReviewedAt)
+                        .Select(r => r.ResolutionAction)
+                        .FirstOrDefault() == ContentReportResolutionActions.Hide)
                 })
                 .ToListAsync();
 
@@ -574,7 +582,6 @@ public class RoommatesController : ControllerBase
             post.TargetGender = request.TargetGender;
             post.Habits = request.Habits;
             post.AreaPreference = request.AreaPreference;
-            post.IsActive = request.IsActive ?? post.IsActive;
 
             await _context.SaveChangesAsync();
 
@@ -630,5 +637,4 @@ public class UpdateRoommatePostRequest
     public string? TargetGender { get; set; }
     public string? Habits { get; set; }
     public string? AreaPreference { get; set; }
-    public bool? IsActive { get; set; }
 }

@@ -83,12 +83,29 @@ public class AuthController : ControllerBase
         // Xóa mã OTP khỏi Cache sau khi đăng ký thành công
         _cache.Remove($"RegisterOTP_{email}");
 
-        if (string.Equals(role, "Host", StringComparison.OrdinalIgnoreCase))
+        var requestedFullName = request.FullName?.Trim();
+
+        if (string.Equals(role, "Student", StringComparison.OrdinalIgnoreCase))
+        {
+            var studentProfile = new StudentProfile
+            {
+                AccountId = account.AccountId,
+                FullName = !string.IsNullOrWhiteSpace(requestedFullName)
+                    ? requestedFullName
+                    : BuildDefaultStudentFullName(account.Email, account.AccountId)
+            };
+
+            _context.StudentProfiles.Add(studentProfile);
+            await _context.SaveChangesAsync();
+        }
+        else if (string.Equals(role, "Host", StringComparison.OrdinalIgnoreCase))
         {
             var hostProfile = new HostProfile
             {
                 AccountId = account.AccountId,
-                FullName = BuildDefaultHostFullName(account.Email, account.AccountId),
+                FullName = !string.IsNullOrWhiteSpace(requestedFullName)
+                    ? requestedFullName
+                    : BuildDefaultHostFullName(account.Email, account.AccountId),
                 Idcard = BuildTemporaryHostIdCard(account.AccountId),
                 IsVerified = false
             };
@@ -101,7 +118,9 @@ public class AuthController : ControllerBase
             var employerProfile = new EmployerProfile
             {
                 AccountId = account.AccountId,
-                CompanyName = BuildDefaultEmployerCompanyName(account.Email, account.AccountId),
+                CompanyName = !string.IsNullOrWhiteSpace(requestedFullName)
+                    ? requestedFullName
+                    : BuildDefaultEmployerCompanyName(account.Email, account.AccountId),
                 TaxCode = BuildTemporaryEmployerTaxCode(account.AccountId)
             };
 
@@ -127,7 +146,11 @@ public class AuthController : ControllerBase
             return this.ApiBadRequest("Email và mật khẩu là bắt buộc.", "VALIDATION_ERROR");
 
         var email = request.Email.Trim().ToLowerInvariant();
-        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
+        var account = await _context.Accounts
+            .Include(a => a.StudentProfile)
+            .Include(a => a.HostProfile)
+            .Include(a => a.EmployerProfile)
+            .FirstOrDefaultAsync(a => a.Email == email);
         if (account is null)
             return this.ApiUnauthorized("Sai email hoặc mật khẩu.");
 
@@ -148,6 +171,15 @@ public class AuthController : ControllerBase
         var token = GenerateJwt(account);
         SetTokenCookie(token, request.RememberMe);
 
+        string? fullName = account.UserRole switch
+        {
+            UniMap360.Constants.AppRoles.Student => account.StudentProfile?.FullName,
+            UniMap360.Constants.AppRoles.Host => account.HostProfile?.FullName,
+            UniMap360.Constants.AppRoles.Employer => account.EmployerProfile?.CompanyName,
+            UniMap360.Constants.AppRoles.Admin => "Quản trị viên",
+            _ => null
+        };
+
         return this.ApiOk(new
         {
             // Vẫn trả về token để tương thích ngược với Frontend, 
@@ -156,6 +188,7 @@ public class AuthController : ControllerBase
             accountId = account.AccountId,
             email = account.Email,
             role = account.UserRole,
+            fullName = fullName,
             avatarUrl = account.AvatarUrl
         });
     }
@@ -199,7 +232,11 @@ public class AuthController : ControllerBase
 
             email = email.Trim().ToLowerInvariant();
 
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
+            var account = await _context.Accounts
+                .Include(a => a.StudentProfile)
+                .Include(a => a.HostProfile)
+                .Include(a => a.EmployerProfile)
+                .FirstOrDefaultAsync(a => a.Email == email);
             if (account == null)
             {
                 if (string.IsNullOrEmpty(request.Role))
@@ -248,14 +285,33 @@ public class AuthController : ControllerBase
                     _context.EmployerProfiles.Add(new EmployerProfile { AccountId = account.AccountId, CompanyName = name ?? "Công ty mới" });
                 }
                 await _context.SaveChangesAsync();
+
+                // Load lại các navigation profile cho tài khoản vừa tạo mới
+                account = await _context.Accounts
+                    .Include(a => a.StudentProfile)
+                    .Include(a => a.HostProfile)
+                    .Include(a => a.EmployerProfile)
+                    .FirstOrDefaultAsync(a => a.AccountId == account.AccountId);
             }
 
-            account.LastLoginAt = DateTime.UtcNow;
-            account.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            if (account != null)
+            {
+                account.LastLoginAt = DateTime.UtcNow;
+                account.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
 
-            var token = GenerateJwt(account);
+            var token = GenerateJwt(account!);
             SetTokenCookie(token, request.RememberMe);
+
+            string? fullName = account!.UserRole switch
+            {
+                UniMap360.Constants.AppRoles.Student => account.StudentProfile?.FullName ?? name ?? "Sinh viên mới",
+                UniMap360.Constants.AppRoles.Host => account.HostProfile?.FullName ?? name ?? "Chủ trọ mới",
+                UniMap360.Constants.AppRoles.Employer => account.EmployerProfile?.CompanyName ?? name ?? "Công ty mới",
+                UniMap360.Constants.AppRoles.Admin => "Quản trị viên",
+                _ => null
+            };
 
             return this.ApiOk(new
             {
@@ -263,6 +319,7 @@ public class AuthController : ControllerBase
                 accountId = account.AccountId,
                 email = account.Email,
                 role = account.UserRole,
+                fullName = fullName,
                 avatarUrl = account.AvatarUrl
             });
         }
@@ -274,6 +331,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpGet("me")]
+    [DisableRateLimiting]
     public async Task<IActionResult> Me()
     {
         var accountIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -281,17 +339,30 @@ public class AuthController : ControllerBase
             return this.ApiUnauthorized("Token không hợp lệ.");
 
         var account = await _context.Accounts
+            .Include(a => a.StudentProfile)
+            .Include(a => a.HostProfile)
+            .Include(a => a.EmployerProfile)
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.AccountId == accountId);
 
         if (account is null)
             return this.ApiNotFound("Không tìm thấy tài khoản.");
 
+        string? fullName = account.UserRole switch
+        {
+            UniMap360.Constants.AppRoles.Student => account.StudentProfile?.FullName,
+            UniMap360.Constants.AppRoles.Host => account.HostProfile?.FullName,
+            UniMap360.Constants.AppRoles.Employer => account.EmployerProfile?.CompanyName,
+            UniMap360.Constants.AppRoles.Admin => "Quản trị viên",
+            _ => null
+        };
+
         return this.ApiOk(new
         {
             accountId = account.AccountId,
             email = account.Email,
             role = account.UserRole,
+            fullName = fullName,
             avatarUrl = account.AvatarUrl,
             isActive = account.IsActive,
             isLocked = account.IsLocked,
@@ -301,6 +372,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("refresh")]
+    [DisableRateLimiting]
     public async Task<IActionResult> Refresh([FromQuery] bool rememberMe = true)
     {
         var accountIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -308,6 +380,9 @@ public class AuthController : ControllerBase
             return this.ApiUnauthorized("Token không hợp lệ.");
 
         var account = await _context.Accounts
+            .Include(a => a.StudentProfile)
+            .Include(a => a.HostProfile)
+            .Include(a => a.EmployerProfile)
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.AccountId == accountId);
 
@@ -522,6 +597,14 @@ public class AuthController : ControllerBase
         return alias;
     }
 
+    private static string BuildDefaultStudentFullName(string email, int accountId)
+    {
+        var alias = email.Split('@', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+        if (string.IsNullOrWhiteSpace(alias)) alias = $"Student {accountId}";
+        if (alias.Length > 100) alias = alias[..100];
+        return alias;
+    }
+
     private static string BuildTemporaryHostIdCard(int accountId)
     {
         return $"HOST{accountId:D10}";
@@ -548,12 +631,23 @@ public class AuthController : ControllerBase
         var audience = _configuration["Jwt:Audience"];
         var expiresMinutes = int.TryParse(_configuration["Jwt:ExpiresMinutes"], out var minutes) ? minutes : 120;
 
+        string? fullName = account.UserRole switch
+        {
+            UniMap360.Constants.AppRoles.Student => account.StudentProfile?.FullName,
+            UniMap360.Constants.AppRoles.Host => account.HostProfile?.FullName,
+            UniMap360.Constants.AppRoles.Employer => account.EmployerProfile?.CompanyName,
+            UniMap360.Constants.AppRoles.Admin => "Quản trị viên",
+            _ => null
+        };
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, account.AccountId.ToString()),
             new(JwtRegisteredClaimNames.Email, account.Email),
             new(ClaimTypes.Role, account.UserRole ?? "Student"),
-            new(ClaimTypes.NameIdentifier, account.AccountId.ToString())
+            new(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
+            new(ClaimTypes.Name, fullName ?? account.Email.Split('@')[0]),
+            new("avatarUrl", account.AvatarUrl ?? "")
         };
 
         var credentials = new SigningCredentials(

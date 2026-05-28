@@ -18,6 +18,10 @@ namespace UniMap360.Controllers
 
         public IActionResult Intro()
         {
+            if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
             ViewData["IsIntroPage"] = true;
             ViewData["ActivePage"] = "intro";
             return View();
@@ -25,6 +29,10 @@ namespace UniMap360.Controllers
 
         public IActionResult Index()
         {
+            if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
             ViewData["IsMapPage"] = true;
             ViewData["ActivePage"] = "map";
             return View();
@@ -70,6 +78,10 @@ namespace UniMap360.Controllers
 
         public IActionResult Auth()
         {
+            if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
             ViewData["ActivePage"] = "auth";
             return View();
         }

@@ -1,0 +1,388 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý tố cáo";
+    ViewData["ActiveAdminPage"] = "reports";
+}
+
+<style>
+    .filter-bento { background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px; }
+    .filter-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--admin-text-light); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    .form-select-sm, .form-control-sm { border-radius: var(--radius-sm); border-color: var(--admin-border); font-weight: 600; padding: 8px 12px; }
+    
+    .report-card-media { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .report-media-item { width: 80px; height: 80px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--admin-border); }
+    
+    .target-preview-box { background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); padding: 15px; margin-top: 12px; }
+    .target-preview-title { font-weight: 700; font-size: 0.95rem; color: var(--admin-secondary); margin-bottom: 8px; }
+    
+    .badge-report-pending { background: #fee2e2; color: #991b1b; }
+    .badge-report-reviewing { background: #fef3c7; color: #92400e; }
+    .badge-report-resolved { background: #d1fae5; color: #065f46; }
+    .badge-report-dismissed { background: #e2e8f0; color: #475569; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-black mb-1">Quản lý Báo cáo Tố cáo</h3>
+        <p class="text-muted mb-0 small">Xét duyệt và xử lý các bài đăng bị người dùng tố cáo vi phạm tiêu chuẩn cộng đồng.</p>
+    </div>
+</div>
+
+<div class="filter-bento">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="filter-label">Loại đối tượng</label>
+            <select class="form-select form-select-sm" id="reportTargetTypeFilter">
+                <option value="">Tất cả loại bài</option>
+                <option value="Roommate">Ở ghép</option>
+                <option value="Room">Phòng trọ</option>
+                <option value="Job">Việc làm</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="filter-label">Trạng thái xử lý</label>
+            <select class="form-select form-select-sm" id="reportStatusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Pending">Đang chờ xử lý (Pending)</option>
+                <option value="Reviewing">Đang xem xét (Reviewing)</option>
+                <option value="Resolved">Đã giải quyết (Resolved)</option>
+                <option value="Dismissed">Đã bỏ qua (Dismissed)</option>
+            </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end gap-2">
+            <button class="btn btn-outline-dark fw-bold btn-sm px-4" id="btnRefreshReports">
+                <i class="fas fa-sync-alt me-2"></i>Làm mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="bento-box p-0">
+    <div class="table-responsive border-0" style="min-height: 400px;">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th style="width: 120px;">LOẠI BÀI</th>
+                    <th>TIÊU ĐỀ BÀI ĐĂNG (SNAPSHOT)</th>
+                    <th>LÝ DO TỐ CÁO</th>
+                    <th style="width: 180px;">NGƯỜI TỐ CÁO</th>
+                    <th style="width: 150px;">NGÀY TỐ CÁO</th>
+                    <th style="width: 140px;">TRẠNG THÁI</th>
+                    <th class="text-end" style="width: 120px;">THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody">
+                <tr><td colspan="8" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let reportRows = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnRefreshReports').addEventListener('click', loadReports);
+        document.getElementById('reportTargetTypeFilter').addEventListener('change', loadReports);
+        document.getElementById('reportStatusFilter').addEventListener('change', loadReports);
+
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-report-action');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            
+            if (action === 'detail') openReportDetail(id);
+            else if (action === 'review') markAsReviewing(id);
+            else if (action === 'resolve') handleResolve(id, btn.getAttribute('data-resolve-action'), btn.getAttribute('data-target-type'));
+            else if (action === 'dismiss') handleDismiss(id);
+            else if (action === 'closeDrawer') closeDrawer();
+        });
+
+        loadReports();
+    });
+
+    async function loadReports() {
+        const params = new URLSearchParams();
+        const targetType = document.getElementById('reportTargetTypeFilter').value;
+        const status = document.getElementById('reportStatusFilter').value;
+
+        if (targetType) params.set('targetType', targetType);
+        if (status) params.set('status', status);
+
+        try {
+            const data = await adminFetchJson('/api/admin/reports?' + params.toString());
+            reportRows = data.items || [];
+            renderReports(reportRows);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được danh sách tố cáo.', 'error');
+            renderReports([]);
+        }
+    }
+
+    function renderReports(rows) {
+        const body = document.getElementById('reportTableBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="8" class="text-center p-5 text-muted">Không tìm thấy báo cáo tố cáo nào.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(r => {
+            let actionsHtml = `
+                <li><a class="dropdown-item js-report-action" href="#" data-action="detail" data-id="${r.reportId}"><i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
+            `;
+
+            if (r.status === 'Pending') {
+                actionsHtml += `
+                    <li><a class="dropdown-item js-report-action text-primary" href="#" data-action="review" data-id="${r.reportId}"><i class="fas fa-search me-2"></i>Xem xét case</a></li>
+                `;
+            }
+
+            if (r.status === 'Pending' || r.status === 'Reviewing') {
+                actionsHtml += `
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item js-report-action text-warning" href="#" data-action="resolve" data-resolve-action="Hide" data-target-type="${r.targetType}" data-id="${r.reportId}"><i class="fas fa-eye-slash me-2"></i>Ẩn bài đăng</a></li>
+                    <li><a class="dropdown-item js-report-action text-danger" href="#" data-action="resolve" data-resolve-action="Reject" data-target-type="${r.targetType}" data-id="${r.reportId}"><i class="fas fa-ban me-2"></i>Từ chối bài</a></li>
+                    <li><a class="dropdown-item js-report-action text-danger fw-bold" href="#" data-action="resolve" data-resolve-action="Delete" data-target-type="${r.targetType}" data-id="${r.reportId}"><i class="fas fa-trash-alt me-2"></i>Xóa bài viết</a></li>
+                    <li><a class="dropdown-item js-report-action text-secondary" href="#" data-action="dismiss" data-id="${r.reportId}"><i class="fas fa-times-circle me-2"></i>Bỏ qua tố cáo</a></li>
+                `;
+            }
+
+            const targetLabel = r.targetType === 'Roommate' ? 'Ở ghép' : (r.targetType === 'Room' ? 'Phòng trọ' : 'Việc làm');
+            const targetColor = r.targetType === 'Roommate' ? 'primary' : (r.targetType === 'Room' ? 'danger' : 'success');
+
+            return `
+            <tr>
+                <td class="text-muted small fw-bold">#${r.reportId}</td>
+                <td><span class="badge bg-${targetColor}">${targetLabel}</span></td>
+                <td>
+                    <div class="fw-bold">${escapeHtml(r.targetTitleSnapshot || 'Bài viết không có tiêu đề')}</div>
+                    <div class="text-muted small">Target ID: #${r.targetId}</div>
+                </td>
+                <td>
+                    <div class="text-truncate" style="max-width: 250px;" title="${escapeHtml(r.reason)}">${escapeHtml(r.reason)}</div>
+                </td>
+                <td class="small text-muted">${escapeHtml(r.reporterName)}</td>
+                <td class="small text-muted">${formatAdminDate(r.createdAt)}</td>
+                <td>${renderReportStatusBadge(r.status)}</td>
+                <td class="text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-dark fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.7rem;">THAO TÁC</button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; min-width: 180px;">
+                            ${actionsHtml}
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `}).join('');
+    }
+
+    async function openReportDetail(id) {
+        try {
+            const d = await adminFetchJson(`/api/admin/reports/${id}`);
+            
+            // Tự động mark reviewing nếu đang pending
+            if (d.status === 'Pending') {
+                try {
+                    await adminFetchRaw(`/api/admin/reports/${id}/review`, { method: 'POST' });
+                    d.status = 'Reviewing';
+                    loadReports(); // Tải lại bảng bên ngoài
+                } catch {}
+            }
+
+            let targetHtml = '';
+            if (d.targetDetail) {
+                const t = d.targetDetail;
+                const mediaHtml = (t.media || []).length
+                    ? t.media.map(x => `<img src="${escapeHtml(x.mediaUrl)}" class="report-media-item">`).join('')
+                    : '<div class="text-muted small">Không có ảnh đi kèm.</div>';
+
+                const detailPath = d.targetType === 'Roommate' ? `/Home/Roommates` 
+                    : `/Home/Detail?type=${d.targetType.toLowerCase()}&id=${d.targetId}`;
+
+                targetHtml = `
+                    <div class="target-preview-box">
+                        <div class="target-preview-title"><i class="fas fa-link me-1"></i> Nội dung gốc của bài đăng</div>
+                        <div class="mb-2"><strong>Tiêu đề:</strong> ${escapeHtml(t.title || t.jobTitle || '-')}</div>
+                        <div class="mb-2"><strong>Trạng thái bài:</strong> ${escapeHtml(t.status || '-')}</div>
+                        <div class="mb-2"><strong>Chủ bài đăng:</strong> ${escapeHtml(t.ownerName || '-')} (${escapeHtml(t.ownerEmail || '-')})</div>
+                        <div class="mb-2"><strong>Mô tả:</strong><br><span class="text-muted small">${escapeHtml(t.description || '-')}</span></div>
+                        <div class="mb-2"><strong>Hình ảnh:</strong><div class="report-card-media">${mediaHtml}</div></div>
+                        <div class="mt-3"><a href="${detailPath}" target="_blank" class="btn btn-xs btn-outline-secondary py-1 px-2 fw-bold" style="font-size:0.7rem;"><i class="fas fa-external-link-alt me-1"></i>Xem trang chi tiết</a></div>
+                    </div>
+                `;
+            } else {
+                targetHtml = `<div class="alert alert-warning py-2 mt-3 small"><i class="fas fa-exclamation-triangle me-1"></i>Bài đăng gốc này đã bị xóa hoặc không còn tồn tại trên hệ thống.</div>`;
+            }
+
+            const isPendingOrReviewing = d.status === 'Pending' || d.status === 'Reviewing';
+
+            let footerHtml = '';
+            if (isPendingOrReviewing) {
+                footerHtml = `
+                    <button class="btn btn-warning btn-sm fw-bold text-dark js-report-action" data-action="resolve" data-resolve-action="Hide" data-target-type="${d.targetType}" data-id="${d.reportId}">ẨN BÀI</button>
+                    <button class="btn btn-outline-danger btn-sm fw-bold js-report-action" data-action="resolve" data-resolve-action="Reject" data-target-type="${d.targetType}" data-id="${d.reportId}">TỪ CHỐI</button>
+                    <button class="btn btn-danger btn-sm fw-bold js-report-action" data-action="resolve" data-resolve-action="Delete" data-target-type="${d.targetType}" data-id="${d.reportId}">XÓA BÀI</button>
+                    <button class="btn btn-secondary btn-sm fw-bold js-report-action" data-action="dismiss" data-id="${d.reportId}">BỎ QUA</button>
+                `;
+            } else {
+                footerHtml = `<button class="btn btn-secondary btn-sm fw-bold" onclick="closeDrawer()">ĐÓNG</button>`;
+            }
+
+            const resolutionDetails = d.status === 'Resolved' || d.status === 'Dismissed'
+                ? `
+                    <div class="alert alert-info py-2 mt-3 small">
+                        <strong>Lịch sử xử lý:</strong><br>
+                        - Trạng thái: ${renderReportStatusBadge(d.status)}<br>
+                        - Hành động: ${escapeHtml(d.resolutionAction || 'NoAction')}<br>
+                        - Ghi chú giải quyết: ${escapeHtml(d.resolutionNote || 'Không có ghi chú')}<br>
+                        - Admin xử lý: ${escapeHtml(d.adminEmail)} (${formatAdminDate(d.reviewedAt)})
+                    </div>
+                `
+                : '';
+
+            const content = `
+                <div class="mb-3"><strong>Trạng thái tố cáo:</strong> ${renderReportStatusBadge(d.status)}</div>
+                <div class="mb-3"><strong>Tổng số tố cáo bài viết này:</strong> <span class="badge bg-danger rounded-pill">${d.totalReportsForThisTarget || 1}</span></div>
+                <div class="mb-3"><strong>Người tố cáo:</strong> ${escapeHtml(d.reporterEmail)} (${formatAdminDate(d.createdAt)})</div>
+                <div class="mb-3"><strong>Lý do tố cáo:</strong><br><span class="text-danger small fw-bold">${escapeHtml(d.reason)}</span></div>
+                ${resolutionDetails}
+                ${targetHtml}
+            `;
+
+            openDrawer(`Chi tiết Tố cáo #${id}`, content, footerHtml);
+        } catch (err) {
+            showAdminToast(err.message || 'Không tải được chi tiết báo cáo.', 'error');
+        }
+    }
+
+    async function markAsReviewing(id) {
+        try {
+            await adminFetchJson(`/api/admin/reports/${id}/review`, { method: 'POST' });
+            showAdminToast('Đã chuyển tố cáo sang trạng thái xem xét.', 'success');
+            await loadReports();
+        } catch (err) {
+            showAdminToast(err.message || 'Thao tác thất bại.', 'error');
+        }
+    }
+
+    function handleResolve(id, resolveAction, targetType) {
+        let actionLabel = '';
+        if (resolveAction === 'Hide') actionLabel = 'ẩn bài viết';
+        else if (resolveAction === 'Reject') actionLabel = 'từ chối bài viết';
+        else if (resolveAction === 'Delete') actionLabel = 'xóa vĩnh viễn bài viết';
+
+        Swal.fire({
+            title: `Giải quyết tố cáo #${id}`,
+            html: `
+                <p class="small text-muted">Bạn đang thực hiện <strong>${actionLabel}</strong> đối với nội dung này.</p>
+                <div class="text-start mb-3">
+                    <label class="form-label small fw-bold">Nhập lý do gửi đến chủ bài viết:</label>
+                    <textarea id="swalResolveReason" class="form-control form-control-sm" rows="3" placeholder="Lý do vi phạm..."></textarea>
+                </div>
+                <div class="form-check text-start">
+                    <input class="form-check-input" type="checkbox" id="swalApplyAll" checked>
+                    <label class="form-check-input-label small text-muted" for="swalApplyAll">
+                        Đồng thời giải quyết tất cả báo cáo chưa xử lý khác của bài viết này.
+                    </label>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#780115',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Xác nhận xử lý',
+            cancelButtonText: 'Hủy bỏ',
+            preConfirm: () => {
+                const reason = document.getElementById('swalResolveReason').value.trim();
+                const applyAll = document.getElementById('swalApplyAll').checked;
+                if (!reason) {
+                    Swal.showValidationMessage('Vui lòng nhập lý do giải quyết.');
+                }
+                return { reason, applyAll };
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await adminFetchJson(`/api/admin/reports/${id}/resolve`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: resolveAction,
+                            reason: result.value.reason,
+                            applyToAllPendingReportsOfSameTarget: result.value.applyAll
+                        })
+                    });
+                    showAdminToast('Đã giải quyết báo cáo tố cáo thành công.', 'success');
+                    closeDrawer();
+                    await loadReports();
+                } catch (err) {
+                    Swal.fire('Lỗi', err.message || 'Giải quyết tố cáo thất bại.', 'error');
+                }
+            }
+        });
+    }
+
+    function handleDismiss(id) {
+        Swal.fire({
+            title: `Bỏ qua tố cáo #${id}`,
+            html: `
+                <p class="small text-muted">Báo cáo này sẽ được đánh dấu là bỏ qua (Dismissed) mà không làm ảnh hưởng tới bài viết gốc.</p>
+                <div class="text-start mb-3">
+                    <label class="form-label small fw-bold">Lý do bỏ qua tố cáo:</label>
+                    <textarea id="swalDismissReason" class="form-control form-control-sm" rows="3" placeholder="Báo cáo không đúng sự thật, không có dấu hiệu vi phạm..."></textarea>
+                </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#64748b',
+            cancelButtonColor: '#e2e8f0',
+            confirmButtonText: 'Bỏ qua tố cáo',
+            cancelButtonText: 'Hủy',
+            preConfirm: () => {
+                const reason = document.getElementById('swalDismissReason').value.trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Vui lòng nhập lý do bỏ qua.');
+                }
+                return { reason };
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await adminFetchJson(`/api/admin/reports/${id}/dismiss`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            reason: result.value.reason
+                        })
+                    });
+                    showAdminToast('Đã bỏ qua báo cáo tố cáo.', 'success');
+                    closeDrawer();
+                    await loadReports();
+                } catch (err) {
+                    Swal.fire('Lỗi', err.message || 'Thao tác thất bại.', 'error');
+                }
+            }
+        });
+    }
+
+    function renderReportStatusBadge(status) {
+        if (status === 'Pending') return '<span class="badge badge-report-pending badge-status">Đang chờ</span>';
+        if (status === 'Reviewing') return '<span class="badge badge-report-reviewing badge-status">Xem xét</span>';
+        if (status === 'Resolved') return '<span class="badge badge-report-resolved badge-status">Đã giải quyết</span>';
+        if (status === 'Dismissed') return '<span class="badge badge-report-dismissed badge-status">Đã bỏ qua</span>';
+        return `<span class="badge bg-secondary badge-status">${escapeHtml(status || '-')}</span>`;
+    }
+
+    function escapeHtml(input) {
+        if (!input) return '';
+        return String(input)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+</script>
+}

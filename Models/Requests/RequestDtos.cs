@@ -62,6 +62,9 @@ public sealed class RegisterRequest
     [RegularExpression("^(Student|Host|Employer)$", ErrorMessage = "Role phải là Student, Host hoặc Employer.")]
     public string Role { get; set; } = string.Empty;
 
+    [StringLength(100, ErrorMessage = "Họ tên không được vượt quá 100 ký tự.")]
+    public string? FullName { get; set; }
+
     [Required(ErrorMessage = "Mã xác thực (OTP) là bắt buộc.")]
     [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã OTP phải có đúng 6 chữ số.")]
     public string Otp { get; set; } = string.Empty;
@@ -240,6 +243,40 @@ public sealed class ActionReasonRequest
 // ── Admin Moderation ────────────────────────────────────
 
 public sealed class ModerationActionRequest
+{
+    [StringLength(1000, ErrorMessage = "Lý do không được vượt quá 1000 ký tự.")]
+    public string? Reason { get; set; }
+}
+
+// ── Content Reports ─────────────────────────────────────
+
+public sealed class CreateReportRequest
+{
+    [Required(ErrorMessage = "Loại đối tượng là bắt buộc.")]
+    [RegularExpression("^(Roommate|Room|Job)$", ErrorMessage = "Loại đối tượng phải là Roommate, Room hoặc Job.")]
+    public string TargetType { get; set; } = string.Empty;
+
+    [Range(1, int.MaxValue, ErrorMessage = "TargetId không hợp lệ.")]
+    public int TargetId { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng nhập lý do tố cáo.")]
+    [StringLength(1000, ErrorMessage = "Lý do không được vượt quá 1000 ký tự.")]
+    public string Reason { get; set; } = string.Empty;
+}
+
+public sealed class ResolveReportRequest
+{
+    [Required(ErrorMessage = "Hành động là bắt buộc.")]
+    [RegularExpression("^(Hide|Restore|Reject|Delete|NoAction)$", ErrorMessage = "Hành động phải là Hide, Restore, Reject, Delete hoặc NoAction.")]
+    public string Action { get; set; } = string.Empty;
+
+    [StringLength(1000, ErrorMessage = "Lý do không được vượt quá 1000 ký tự.")]
+    public string? Reason { get; set; }
+
+    public bool ApplyToAllPendingReportsOfSameTarget { get; set; }
+}
+
+public sealed class DismissReportRequest
 {
     [StringLength(1000, ErrorMessage = "Lý do không được vượt quá 1000 ký tự.")]
     public string? Reason { get; set; }
