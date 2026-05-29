@@ -11,7 +11,7 @@
     };
 
     // DOM Elements
-    let launcherBtn, chatPanel, closeBtn, msgContainer, quickChipsContainer, chatInput, sendBtn;
+    let launcherBtn, chatPanel, closeBtn, msgContainer, quickChipsContainer, chatInput, sendBtn, chipsDrawer, chipsToggleBtn;
     let chatbotInitialized = false;
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -62,6 +62,8 @@
         quickChipsContainer = document.getElementById("ai-quick-chips");
         chatInput = document.getElementById("ai-chat-input");
         sendBtn = document.getElementById("ai-chat-send-btn");
+        chipsDrawer = document.getElementById("ai-quick-chips-drawer");
+        chipsToggleBtn = document.getElementById("ai-quick-chips-toggle");
     }
 
     // 1. TỰ ĐỘNG THU THẬP TỌA ĐỘ KHI TRUY CẬP TRANG WEB
@@ -146,6 +148,12 @@
                 }
             });
         }
+
+        if (chipsToggleBtn && chipsDrawer) {
+            chipsToggleBtn.addEventListener("click", () => {
+                chipsDrawer.classList.toggle("collapsed");
+            });
+        }
     }
 
     function togglePanel(open) {
@@ -219,8 +227,10 @@
         indicator.className = "ai-chat-bubble ai typing-indicator-bubble";
         indicator.id = "ai-chat-typing-indicator";
         indicator.innerHTML = `
-            <div style="display: flex; gap: 4px; align-items: center; min-height: 20px;">
-                <span style="font-style: italic; color: rgba(255,255,255,0.6)">Trợ lý đang phân tích...</span>
+            <div class="ai-typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         `;
         msgContainer.appendChild(indicator);
@@ -324,6 +334,10 @@
             });
             quickChipsContainer.appendChild(chipBtn);
         });
+
+        if (chipsDrawer) {
+            chipsDrawer.classList.remove("collapsed");
+        }
     }
 
     // 4. GỬI TIN NHẮN HỘI THOẠI & ĐỒNG BỘ BẢN ĐỒ

@@ -90,8 +90,14 @@
     <div class="ai-chat-messages" id="ai-chat-messages">
         <!-- Messages will be injected here by ai-chatbot.js -->
     </div>
-    <div class="ai-quick-chips" id="ai-quick-chips">
-        <!-- Chips will be injected here by ai-chatbot.js -->
+    <div class="ai-quick-chips-drawer" id="ai-quick-chips-drawer">
+        <button type="button" class="ai-quick-chips-toggle" id="ai-quick-chips-toggle" title="Gợi ý nhanh">
+            <span class="ai-quick-chips-toggle-text"><i class="fas fa-lightbulb me-1"></i>Gợi ý nhanh</span>
+            <i class="fas fa-chevron-down" id="ai-quick-chips-toggle-icon"></i>
+        </button>
+        <div class="ai-quick-chips" id="ai-quick-chips">
+            <!-- Chips will be injected here by ai-chatbot.js -->
+        </div>
     </div>
     <div class="ai-chat-input-wrap">
         <input type="text" id="ai-chat-input" class="ai-chat-input" placeholder="Nhập câu hỏi hoặc địa điểm của bạn..." />

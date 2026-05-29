@@ -221,14 +221,65 @@
     }
 }
 
-/* Chat Quick Actions / Chips */
+/* Chat Quick Actions / Chips Drawer */
+.ai-quick-chips-drawer {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 1px solid rgba(120, 1, 21, 0.08);
+    transition: all 0.3s ease;
+}
+
+.ai-quick-chips-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px;
+    background: rgba(120, 1, 21, 0.02);
+    border: none;
+    border-bottom: 1px solid rgba(120, 1, 21, 0.04);
+    color: #780115;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    width: 100%;
+    outline: none;
+    transition: background 0.2s ease;
+}
+
+.ai-quick-chips-toggle:hover {
+    background: rgba(120, 1, 21, 0.06);
+}
+
+.ai-quick-chips-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.ai-quick-chips-drawer.collapsed .ai-quick-chips-toggle i {
+    transform: rotate(180deg);
+}
+
 .ai-quick-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     padding: 10px 20px;
+    max-height: 140px;
+    overflow-y: auto;
     background: rgba(255, 255, 255, 0.95);
-    border-top: 1px solid rgba(120, 1, 21, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+}
+
+.ai-quick-chips-drawer.collapsed .ai-quick-chips {
+    max-height: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    opacity: 0;
+    overflow: hidden;
+    border-top: none;
 }
 
 .ai-chip {
@@ -257,6 +308,52 @@
 
 .ai-chip:active {
     transform: translateY(0);
+}
+
+/* Premium Wave Typing Indicator Styles */
+.typing-indicator-bubble {
+    align-self: flex-start;
+    background: rgba(120, 1, 21, 0.05) !important;
+    border: 1px solid rgba(120, 1, 21, 0.08) !important;
+    border-bottom-left-radius: 4px !important;
+    padding: 12px 20px !important;
+    display: inline-flex;
+    align-items: center;
+}
+
+.ai-typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 12px;
+}
+
+.ai-typing-dots span {
+    width: 8px;
+    height: 8px;
+    background-color: #780115; /* Brand Maroon color */
+    border-radius: 50%;
+    display: inline-block;
+    animation: aiTypingWave 1.4s infinite ease-in-out both;
+}
+
+.ai-typing-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.ai-typing-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes aiTypingWave {
+    0%, 80%, 100% { 
+        transform: scale(0.6);
+        opacity: 0.5;
+    } 
+    40% { 
+        transform: scale(1.2);
+        opacity: 1;
+    }
 }
 
 /* Chat Input Bar */
