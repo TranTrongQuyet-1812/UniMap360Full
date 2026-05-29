@@ -240,9 +240,7 @@
 
         state.loadingConversations = true;
         try {
-            const { response, payload } = await fetchJson("/api/chat/conversations?limit=80", {
-                headers: { Authorization: "Bearer " + token }
-            });
+            const { response, payload } = await fetchJson("/api/chat/conversations?limit=80");
 
             if (!response.ok) {
                 renderConversationError(payload?.message || "Không tải được danh sách chat.");
@@ -436,9 +434,7 @@
         if (!messagesEl) return;
 
         try {
-            const { response, payload } = await fetchJson(`/api/chat/conversations/${state.activeConversationId}/messages?take=80`, {
-                headers: { Authorization: "Bearer " + token }
-            });
+            const { response, payload } = await fetchJson(`/api/chat/conversations/${state.activeConversationId}/messages?take=80`);
 
             if (!response.ok) {
                 messagesEl.innerHTML = '<div class="um-chat-empty">Không tải được tin nhắn.</div>';
@@ -523,8 +519,7 @@
             const { response, payload } = await fetchJson(`/api/chat/conversations/${state.activeConversationId}/messages`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ content: content })
             });
@@ -556,8 +551,7 @@
             await fetch(`/api/chat/conversations/${state.activeConversationId}/read`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ lastReadMessageId: lastReadMessageId })
             });
@@ -583,8 +577,7 @@
         const { response, payload } = await fetchJson("/api/chat/conversations/direct", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + token
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({ targetAccountId: normalizedTargetId })
         });
@@ -622,11 +615,80 @@
         badge.textContent = count > 99 ? "99+" : String(count);
     }
 
+    async function handleConnected(label) {
+        console.log("ChatWidget: SignalR " + label + ", switching to slow polling and reloading state.");
+        await loadConversations(true);
+        if (state.open && state.activeConversationId) {
+            await loadMessages(true, true);
+            await markConversationRead();
+        }
+        // Re-apply polling
+        if (state.open) {
+            startPolling();
+            if (state.viewMode === "thread") {
+                startMessagePolling();
+            }
+        }
+    }
+
+    function registerRealtimeListeners() {
+        window.addEventListener("unimap360:realtime:message", async function (event) {
+            const message = event.detail;
+            if (!message) return;
+            
+            // If this message belongs to the active conversation, append it
+            if (state.activeConversationId && Number(message.conversationId) === Number(state.activeConversationId)) {
+                // Ensure message not already in state.messages
+                const exists = state.messages.some(m => m.messageId === message.messageId);
+                if (!exists) {
+                    state.messages.push(message);
+                    renderMessages(true, false);
+                    if (state.open) {
+                        await markConversationRead();
+                    }
+                }
+            }
+            
+            // Refetch conversations is handled by unimap360:realtime:conversation event
+        });
+
+        window.addEventListener("unimap360:realtime:conversation", async function (event) {
+            await loadConversations(true);
+        });
+
+        window.addEventListener("unimap360:realtime:chat-unread", function (event) {
+            const payload = event.detail;
+            if (payload && typeof payload.totalUnread !== "undefined") {
+                updateLauncherBadge(payload.totalUnread);
+            }
+        });
+
+        window.addEventListener("unimap360:realtime:connected", async function () {
+            await handleConnected("connected");
+        });
+
+        window.addEventListener("unimap360:realtime:reconnected", async function () {
+            await handleConnected("reconnected");
+        });
+
+        window.addEventListener("unimap360:realtime:closed", function () {
+            console.log("ChatWidget: SignalR closed, reverting to fast polling.");
+            if (state.open) {
+                startPolling();
+                if (state.viewMode === "thread") {
+                    startMessagePolling();
+                }
+            }
+        });
+    }
+
     function startPolling() {
         stopConversationPolling();
+        const isSignalRConnected = window.UniMap360RealtimeClient && window.UniMap360RealtimeClient.isConnected();
+        const interval = isSignalRConnected ? 60000 : POLL_CONVERSATIONS_MS;
         state.conversationPollTimer = window.setInterval(function () {
             loadConversations(false);
-        }, POLL_CONVERSATIONS_MS);
+        }, interval);
     }
 
     function stopConversationPolling() {
@@ -638,6 +700,11 @@
 
     function startMessagePolling() {
         stopMessagePolling();
+        const isSignalRConnected = window.UniMap360RealtimeClient && window.UniMap360RealtimeClient.isConnected();
+        if (isSignalRConnected) {
+            // SignalR handles message delivery in real time, so no need to poll
+            return;
+        }
         state.messagePollTimer = window.setInterval(async function () {
             if (!state.activeConversationId || !state.open) return;
             await loadMessages();
@@ -654,6 +721,7 @@
     }
 
     function boot() {
+        registerRealtimeListeners();
         ensureWidget();
         applyViewMode();
         updateWidgetVisibility();

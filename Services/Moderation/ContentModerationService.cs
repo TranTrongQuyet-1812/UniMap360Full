@@ -16,15 +16,18 @@ public class ContentModerationService : IContentModerationService
     private readonly UniMap360ProContext _context;
     private readonly IAdminAuditService _auditService;
     private readonly ICloudinaryAssetPurger _cloudinaryAssetPurger;
+    private readonly UniMap360.Services.Realtime.IRealtimeNotifier _realtimeNotifier;
 
     public ContentModerationService(
         UniMap360ProContext context,
         IAdminAuditService auditService,
-        ICloudinaryAssetPurger cloudinaryAssetPurger)
+        ICloudinaryAssetPurger cloudinaryAssetPurger,
+        UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier)
     {
         _context = context;
         _auditService = auditService;
         _cloudinaryAssetPurger = cloudinaryAssetPurger;
+        _realtimeNotifier = realtimeNotifier;
     }
 
     public async Task<bool> ApproveAsync(int adminAccountId, string targetType, int targetId, string? reason, HttpContext? httpContext, CancellationToken cancellationToken = default)
@@ -467,7 +470,7 @@ public class ContentModerationService : IContentModerationService
             ? null
             : System.Text.Json.JsonSerializer.Serialize(new { reason = reason.Trim() });
 
-        _context.Notifications.Add(new Notification
+        var notification = new Notification
         {
             RecipientAccountId = recipientAccountId,
             Type = normalizedAction,
@@ -478,9 +481,13 @@ public class ContentModerationService : IContentModerationService
             IsRead = false,
             CreatedAt = DateTime.UtcNow,
             MetaJson = metaJson
-        });
+        };
+        _context.Notifications.Add(notification);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _realtimeNotifier.NotifyNotificationCreatedAsync(recipientAccountId, notification, cancellationToken);
+        await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(recipientAccountId, cancellationToken);
     }
 
     private async Task ResolvePendingReportsOfTargetAsync(

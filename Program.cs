@@ -110,6 +110,7 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 
 // Cấu hình Swagger API Documentation
 builder.Services.AddEndpointsApiExplorer();
@@ -171,6 +172,7 @@ builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
 builder.Services.AddScoped<UniMap360.Services.Moderation.IContentModerationService, UniMap360.Services.Moderation.ContentModerationService>();
 builder.Services.AddScoped<UniMap360.Services.Reports.IContentReportService, UniMap360.Services.Reports.ContentReportService>();
+builder.Services.AddScoped<UniMap360.Services.Realtime.IRealtimeNotifier, UniMap360.Services.Realtime.RealtimeNotifier>();
 builder.Services.AddProblemDetails();
 
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -267,6 +269,8 @@ app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<UniMap360.Hubs.RealtimeHub>("/hubs/realtime");
 
 app.MapControllerRoute(
     name: "default",

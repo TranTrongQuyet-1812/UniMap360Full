@@ -67,11 +67,16 @@ public sealed class AppointmentService : IAppointmentService
 {
     private readonly UniMap360ProContext _context;
     private readonly ILogger<AppointmentService> _logger;
+    private readonly UniMap360.Services.Realtime.IRealtimeNotifier _realtimeNotifier;
 
-    public AppointmentService(UniMap360ProContext context, ILogger<AppointmentService> logger)
+    public AppointmentService(
+        UniMap360ProContext context,
+        ILogger<AppointmentService> logger,
+        UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier)
     {
         _context = context;
         _logger = logger;
+        _realtimeNotifier = realtimeNotifier;
     }
 
     public async Task<AppointmentResult> CreateAppointmentAsync(
@@ -118,9 +123,10 @@ public sealed class AppointmentService : IAppointmentService
             .Select(h => (int?)h.AccountId)
             .FirstOrDefaultAsync(cancellationToken);
 
+        Notification? createdNotification = null;
         if (hostAccountId.HasValue)
         {
-            _context.Notifications.Add(new Notification
+            var notification = new Notification
             {
                 RecipientAccountId = hostAccountId.Value,
                 Type = "room_viewing_request",
@@ -136,11 +142,19 @@ public sealed class AppointmentService : IAppointmentService
                     scheduledAt,
                     contactPhone
                 })
-            });
+            };
+            _context.Notifications.Add(notification);
             await _context.SaveChangesAsync(cancellationToken);
+            createdNotification = notification;
         }
 
         await tx.CommitAsync(cancellationToken);
+
+        if (createdNotification != null)
+        {
+            await _realtimeNotifier.NotifyNotificationCreatedAsync(hostAccountId.Value, createdNotification, cancellationToken);
+            await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(hostAccountId.Value, cancellationToken);
+        }
 
         _logger.LogInformation(
             "Appointment created. AppointmentId={AppointmentId}, RoomId={RoomId}, StudentId={StudentId}",
@@ -303,9 +317,10 @@ public sealed class AppointmentService : IAppointmentService
                 .Select(s => (int?)s.AccountId)
                 .FirstOrDefaultAsync(cancellationToken);
 
+            Notification? createdNotification = null;
             if (studentAccountId.HasValue)
             {
-                _context.Notifications.Add(new Notification
+                var notification = new Notification
                 {
                     RecipientAccountId = studentAccountId.Value,
                     Type = "room_viewing_update",
@@ -321,11 +336,19 @@ public sealed class AppointmentService : IAppointmentService
                         status = normalizedStatus,
                         suggestedAt = appointment.SuggestedAt
                     })
-                });
+                };
+                _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync(cancellationToken);
+                createdNotification = notification;
             }
 
             await tx.CommitAsync(cancellationToken);
+
+            if (createdNotification != null)
+            {
+                await _realtimeNotifier.NotifyNotificationCreatedAsync(studentAccountId.Value, createdNotification, cancellationToken);
+                await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(studentAccountId.Value, cancellationToken);
+            }
 
             _logger.LogInformation(
                 "Appointment updated. AppointmentId={AppointmentId}, HostId={HostId}, TargetStatus={TargetStatus}",

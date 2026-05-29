@@ -54,8 +54,7 @@
             return `/Home/Detail?id=${targetId}&type=${targetType}`;
         }
 
-        function render(items, unreadCount) {
-            // Update all badges
+        function updateBadges(unreadCount) {
             document.querySelectorAll(".nav-notification-badge").forEach(badge => {
                 if (unreadCount > 0) {
                     badge.classList.remove("d-none");
@@ -65,6 +64,10 @@
                     badge.textContent = "0";
                 }
             });
+        }
+
+        function render(items, unreadCount) {
+            updateBadges(unreadCount);
 
             // Update all lists
             document.querySelectorAll(".nav-notification-menu").forEach(menu => {
@@ -127,10 +130,55 @@
             stopPolling();
             if (!token) return;
             fetchNotifications(token);
-            pollTimer = setInterval(() => fetchNotifications(token), 15000);
+            
+            // Dùng polling chậm (60s) nếu SignalR đang kết nối tốt, ngược lại dùng polling nhanh (15s)
+            const isSignalRConnected = window.UniMap360RealtimeClient && window.UniMap360RealtimeClient.isConnected();
+            const interval = isSignalRConnected ? 60000 : 15000;
+            pollTimer = setInterval(() => fetchNotifications(token), interval);
+        }
+
+        function registerRealtimeListeners() {
+            window.addEventListener("unimap360:realtime:notification", function (event) {
+                const token = getToken();
+                if (token) {
+                    fetchNotifications(token);
+                }
+            });
+
+            window.addEventListener("unimap360:realtime:notif-unread", function (event) {
+                const payload = event.detail;
+                if (payload && typeof payload.unreadCount !== "undefined") {
+                    updateBadges(payload.unreadCount);
+                }
+            });
+
+            window.addEventListener("unimap360:realtime:connected", function () {
+                const token = getToken();
+                if (token) {
+                    console.log("NotificationCenter: SignalR connected, resyncing and switching to slow polling.");
+                    startPolling(token);
+                }
+            });
+
+            window.addEventListener("unimap360:realtime:reconnected", function () {
+                const token = getToken();
+                if (token) {
+                    console.log("NotificationCenter: SignalR reconnected, resyncing and switching to slow polling.");
+                    startPolling(token);
+                }
+            });
+
+            window.addEventListener("unimap360:realtime:closed", function () {
+                const token = getToken();
+                if (token) {
+                    console.log("NotificationCenter: SignalR disconnected, reverting to fast polling fallback.");
+                    startPolling(token);
+                }
+            });
         }
 
         function wireEvents() {
+            registerRealtimeListeners();
             document.querySelectorAll(".nav-notification-menu").forEach(menu => {
                 menu.addEventListener("click", async function (event) {
                     const actionNode = event.target.closest("[data-notification-action]");
@@ -198,4 +246,3 @@
 
     window.UniMap360NotificationCenter = { createNotificationCenter };
 })();
-

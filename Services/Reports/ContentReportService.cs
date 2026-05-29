@@ -14,13 +14,16 @@ public class ContentReportService : IContentReportService
 {
     private readonly UniMap360ProContext _context;
     private readonly IContentModerationService _moderationService;
+    private readonly UniMap360.Services.Realtime.IRealtimeNotifier _realtimeNotifier;
 
     public ContentReportService(
         UniMap360ProContext context,
-        IContentModerationService moderationService)
+        IContentModerationService moderationService,
+        UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier)
     {
         _context = context;
         _moderationService = moderationService;
+        _realtimeNotifier = realtimeNotifier;
     }
 
     public async Task<ContentReport> CreateReportAsync(int reporterAccountId, string targetType, int targetId, string reason, CancellationToken cancellationToken = default)
@@ -131,6 +134,12 @@ public class ContentReportService : IContentReportService
 
             _context.Notifications.AddRange(notifications);
             await _context.SaveChangesAsync(cancellationToken);
+
+            foreach (var n in notifications)
+            {
+                await _realtimeNotifier.NotifyNotificationCreatedAsync(n.RecipientAccountId, n, cancellationToken);
+                await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(n.RecipientAccountId, cancellationToken);
+            }
         }
 
         return report;

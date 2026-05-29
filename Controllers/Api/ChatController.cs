@@ -15,10 +15,12 @@ namespace UniMap360.Controllers.Api;
 public sealed class ChatController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
+    private readonly UniMap360.Services.Realtime.IRealtimeNotifier _realtimeNotifier;
 
-    public ChatController(UniMap360ProContext context)
+    public ChatController(UniMap360ProContext context, UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier)
     {
         _context = context;
+        _realtimeNotifier = realtimeNotifier;
     }
 
     [HttpGet("conversations")]
@@ -369,9 +371,10 @@ public sealed class ChatController : ControllerBase
             .Select(a => a.Email)
             .FirstOrDefaultAsync(cancellationToken);
 
+        var notificationsToPush = new List<Notification>();
         foreach (var p in otherParticipants)
         {
-            _context.Notifications.Add(new Notification
+            var notif = new Notification
             {
                 RecipientAccountId = p.AccountId,
                 Type = "chat_message",
@@ -381,11 +384,60 @@ public sealed class ChatController : ControllerBase
                 TargetId = conversationId,
                 IsRead = false,
                 CreatedAt = now
-            });
+            };
+            _context.Notifications.Add(notif);
+            notificationsToPush.Add(notif);
         }
 
         await _context.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
+
+        // Realtime updates
+        try
+        {
+            var participantAccountIds = await _context.ConversationParticipants
+                .AsNoTracking()
+                .Where(p => p.ConversationId == conversationId)
+                .Select(p => p.AccountId)
+                .ToListAsync(cancellationToken);
+
+            var messagePayload = new
+            {
+                messageId = message.MessageId,
+                conversationId = message.ConversationId,
+                senderAccountId = message.SenderAccountId,
+                senderEmail = senderEmail,
+                content = message.Content,
+                createdAt = message.CreatedAt
+            };
+
+            await _realtimeNotifier.NotifyChatMessageCreatedAsync(participantAccountIds, messagePayload, cancellationToken);
+
+            var conversationPayload = new
+            {
+                conversationId = conversationId,
+                lastMessage = new
+                {
+                    messageId = message.MessageId,
+                    senderAccountId = message.SenderAccountId,
+                    content = message.Content,
+                    createdAt = message.CreatedAt
+                }
+            };
+
+            await _realtimeNotifier.NotifyConversationUpdatedAsync(participantAccountIds, conversationPayload, cancellationToken);
+
+            foreach (var notif in notificationsToPush)
+            {
+                await _realtimeNotifier.NotifyNotificationCreatedAsync(notif.RecipientAccountId, notif, cancellationToken);
+                await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(notif.RecipientAccountId, cancellationToken);
+                await _realtimeNotifier.NotifyChatUnreadChangedAsync(notif.RecipientAccountId, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Failed to push realtime events in SendMessage.");
+        }
 
         return this.ApiOk(new
         {
@@ -438,9 +490,11 @@ public sealed class ChatController : ControllerBase
             return this.ApiBadRequest("LastReadMessageId khong hop le.");
 
         if (!participant.LastReadMessageId.HasValue || participant.LastReadMessageId.Value < targetMessageId.Value)
+        {
             participant.LastReadMessageId = targetMessageId.Value;
-
-        await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await _realtimeNotifier.NotifyChatUnreadChangedAsync(accountId.Value, cancellationToken);
+        }
         return this.ApiOk(new { success = true, lastReadMessageId = participant.LastReadMessageId });
     }
 

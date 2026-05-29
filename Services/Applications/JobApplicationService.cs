@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using UniMap360.Constants;
 using UniMap360.Models;
 using UniMap360.Options;
+using UniMap360.Services.Realtime;
 
 namespace UniMap360.Services.Applications;
 
@@ -62,6 +63,7 @@ public sealed class JobApplicationService : IJobApplicationService
     private readonly CloudinarySettings _cloudinarySettings;
     private readonly ILogger<JobApplicationService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IRealtimeNotifier _realtimeNotifier;
 
     private static readonly HashSet<string> AllowedCvExtensions = new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".doc", ".docx" };
     private const long MaxCvFileSizeBytes = 8 * 1024 * 1024;
@@ -70,12 +72,14 @@ public sealed class JobApplicationService : IJobApplicationService
         UniMap360ProContext context,
         IOptions<CloudinarySettings> cloudinaryOptions,
         ILogger<JobApplicationService> logger,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IRealtimeNotifier realtimeNotifier)
     {
         _context = context;
         _cloudinarySettings = cloudinaryOptions.Value;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
+        _realtimeNotifier = realtimeNotifier;
     }
 
     public async Task<JobAppResult> CreateApplicationAsync(int accountId, JobAppPayload request, IFormFile? cvFile, CancellationToken ct)
@@ -140,9 +144,10 @@ public sealed class JobApplicationService : IJobApplicationService
             .Where(e => e.EmployerId == job.EmployerId)
             .Select(e => (int?)e.AccountId)
             .FirstOrDefaultAsync(ct);
+        Notification? createdNotification = null;
         if (employerAccountId.HasValue)
         {
-            _context.Notifications.Add(new Notification
+            var notification = new Notification
             {
                 RecipientAccountId = employerAccountId.Value,
                 Type = "job_application_request",
@@ -152,11 +157,19 @@ public sealed class JobApplicationService : IJobApplicationService
                 TargetId = job.JobId,
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
-            });
+            };
+            _context.Notifications.Add(notification);
             await _context.SaveChangesAsync(ct);
+            createdNotification = notification;
         }
 
         await tx.CommitAsync(ct);
+
+        if (createdNotification != null)
+        {
+            await _realtimeNotifier.NotifyNotificationCreatedAsync(employerAccountId.Value, createdNotification, ct);
+            await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(employerAccountId.Value, ct);
+        }
         _logger.LogInformation(
             "Job application created. ApplicationId={ApplicationId}, JobId={JobId}, StudentId={StudentId}",
             application.ApplicationId, job.JobId, student.StudentId);
@@ -259,9 +272,10 @@ public sealed class JobApplicationService : IJobApplicationService
                 .Select(s => (int?)s.AccountId)
                 .FirstOrDefaultAsync(ct);
 
+            Notification? createdNotification = null;
             if (studentAccountId.HasValue)
             {
-                _context.Notifications.Add(new Notification
+                var notification = new Notification
                 {
                     RecipientAccountId = studentAccountId.Value,
                     Type = "job_application_update",
@@ -271,11 +285,19 @@ public sealed class JobApplicationService : IJobApplicationService
                     TargetId = application.JobId,
                     IsRead = false,
                     CreatedAt = now
-                });
+                };
+                _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync(ct);
+                createdNotification = notification;
             }
 
             await tx.CommitAsync(ct);
+
+            if (createdNotification != null)
+            {
+                await _realtimeNotifier.NotifyNotificationCreatedAsync(studentAccountId.Value, createdNotification, ct);
+                await _realtimeNotifier.NotifyNotificationUnreadChangedAsync(studentAccountId.Value, ct);
+            }
 
             _logger.LogInformation(
                 "Job application updated. ApplicationId={ApplicationId}, EmployerId={EmployerId}, TargetStatus={TargetStatus}",
