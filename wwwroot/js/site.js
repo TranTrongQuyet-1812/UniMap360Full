@@ -58,14 +58,14 @@ window.escapeHtml = function(unsafe) {
 
 	function clearStoredAuth() {
 		if (authStore) {
-			authStore.clearStoredAuth();
-			return;
+			return authStore.clearStoredAuth();
 		}
-		fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => { });
+		const promise = fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => { });
 
 		window.dispatchEvent(new CustomEvent('unimap360:auth-changed', {
 			detail: { account: null }
 		}));
+		return promise;
 	}
 
 	function stopNotificationPolling() {

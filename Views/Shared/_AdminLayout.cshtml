@@ -438,15 +438,25 @@
         });
 
         function logoutAdmin() {
+            let promise;
             if (window.UniMap360AuthStore && typeof window.UniMap360AuthStore.clearStoredAuth === 'function') {
-                window.UniMap360AuthStore.clearStoredAuth();
+                promise = window.UniMap360AuthStore.clearStoredAuth();
             } else {
-                fetch('/api/auth/logout', {
+                promise = fetch('/api/auth/logout', {
                     method: 'POST',
                     credentials: 'same-origin'
                 }).catch(() => { });
             }
-            window.location.href = '/Home/Auth';
+
+            const redirect = () => {
+                window.location.href = '/Home/Auth';
+            };
+
+            if (promise instanceof Promise) {
+                promise.finally(redirect);
+            } else {
+                redirect();
+            }
         }
 
         async function adminFetchJson(url, options = {}) {

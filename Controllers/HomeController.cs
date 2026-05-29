@@ -186,6 +186,10 @@ namespace UniMap360.Controllers
                 {
                     return View("Error500");
                 }
+                if (statusCode == 401 || statusCode == 403)
+                {
+                    return RedirectToAction("Auth", "Home");
+                }
             }
             return View("Error500", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }

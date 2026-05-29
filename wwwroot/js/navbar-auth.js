@@ -106,11 +106,20 @@
             if (!logoutButton) return;
 
             logoutButton.addEventListener("click", function () {
-                clearStoredAuth();
+                const promise = clearStoredAuth();
                 render(null);
                 if (resetNotifications) resetNotifications();
                 if (stopNotifications) stopNotifications();
-                window.location.href = "/Home/Auth";
+
+                const redirect = () => {
+                    window.location.href = "/Home/Auth";
+                };
+
+                if (promise instanceof Promise) {
+                    promise.finally(redirect);
+                } else {
+                    redirect();
+                }
             });
         }
 

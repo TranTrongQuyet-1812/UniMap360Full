@@ -87,7 +87,7 @@
         sessionStorage.removeItem(STORAGE_KEY_ACCOUNT);
 
         // Ask server to remove HttpOnly cookie.
-        fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => { });
+        return fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => { });
     }
 
     window.UniMap360AuthStore = {
