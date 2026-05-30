@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NetTopologySuite.Geometries;
 
@@ -31,6 +31,18 @@ public partial class Location
     public Geometry Coordinates { get; set; } = null!;
 
     public string? District { get; set; }
+
+    public double? GeocodedLatitude { get; set; }
+
+    public double? GeocodedLongitude { get; set; }
+
+    public double? LocationDistanceMeters { get; set; }
+
+    public string? LocationConfidence { get; set; }
+
+    public bool? LocationSuspicious { get; set; }
+
+    public string? GeocodeSource { get; set; }
 
     public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 

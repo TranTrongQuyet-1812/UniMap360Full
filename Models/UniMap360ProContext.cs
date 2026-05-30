@@ -328,6 +328,12 @@ public partial class UniMap360ProContext : DbContext
             entity.Property(e => e.HouseNumber).HasMaxLength(50);
             entity.Property(e => e.Street).HasMaxLength(255);
             entity.Property(e => e.FullAddressNormalized).HasMaxLength(500);
+            entity.Property(e => e.GeocodedLatitude);
+            entity.Property(e => e.GeocodedLongitude);
+            entity.Property(e => e.LocationDistanceMeters);
+            entity.Property(e => e.LocationConfidence).HasMaxLength(20);
+            entity.Property(e => e.LocationSuspicious).HasDefaultValue(false);
+            entity.Property(e => e.GeocodeSource).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Medium>(entity =>

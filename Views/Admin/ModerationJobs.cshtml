@@ -22,7 +22,7 @@
 
 <div class="filter-bento">
     <div class="row g-3">
-        <div class="col-md-5">
+        <div class="col-md-4">
             <label class="filter-label">Tìm kiếm tiêu đề / ID</label>
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
@@ -38,8 +38,16 @@
                 <option value="Rejected">Đã từ chối</option>
             </select>
         </div>
-        <div class="col-md-4 d-flex align-items-end gap-2">
-            <button class="btn btn-outline-dark fw-bold btn-sm flex-grow-1" id="btnRefreshJobs">
+        <div class="col-md-3 d-flex align-items-end" style="padding-bottom: 6px;">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="onlySuspiciousFilter">
+                <label class="form-check-label fw-bold text-danger small" for="onlySuspiciousFilter">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Vị trí đáng nghi
+                </label>
+            </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-dark fw-bold btn-sm w-100" id="btnRefreshJobs">
                 <i class="fas fa-sync-alt me-2"></i>Làm mới
             </button>
         </div>
@@ -66,12 +74,13 @@
                     <th>THÔNG TIN VIỆC LÀM</th>
                     <th>NHÀ TUYỂN DỤNG</th>
                     <th style="width: 150px;">LƯƠNG</th>
+                    <th style="width: 160px;">KHOẢNG CÁCH LỆCH</th>
                     <th style="width: 150px;">TRẠNG THÁI</th>
                     <th class="text-end" style="width: 120px;">THAO TÁC</th>
                 </tr>
             </thead>
             <tbody id="jobTableBody">
-                <tr><td colspan="7" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
+                <tr><td colspan="8" class="text-center p-5 text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...</td></tr>
             </tbody>
         </table>
     </div>
@@ -85,6 +94,7 @@
         document.getElementById('btnRefreshJobs').addEventListener('click', loadJobs);
         document.getElementById('jobSearch').addEventListener('input', debounce(loadJobs, 300));
         document.getElementById('jobStatusFilter').addEventListener('change', loadJobs);
+        document.getElementById('onlySuspiciousFilter').addEventListener('change', loadJobs);
         document.getElementById('jobsSelectAll').addEventListener('change', function () {
             document.querySelectorAll('.job-select').forEach(cb => cb.checked = this.checked);
             syncJobBulkButtons();
@@ -119,9 +129,11 @@
         const params = new URLSearchParams();
         const search = document.getElementById('jobSearch').value.trim();
         const status = document.getElementById('jobStatusFilter').value;
+        const onlySuspicious = document.getElementById('onlySuspiciousFilter').checked;
 
         if (search) params.set('search', search);
         if (status) params.set('status', status);
+        if (onlySuspicious) params.set('onlySuspicious', 'true');
         params.set('limit', '200');
 
         try {
@@ -137,7 +149,7 @@
     function renderJobs(rows) {
         const body = document.getElementById('jobTableBody');
         if (!rows.length) {
-            body.innerHTML = '<tr><td colspan="7" class="text-center p-5 text-muted">Không tìm thấy việc làm nào.</td></tr>';
+            body.innerHTML = '<tr><td colspan="8" class="text-center p-5 text-muted">Không tìm thấy việc làm nào.</td></tr>';
             document.getElementById('jobsSelectAll').checked = false;
             syncJobBulkButtons();
             return;
@@ -155,6 +167,7 @@
                     <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(j.employerEmail || '-')}</div>
                 </td>
                 <td class="fw-bold text-success" style="font-size: 0.85rem;">${escapeHtml(j.salaryRange || 'Thỏa thuận')}</td>
+                <td>${renderLocationDistanceBadge(j.locationDistanceMeters, j.locationConfidence, j.geocodeSource)}</td>
                 <td>${renderJobStatusBadge(j.jobStatus || j.status)}</td>
                 <td class="text-end">
                     <div class="dropdown">
@@ -175,6 +188,34 @@
 
         document.getElementById('jobsSelectAll').checked = false;
         syncJobBulkButtons();
+    }
+
+    function renderLocationDistanceBadge(distanceMeters, confidence, geocodeSource) {
+        if (distanceMeters == null) {
+            return '<span class="badge bg-light text-muted border px-2 py-1"><i class="fas fa-question-circle me-1"></i>N/A</span>';
+        }
+
+        const km = distanceMeters / 1000;
+        const distanceText = km >= 1 ? `${km.toFixed(2)} km` : `${Math.round(distanceMeters)} m`;
+        const source = geocodeSource || 'None';
+        if (source !== 'Server') {
+            return `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" title="Khoảng cách ước tính từ geocode phía client"><i class="fas fa-ruler-combined me-1"></i>${distanceText}</span>`;
+        }
+
+        const conf = (confidence || '').toLowerCase();
+        if (conf === 'high') {
+            return `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-ruler-combined me-1"></i>${distanceText}</span>`;
+        }
+        if (conf === 'medium') {
+            return `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><i class="fas fa-ruler-combined me-1"></i>${distanceText}</span>`;
+        }
+        if (conf === 'low') {
+            return `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="fas fa-ruler-combined me-1"></i>${distanceText}</span>`;
+        }
+        if (conf === 'verylow') {
+            return `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fas fa-ruler-combined me-1"></i>${distanceText}</span>`;
+        }
+        return `<span class="badge bg-secondary-subtle text-secondary border px-2 py-1"><i class="fas fa-ruler-combined me-1"></i>${distanceText}</span>`;
     }
 
     function getSelectedJobIds() {
@@ -213,6 +254,63 @@
                 ? d.media.map(x => `<div><a href="${escapeHtml(x.mediaUrl)}" target="_blank">${escapeHtml(x.mediaUrl)}</a></div>`).join('')
                 : '<div class="text-muted">Không có tệp đính kèm.</div>';
 
+            let trustHtml = '';
+            if (d.location) {
+                const loc = d.location;
+                const dist = loc.locationDistanceMeters != null ? (loc.locationDistanceMeters / 1000).toFixed(2) + ' km' : 'N/A';
+                const confText = loc.locationConfidence === 'High' ? 'Cao (Khớp vị trí <= 500m)' :
+                                 loc.locationConfidence === 'Medium' ? 'Trung bình (Lệch nhẹ <= 2km)' :
+                                 loc.locationConfidence === 'Low' ? 'Thấp (Lệch vừa <= 10km)' :
+                                 loc.locationConfidence === 'VeryLow' ? 'Rất thấp (Lệch xa > 10km)' : 'Chưa xác minh';
+                
+                const badgeColor = loc.locationConfidence === 'High' ? 'text-success' :
+                                   loc.locationConfidence === 'Medium' ? 'text-info' :
+                                   loc.locationConfidence === 'Low' ? 'text-warning' :
+                                   loc.locationConfidence === 'VeryLow' ? 'text-danger' : 'text-muted';
+
+                const source = loc.geocodeSource || 'None';
+                let sourceText = 'None';
+                let sourceClass = 'text-danger fw-bold';
+                if (source === 'Server') {
+                    sourceText = 'Server';
+                    sourceClass = 'text-success fw-bold';
+                } else if (source === 'ClientFallback') {
+                    sourceText = 'ClientFallback (Chưa xác minh từ server)';
+                    sourceClass = 'text-warning fw-bold';
+                } else if (source === 'None') {
+                    sourceText = 'None (Chưa xác minh từ server)';
+                    sourceClass = 'text-danger fw-bold';
+                }
+
+                let coordsMapLink = '';
+                if (loc.latitude && loc.longitude) {
+                    coordsMapLink = `<a href="https://www.google.com/maps?q=${loc.latitude},${loc.longitude}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 ms-2" style="font-size:0.65rem;"><i class="fas fa-map-marker-alt me-1"></i>Bản đồ</a>`;
+                }
+                
+                let geocodedMapLink = '';
+                if (loc.geocodedLatitude && loc.geocodedLongitude) {
+                    geocodedMapLink = `<a href="https://www.google.com/maps?q=${loc.geocodedLatitude},${loc.geocodedLongitude}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2 ms-2" style="font-size:0.65rem;"><i class="fas fa-search-location me-1"></i>Geocode</a>`;
+                }
+
+                let comparisonLink = '';
+                if (loc.latitude && loc.longitude && loc.geocodedLatitude && loc.geocodedLongitude) {
+                    comparisonLink = `<a href="https://www.google.com/maps/dir/?api=1&origin=${loc.geocodedLatitude},${loc.geocodedLongitude}&destination=${loc.latitude},${loc.longitude}" target="_blank" class="btn btn-xs btn-outline-danger py-1 px-2" style="font-size:0.7rem;"><i class="fas fa-route me-1"></i>Đo khoảng cách</a>`;
+                }
+
+                trustHtml = `
+                    <div class="card border-0 bg-light p-3 mb-3">
+                        <h6 class="fw-bold mb-2 text-dark"><i class="fas fa-shield-alt me-2 text-primary"></i>Kiểm tra vị trí tin đăng</h6>
+                        <div class="row g-2 small">
+                            <div class="col-12 mb-1"><strong>Tọa độ ghim:</strong> ${loc.latitude != null ? `${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}` : 'N/A'} ${coordsMapLink}</div>
+                            <div class="col-12 mb-1"><strong>Tọa độ Geocode:</strong> ${loc.geocodedLatitude != null ? `${loc.geocodedLatitude.toFixed(6)}, ${loc.geocodedLongitude.toFixed(6)}` : 'N/A'} ${geocodedMapLink}</div>
+                            <div class="col-12 mb-1"><strong>Nguồn geocode:</strong> <span class="${sourceClass}">${sourceText}</span></div>
+                            <div class="col-12"><strong>Khoảng cách lệch:</strong> <span class="fw-bold text-danger">${dist}</span></div>
+                        </div>
+                        ${comparisonLink ? `<div class="mt-2 text-end">${comparisonLink}</div>` : ''}
+                    </div>
+                `;
+            }
+
             const content = `
                 <div class="mb-3"><strong>Tiêu đề:</strong> ${escapeHtml(d.title || d.jobTitle || '-')}</div>
                 <div class="mb-3"><strong>Trạng thái:</strong> ${renderJobStatusBadge(d.status || d.jobStatus)}</div>
@@ -221,6 +319,7 @@
                 <div class="mb-3"><strong>Lương:</strong> ${escapeHtml(d.salaryRange || '-')}</div>
                 <div class="mb-3"><strong>Liên hệ:</strong> ${escapeHtml(d.contactPhone || '-')}</div>
                 <div class="mb-3"><strong>Địa chỉ:</strong> ${escapeHtml(d.location?.addressText || d.location || '-')}</div>
+                ${trustHtml}
                 <div class="mb-3"><strong>Mô tả:</strong><br>${escapeHtml(d.description || '-')}</div>
                 <div><strong>Tệp đính kèm:</strong><br>${mediaHtml}</div>
             `;

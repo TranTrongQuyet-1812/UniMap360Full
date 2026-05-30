@@ -85,13 +85,15 @@ public class HostRoomsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request)
     {
+        request.LocationId = 0; // Triệt tiêu hoàn toàn LocationId từ client khi tạo mới
+
         var host = await _managePostsContextService.GetCurrentHostAsync(User);
         if (host is null) return NotFound("Không tìm thấy hồ sơ chủ trọ.");
 
         var validationError = await ValidateCategoryAsync(request.CategoryId);
         if (validationError is not null) return BadRequest(validationError);
 
-        var locationResult = await ResolveLocationIdAsync(request);
+        var locationResult = await ResolveLocationIdAsync(request, isCreate: true);
         if (locationResult.Error is not null) return BadRequest(locationResult.Error);
 
         var room = new Room
@@ -120,13 +122,15 @@ public class HostRoomsController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> CreateRoomWithImages([FromForm] CreateRoomWithImagesRequest request)
     {
+        request.LocationId = 0; // Triệt tiêu hoàn toàn LocationId từ client khi tạo mới
+
         var host = await _managePostsContextService.GetCurrentHostAsync(User);
         if (host is null) return NotFound("Không tìm thấy hồ sơ chủ trọ.");
 
         var validationError = await ValidateCategoryAsync(request.CategoryId);
         if (validationError is not null) return BadRequest(validationError);
 
-        var locationResult = await ResolveLocationIdAsync(request);
+        var locationResult = await ResolveLocationIdAsync(request, isCreate: true);
         if (locationResult.Error is not null) return BadRequest(locationResult.Error);
 
         var imageValidationError = ValidateImageFiles(request.Images);
@@ -465,7 +469,7 @@ public class HostRoomsController : ControllerBase
         var validationError = await ValidateCategoryAsync(request.CategoryId);
         if (validationError is not null) return BadRequest(validationError);
 
-        var locationResult = await ResolveLocationIdAsync(request);
+        var locationResult = await ResolveLocationIdAsync(request, isCreate: false, currentLocationId: room.LocationId);
         if (locationResult.Error is not null) return BadRequest(locationResult.Error);
 
         room.CategoryId = request.CategoryId;
@@ -665,11 +669,12 @@ public class HostRoomsController : ControllerBase
         return null;
     }
 
-    private Task<(int? LocationId, string? Error)> ResolveLocationIdAsync(RoomLocationRequestBase request)
+    private Task<(int? LocationId, string? Error)> ResolveLocationIdAsync(RoomLocationRequestBase request, bool isCreate = false, int? currentLocationId = null)
     {
         return _locationResolutionService.ResolveLocationIdAsync(new LocationResolveInput
         {
-            LocationId = request.LocationId,
+            LocationId = isCreate ? 0 : request.LocationId,
+            CurrentLocationId = currentLocationId,
             ProvinceCode = request.ProvinceCode,
             ProvinceName = request.ProvinceName,
             DistrictCode = request.DistrictCode,
@@ -680,6 +685,8 @@ public class HostRoomsController : ControllerBase
             Street = request.Street,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
+            GeocodedLatitude = request.GeocodedLatitude,
+            GeocodedLongitude = request.GeocodedLongitude,
             UseProvinceCodeCanonicalization = true,
             MissingPinMessage = "Vui lòng ghim vị trí bản đồ trước khi đăng bài."
         });
@@ -725,6 +732,8 @@ public class HostRoomsController : ControllerBase
         public string? Street { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public double? GeocodedLatitude { get; set; }
+        public double? GeocodedLongitude { get; set; }
     }
 
     public sealed class CreateRoomRequest : RoomLocationRequestBase

@@ -375,7 +375,11 @@
 <div class="toast-msg" id="toastMsg"></div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        let geocodedLat = null;
+        let geocodedLng = null;
+
         const roomCategorySelect = document.getElementById('roomCategorySelect');
         const provinceSelect = document.getElementById('provinceSelect');
         const districtSelect = document.getElementById('districtSelect');
@@ -428,8 +432,43 @@
             hiddenInput.value = selected && selected.value ? selected.textContent.trim() : '';
         }
 
+        function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function checkLocationTrust(lat, lng) {
+            if (geocodedLat === null || geocodedLng === null) return '';
+            const distance = calculateDistanceMeters(geocodedLat, geocodedLng, lat, lng);
+            if (distance > 10000) {
+                return ` <span style="color: #dc3545; font-weight: bold;">[Cảnh báo: Ghim lệch quá xa (${(distance / 1000).toFixed(1)} km). Bài đăng sẽ bị Admin kiểm duyệt!]</span>`;
+            }
+            if (distance > 2000) {
+                return ` <span style="color: #ffc107; font-weight: bold;">[Cảnh báo: Ghim lệch khá xa (${(distance / 1000).toFixed(1)} km). Có thể bị Admin ẩn bài.]</span>`;
+            }
+            if (distance > 500) {
+                return ` <span style="color: #0dcaf0; font-weight: bold;">[Lưu ý: Ghim hơi lệch (${Math.round(distance)}m).]</span>`;
+            }
+            return ` <span style="color: #198754; font-weight: bold;">[Khớp vị trí địa chỉ.]</span>`;
+        }
+
         function setMapStatus(text) {
-            if (mapPinStatus) mapPinStatus.textContent = text;
+            if (!mapPinStatus) return;
+            let trustText = '';
+            if (latitudeInput.value && longitudeInput.value) {
+                const lat = parseFloat(latitudeInput.value);
+                const lng = parseFloat(longitudeInput.value);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    trustText = checkLocationTrust(lat, lng);
+                }
+            }
+            mapPinStatus.innerHTML = text + trustText;
         }
 
         function setCoordinates(lat, lng) {
@@ -599,6 +638,16 @@
                 createOrMoveMarker(lat, lng);
                 map.setView([lat, lng], Math.max(map.getZoom(), 17));
                 await verifyPinnedLocation(lat, lng, 'GPS thiết bị');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Lưu ý vị trí GPS',
+                        text: 'Vị trí hiện tại chỉ dùng để hỗ trợ đặt ghim. Nếu bạn đang không ở đúng phòng trọ, hãy nhập địa chỉ và kéo ghim tới đúng vị trí thực tế của phòng trọ.',
+                        icon: 'info',
+                        confirmButtonText: 'Đã hiểu'
+                    });
+                } else {
+                    alert('Lưu ý vị trí GPS:\nVị trí hiện tại chỉ dùng để hỗ trợ đặt ghim. Nếu bạn đang không ở đúng phòng trọ, hãy nhập địa chỉ và kéo ghim tới đúng vị trí thực tế của phòng trọ.');
+                }
                 showToast('Đã lấy vị trí hiện tại. Hãy kiểm tra ghim rồi đăng bài.', 'success');
             } catch (err) {
                 const msg = err && err.message ? err.message : 'Không thể lấy vị trí hiện tại.';
@@ -700,6 +749,8 @@
 
                 await initMap();
                 const best = data.bestCandidate;
+                geocodedLat = best.latitude;
+                geocodedLng = best.longitude;
                 createOrMoveMarker(best.latitude, best.longitude);
                 await verifyPinnedLocation(best.latitude, best.longitude, 'địa chỉ chi tiết');
 
@@ -766,6 +817,37 @@
                 return;
             }
 
+            const lat = parseFloat(latitudeInput.value);
+            const lng = parseFloat(longitudeInput.value);
+            if (geocodedLat !== null && geocodedLng !== null && !isNaN(lat) && !isNaN(lng)) {
+                const distance = calculateDistanceMeters(geocodedLat, geocodedLng, lat, lng);
+                if (distance > 2000) {
+                    let confirmSubmit = false;
+                    const distanceKmText = (distance / 1000).toFixed(1) + ' km';
+                    if (typeof Swal !== 'undefined') {
+                        const result = await Swal.fire({
+                            title: 'Vị trí ghim lệch khá xa!',
+                            text: `Vị trí ghim cách địa chỉ nhập khoảng ${distanceKmText}. Bạn có chắc chắn ghim này là chính xác? Tin đăng có thể bị Admin kiểm duyệt nếu thông tin không đúng thực tế.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Đồng ý đăng',
+                            cancelButtonText: 'Kiểm tra lại'
+                        });
+                        confirmSubmit = result.isConfirmed;
+                    } else {
+                        confirmSubmit = confirm(`Vị trí ghim cách địa chỉ nhập khoảng ${distanceKmText}. Bạn có chắc chắn ghim này là chính xác?\nTin đăng có thể bị Admin kiểm duyệt nếu thông tin không đúng thực tế.`);
+                    }
+
+                    if (!confirmSubmit) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Đăng Tin Ngay';
+                        return;
+                    }
+                }
+            }
+
             if (!roomImagesInput || !roomImagesInput.files || roomImagesInput.files.length === 0) {
                 showToast('Vui lòng chọn ít nhất 1 ảnh phòng trọ.', 'error');
                 btn.disabled = false;
@@ -793,6 +875,10 @@
             body.append('Street', streetInput.value.trim());
             body.append('Latitude', latitudeInput.value || '');
             body.append('Longitude', longitudeInput.value || '');
+            if (geocodedLat !== null && geocodedLng !== null) {
+                body.append('GeocodedLatitude', geocodedLat.toString());
+                body.append('GeocodedLongitude', geocodedLng.toString());
+            }
             body.append('Title', form.Title.value.trim());
             body.append('Price', (parseFloat(form.Price.value) || 0).toString());
             body.append('Area', (parseFloat(form.Area.value) || 0).toString());
@@ -822,6 +908,8 @@
                     districtNameInput.value = '';
                     wardNameInput.value = '';
                     clearCoordinates();
+                    geocodedLat = null;
+                    geocodedLng = null;
                     if (marker && map) {
                         map.removeLayer(marker);
                         marker = null;
@@ -844,6 +932,8 @@
             provinceSelect.addEventListener('change', async function () {
                 setSelectAndHidden(provinceSelect, provinceNameInput);
                 clearCoordinates();
+                geocodedLat = null;
+                geocodedLng = null;
                 try {
                     await loadDistricts(provinceSelect.value);
                 } catch (err) {
@@ -856,6 +946,8 @@
             districtSelect.addEventListener('change', async function () {
                 setSelectAndHidden(districtSelect, districtNameInput);
                 clearCoordinates();
+                geocodedLat = null;
+                geocodedLng = null;
                 try {
                     await loadWards(districtSelect.value);
                 } catch (err) {
@@ -868,6 +960,8 @@
             wardSelect.addEventListener('change', function () {
                 setSelectAndHidden(wardSelect, wardNameInput);
                 clearCoordinates();
+                geocodedLat = null;
+                geocodedLng = null;
             });
         }
 
@@ -882,6 +976,8 @@
         if (resetPinBtn) {
             resetPinBtn.addEventListener('click', function () {
                 clearCoordinates();
+                geocodedLat = null;
+                geocodedLng = null;
                 if (marker && map) {
                     map.removeLayer(marker);
                     marker = null;

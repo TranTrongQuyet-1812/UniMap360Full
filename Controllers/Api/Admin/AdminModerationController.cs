@@ -32,6 +32,7 @@ public sealed class AdminModerationController : ControllerBase
     public async Task<IActionResult> GetRooms(
         [FromQuery] string? status,
         [FromQuery] string? search,
+        [FromQuery] bool? onlySuspicious,
         [FromQuery] int limit = 200,
         CancellationToken cancellationToken = default)
     {
@@ -46,6 +47,9 @@ public sealed class AdminModerationController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(status))
             q = q.Where(r => r.RoomStatus == status.Trim());
+
+        if (onlySuspicious == true)
+            q = q.Where(r => r.Location.LocationSuspicious == true);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -71,7 +75,11 @@ public sealed class AdminModerationController : ControllerBase
                 hostAccountId = r.Host.AccountId,
                 hostName = r.Host.FullName,
                 hostEmail = r.Host.Account.Email,
-                location = r.Location.AddressText
+                location = r.Location.AddressText,
+                locationDistanceMeters = r.Location.LocationDistanceMeters,
+                locationConfidence = r.Location.LocationConfidence,
+                locationSuspicious = r.Location.LocationSuspicious,
+                geocodeSource = r.Location.GeocodeSource
             })
             .ToListAsync(cancellationToken);
 
@@ -125,7 +133,15 @@ public sealed class AdminModerationController : ControllerBase
                 room.Location.AddressText,
                 room.Location.ProvinceName,
                 room.Location.DistrictName,
-                room.Location.WardName
+                room.Location.WardName,
+                latitude = room.Location.Coordinates != null ? room.Location.Coordinates.Coordinate.Y : (double?)null,
+                longitude = room.Location.Coordinates != null ? room.Location.Coordinates.Coordinate.X : (double?)null,
+                geocodedLatitude = room.Location.GeocodedLatitude,
+                geocodedLongitude = room.Location.GeocodedLongitude,
+                locationDistanceMeters = room.Location.LocationDistanceMeters,
+                locationConfidence = room.Location.LocationConfidence,
+                locationSuspicious = room.Location.LocationSuspicious,
+                geocodeSource = room.Location.GeocodeSource
             },
             media
         });
@@ -135,6 +151,7 @@ public sealed class AdminModerationController : ControllerBase
     public async Task<IActionResult> GetJobs(
         [FromQuery] string? status,
         [FromQuery] string? search,
+        [FromQuery] bool? onlySuspicious,
         [FromQuery] int limit = 200,
         CancellationToken cancellationToken = default)
     {
@@ -149,6 +166,9 @@ public sealed class AdminModerationController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(status))
             q = q.Where(j => j.JobStatus == status.Trim());
+
+        if (onlySuspicious == true)
+            q = q.Where(j => j.Location.LocationSuspicious == true);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -174,7 +194,11 @@ public sealed class AdminModerationController : ControllerBase
                 employerAccountId = j.Employer.AccountId,
                 employerName = j.Employer.CompanyName,
                 employerEmail = j.Employer.Account.Email,
-                location = j.Location.AddressText
+                location = j.Location.AddressText,
+                locationDistanceMeters = j.Location.LocationDistanceMeters,
+                locationConfidence = j.Location.LocationConfidence,
+                locationSuspicious = j.Location.LocationSuspicious,
+                geocodeSource = j.Location.GeocodeSource
             })
             .ToListAsync(cancellationToken);
 
@@ -228,7 +252,15 @@ public sealed class AdminModerationController : ControllerBase
                 job.Location.AddressText,
                 job.Location.ProvinceName,
                 job.Location.DistrictName,
-                job.Location.WardName
+                job.Location.WardName,
+                latitude = job.Location.Coordinates != null ? job.Location.Coordinates.Coordinate.Y : (double?)null,
+                longitude = job.Location.Coordinates != null ? job.Location.Coordinates.Coordinate.X : (double?)null,
+                geocodedLatitude = job.Location.GeocodedLatitude,
+                geocodedLongitude = job.Location.GeocodedLongitude,
+                locationDistanceMeters = job.Location.LocationDistanceMeters,
+                locationConfidence = job.Location.LocationConfidence,
+                locationSuspicious = job.Location.LocationSuspicious,
+                geocodeSource = job.Location.GeocodeSource
             },
             media
         });

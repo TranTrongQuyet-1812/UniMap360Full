@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using UniMap360.Models;
 namespace UniMap360.Migrations.PostgreSql
 {
     [DbContext(typeof(UniMap360PostgresContext))]
-    partial class UniMap360PostgresContextModelSnapshot : ModelSnapshot
+    [Migration("20260530091131_AddLocationTrustFields")]
+    partial class AddLocationTrustFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -612,10 +615,6 @@ namespace UniMap360.Migrations.PostgreSql
                     b.Property<string>("FullAddressNormalized")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<string>("GeocodeSource")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<double?>("GeocodedLatitude")
                         .HasColumnType("double precision");

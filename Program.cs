@@ -163,6 +163,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.Configure<AdminSecurityOptions>(builder.Configuration.GetSection("Admin"));
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("NominatimGeocoding", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(3);
+});
 builder.Services.AddScoped<ISuperAdminGuardService, SuperAdminGuardService>();
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 builder.Services.AddScoped<ICloudinaryAssetPurger, CloudinaryAssetPurger>();

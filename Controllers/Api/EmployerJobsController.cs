@@ -71,13 +71,15 @@ public class EmployerJobsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateJob([FromBody] CreateJobRequest request)
     {
+        request.LocationId = 0; // Triệt tiêu hoàn toàn LocationId từ client khi tạo mới
+
         var employer = await _managePostsContextService.GetCurrentEmployerAsync(User);
         if (employer is null) return NotFound("Không tìm thấy hồ sơ nhà tuyển dụng.");
 
         var validationError = await ValidateCategoryAsync(request.CategoryId);
         if (validationError is not null) return BadRequest(validationError);
 
-        var locationResult = await ResolveLocationIdAsync(request);
+        var locationResult = await ResolveLocationIdAsync(request, isCreate: true);
         if (locationResult.Error is not null) return BadRequest(locationResult.Error);
 
         var job = new Job
@@ -115,7 +117,7 @@ public class EmployerJobsController : ControllerBase
         var validationError = await ValidateCategoryAsync(request.CategoryId);
         if (validationError is not null) return BadRequest(validationError);
 
-        var locationResult = await ResolveLocationIdAsync(request);
+        var locationResult = await ResolveLocationIdAsync(request, isCreate: false, currentLocationId: job.LocationId);
         if (locationResult.Error is not null) return BadRequest(locationResult.Error);
 
         job.CategoryId = request.CategoryId;
@@ -191,11 +193,12 @@ public class EmployerJobsController : ControllerBase
         return null;
     }
 
-    private Task<(int? LocationId, string? Error)> ResolveLocationIdAsync(JobLocationRequestBase request)
+    private Task<(int? LocationId, string? Error)> ResolveLocationIdAsync(JobLocationRequestBase request, bool isCreate = false, int? currentLocationId = null)
     {
         return _locationResolutionService.ResolveLocationIdAsync(new LocationResolveInput
         {
-            LocationId = request.LocationId,
+            LocationId = isCreate ? 0 : request.LocationId,
+            CurrentLocationId = currentLocationId,
             ProvinceCode = request.ProvinceCode,
             ProvinceName = request.ProvinceName,
             DistrictCode = request.DistrictCode,
@@ -206,6 +209,8 @@ public class EmployerJobsController : ControllerBase
             Street = request.Street,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
+            GeocodedLatitude = request.GeocodedLatitude,
+            GeocodedLongitude = request.GeocodedLongitude,
             UseProvinceCodeCanonicalization = false,
             MissingPinMessage = "Vui lòng ghim vị trí bản đồ trước khi đăng việc làm."
         });
@@ -224,6 +229,8 @@ public class EmployerJobsController : ControllerBase
         public string? Street { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public double? GeocodedLatitude { get; set; }
+        public double? GeocodedLongitude { get; set; }
     }
 
     public sealed class CreateJobRequest : JobLocationRequestBase
