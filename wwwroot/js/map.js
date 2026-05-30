@@ -177,7 +177,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (f.lat && f.lng && f.radiusKm && f.serviceType) {
                         setTimeout(() => {
                             if (window.UniMap360Map && typeof window.UniMap360Map.applyProximityFilterOnMap === 'function') {
-                                window.UniMap360Map.applyProximityFilterOnMap(f.lat, f.lng, f.radiusKm, f.serviceType);
+                                window.UniMap360Map.applyProximityFilterOnMap(f.lat, f.lng, f.radiusKm, f.serviceType, {
+                                    label: f.label,
+                                    source: f.source
+                                });
                             }
                         }, 500); // Đợi Leaflet và DOM ổn định
                     }
@@ -436,13 +439,16 @@ document.addEventListener('DOMContentLoaded', function () {
             map.flyTo([lat, lng], 15, { animate: true, duration: 1.5 });
         },
 
-        applyProximityFilterOnMap: function (lat, lng, radiusKm, serviceType) {
+        applyProximityFilterOnMap: function (lat, lng, radiusKm, serviceType, options) {
+            options = options || {};
             // Lưu state để F5 không bị mất
             sessionStorage.setItem('ai_proximity_filter', JSON.stringify({
                 lat: lat,
                 lng: lng,
                 radiusKm: radiusKm,
-                serviceType: serviceType
+                serviceType: serviceType,
+                label: options.label || null,
+                source: options.source || null
             }));
 
 
@@ -529,9 +535,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         ? item.distance.toFixed(1) + ' km' 
                         : Math.round(item.distance * 1000) + ' m';
                     
+                    var prefix = "Cách bạn ";
+                    if (options.source === 'gps') {
+                        prefix = "Cách bạn ";
+                    } else if (options.label) {
+                        prefix = "Cách " + options.label + " ";
+                    } else {
+                        prefix = "Cách tâm tìm kiếm ";
+                    }
+
                     var badge = document.createElement('div');
                     badge.className = 'distance-badge';
-                    badge.innerHTML = `<i class="fas fa-route"></i> Cách bạn ${distStr}`;
+                    badge.innerHTML = `<i class="fas fa-route"></i> ${prefix}${distStr}`;
                     infoPanel.appendChild(badge);
                 }
 

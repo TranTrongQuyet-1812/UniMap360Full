@@ -177,6 +177,8 @@ builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
 builder.Services.AddScoped<UniMap360.Services.Moderation.IContentModerationService, UniMap360.Services.Moderation.ContentModerationService>();
 builder.Services.AddScoped<UniMap360.Services.Reports.IContentReportService, UniMap360.Services.Reports.ContentReportService>();
 builder.Services.AddScoped<UniMap360.Services.Realtime.IRealtimeNotifier, UniMap360.Services.Realtime.RealtimeNotifier>();
+builder.Services.AddScoped<UniMap360.Services.Ai.IAiMapToolService, UniMap360.Services.Ai.AiMapToolService>();
+builder.Services.AddScoped<UniMap360.Services.Ai.IAiChatOrchestratorService, UniMap360.Services.Ai.AiChatOrchestratorService>();
 builder.Services.AddProblemDetails();
 
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
