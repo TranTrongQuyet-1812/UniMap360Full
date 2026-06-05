@@ -1,0 +1,790 @@
+@{
+    ViewData["Title"] = "UniMap360 - Bảng giá & Nâng cấp VIP";
+}
+
+<style>
+    /* Premium VIP Pricing Portal Styles */
+    .pricing-container {
+        padding: 80px 0;
+        background: radial-gradient(circle at top right, rgba(247, 182, 56, 0.08), transparent 500px),
+                    radial-gradient(circle at bottom left, rgba(120, 1, 21, 0.05), transparent 500px);
+        min-height: 100vh;
+    }
+    
+    .pricing-header h1 {
+        font-size: 3rem;
+        font-weight: 900;
+        color: var(--color-primary, #780115);
+        letter-spacing: -1.5px;
+    }
+    
+    .pricing-header .highlight {
+        color: var(--color-accent, #f7b638);
+    }
+    
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 30px;
+        margin-top: 50px;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Elegant Pricing Card */
+    .pricing-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(120, 1, 21, 0.08);
+        border-color: rgba(120, 1, 21, 0.15);
+    }
+    
+    .pricing-card.premium-card {
+        border: 2px solid #ffd700;
+        background: linear-gradient(180deg, #fffdf5 0%, #ffffff 100%);
+        box-shadow: 0 15px 35px rgba(247, 182, 56, 0.12);
+    }
+    
+    .pricing-card.premium-card:hover {
+        box-shadow: 0 25px 50px rgba(247, 182, 56, 0.22);
+        border-color: #f7b638;
+    }
+    
+    .pricing-card .badge-popular {
+        position: absolute;
+        top: 20px;
+        right: -35px;
+        background: linear-gradient(135deg, var(--color-primary, #780115), #b0102a);
+        color: #ffd700;
+        font-size: 0.65rem;
+        font-weight: 900;
+        padding: 6px 40px;
+        transform: rotate(45deg);
+        letter-spacing: 1px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-transform: uppercase;
+    }
+    
+    .plan-name {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+    
+    .plan-price {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #0f172a;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: baseline;
+    }
+    
+    .plan-price .currency {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-right: 2px;
+    }
+    
+    .plan-price .period {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-left: 6px;
+    }
+    
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 32px 0;
+        flex-grow: 1;
+    }
+    
+    .plan-features li {
+        margin-bottom: 14px;
+        color: #475569;
+        font-weight: 550;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .plan-features li i {
+        color: #10b981;
+        font-size: 1rem;
+    }
+    
+    .plan-features li.disabled {
+        color: #94a3b8;
+        text-decoration: line-through;
+    }
+    
+    .plan-features li.disabled i {
+        color: #cbd5e1;
+    }
+    
+    .btn-pricing {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-free {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    
+    .btn-free:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+    
+    .btn-premium {
+        background: linear-gradient(135deg, var(--color-primary, #780115), #b0102a);
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(120, 1, 21, 0.2);
+    }
+    
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(120, 1, 21, 0.35);
+        background: linear-gradient(135deg, #8a0119, #c81331);
+    }
+    
+    /* Mock Checkout Modal */
+    .checkout-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .checkout-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    .checkout-modal {
+        background: #ffffff;
+        border-radius: 28px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        transform: translateY(30px) scale(0.95);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .checkout-overlay.active .checkout-modal {
+        transform: translateY(0) scale(1);
+    }
+    
+    .checkout-header {
+        background: linear-gradient(135deg, var(--color-primary, #780115), #4e000c);
+        padding: 30px;
+        color: #ffffff;
+        position: relative;
+    }
+    
+    .checkout-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: #ffffff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .checkout-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Simulated Credit Card CSS */
+    .credit-card-preview {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-radius: 16px;
+        padding: 24px;
+        color: #ffffff;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        margin-bottom: 24px;
+        position: relative;
+        height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-family: 'Courier New', Courier, monospace;
+        letter-spacing: 1px;
+    }
+    
+    .card-chip {
+        width: 40px;
+        height: 30px;
+        background: linear-gradient(135deg, #fef08a, #eab308);
+        border-radius: 6px;
+    }
+    
+    .card-number {
+        font-size: 1.15rem;
+        word-spacing: 4px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .card-bottom {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+    }
+    
+    .card-label {
+        font-size: 0.55rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    
+    /* Success Screen */
+    .checkout-success-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 30px;
+        text-align: center;
+    }
+    
+    .success-icon-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    @@keyframes scaleIn {
+        from { transform: scale(0.3); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Maintenance Mode Overlay Styles */
+    .pricing-wrapper {
+        position: relative;
+    }
+    
+    .maintenance-blur {
+        filter: blur(6px);
+        pointer-events: none;
+        opacity: 0.55;
+        transition: all 0.4s ease;
+    }
+    
+    .maintenance-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 2px solid rgba(255, 215, 0, 0.15);
+        border-radius: 28px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px;
+        z-index: 100;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    }
+    
+    .maintenance-card {
+        background: #ffffff;
+        border: 3px solid #ffd700;
+        border-radius: 24px;
+        padding: 40px 30px;
+        max-width: 550px;
+        box-shadow: 0 25px 60px rgba(120, 1, 21, 0.15);
+        transform: translateY(0);
+        animation: card-float 4s ease-in-out infinite;
+    }
+    
+    @@keyframes card-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+    
+    @@keyframes pulse-maintenance {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(247, 182, 56, 0.5); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(247, 182, 56, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(247, 182, 56, 0); }
+    }
+</style>
+
+<div class="pricing-container">
+    <div class="container">
+        <!-- Main Header -->
+        <div class="pricing-header text-center mb-5">
+            <h1 class="mb-3 text-uppercase d-inline-flex align-items-center justify-content-center flex-wrap gap-2">
+                Nâng Cấp Tài Khoản <span class="highlight">VIP</span>
+                @if (ViewBag.BillingEnforcementEnabled == false)
+                {
+                    <span class="badge bg-danger px-3 py-2 text-uppercase fw-black" style="background: linear-gradient(135deg, #780115, #b0102a); border: 1.5px solid #ffd700; font-size: 0.75rem; letter-spacing: 0.5px; animation: pulse-maintenance 2s infinite; border-radius: 8px; vertical-align: middle; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-tools text-warning"></i> Cổng thanh toán tạm đóng (VIP FREE)
+                    </span>
+                }
+            </h1>
+            <p class="text-muted mx-auto fw-bold" style="max-width: 600px; font-size: 1.1rem;">
+                Mở khóa các tính năng đặc quyền để tiếp cận hàng nghìn sinh viên hiệu quả hơn.
+            </p>
+        </div>
+
+        <!-- Role Checking Block -->
+        <div id="roleSelectionArea" class="text-center py-5 d-none">
+            <div class="alert alert-warning d-inline-block mx-auto px-4 py-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>Bạn cần đăng nhập bằng tài khoản <strong>Chủ trọ</strong> hoặc <strong>Nhà tuyển dụng</strong> để sử dụng trang này.
+            </div>
+            <div class="mt-3">
+                <a href="/Home/Auth" class="btn btn-primary fw-bold px-4">ĐĂNG NHẬP NGAY</a>
+            </div>
+        </div>
+
+        <!-- Student Free Tier Warning -->
+        <div id="studentWarningArea" class="text-center py-5 d-none">
+            <div class="alert alert-success d-inline-block mx-auto px-4 py-3" style="max-width: 600px;">
+                <h4 class="fw-bold mb-2"><i class="fas fa-graduation-cap me-2"></i>Chào bạn Sinh Viên!</h4>
+                <p class="mb-0 text-start">UniMap360 được tạo ra để đồng hành và hỗ trợ tối đa cho sinh viên. Do đó, tất cả các tính năng xem phòng, liên hệ, ghép cặp ở ghép, và tìm kiếm việc làm đều **miễn phí trọn đời** dành cho bạn! Chúc bạn tìm được phòng trọ và cơ hội ưng ý.</p>
+            </div>
+        </div>
+
+        <!-- Pricing Plans Section -->
+        <div id="plansArea" class="d-none">
+            <div class="pricing-wrapper">
+                @if (ViewBag.BillingEnforcementEnabled == false)
+                {
+                    <div class="maintenance-overlay">
+                        <div class="maintenance-card">
+                            <div class="d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; border-radius: 50%; background: rgba(120, 1, 21, 0.1); color: #780115; font-size: 2.2rem;">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                            </div>
+                            <h3 class="fw-bold mb-3 text-uppercase" style="color: #780115; letter-spacing: -0.5px;">Cổng thanh toán đang tạm tắt</h3>
+                            <p class="text-muted fw-bold mb-4" style="font-size: 1rem; line-height: 1.6;">
+                                Hệ thống đang tạm tắt cổng thanh toán trực tuyến để bảo trì nâng cấp.<br>
+                                <span class="text-maroon" style="color: #780115;">Trong thời gian này, tất cả các chức năng đặc quyền VIP đều được mở MIỄN PHÍ!</span>
+                            </p>
+                            <a href="/Home/Manage" class="btn btn-primary btn-premium fw-black px-5 py-3 rounded-pill text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px; border: none; text-decoration: none;">Trải nghiệm VIP ngay</a>
+                        </div>
+                    </div>
+                }
+                
+                <div class="pricing-grid @(ViewBag.BillingEnforcementEnabled == false ? "maintenance-blur" : "")" id="pricingGrid">
+                    <!-- Dynamically Rendered by Javascript depending on Role -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Native PayOS QR Checkout Overlay Modal -->
+<div class="checkout-overlay" id="checkoutOverlay">
+    <div class="checkout-modal" style="border: 2px solid #ffd700; background: #ffffff;">
+        <!-- Modal Content: QR Code Display -->
+        <div id="checkoutFormContent">
+            <div class="checkout-header" style="background: linear-gradient(135deg, #780115, #4e000c); padding: 24px; position: relative;">
+                <button class="checkout-close" id="btnCancelCheckout" style="background: rgba(255, 255, 255, 0.2); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; top: 15px; right: 15px; cursor: pointer; transition: background 0.2s;"><i class="fas fa-times"></i></button>
+                <div class="small text-uppercase fw-bold text-warning" style="letter-spacing: 1px;"><i class="fas fa-crown me-1"></i> Thanh toán VIP UniMap360</div>
+                <h4 class="fw-black mt-2 mb-0" id="checkoutPlanName" style="color: #ffffff; font-weight: 800;">Đăng ký Gói VIP</h4>
+                <div class="mt-1 small" id="checkoutPlanPrice" style="color: #f8fafc; opacity: 0.9;">Giá: 36.000₫/tháng</div>
+            </div>
+            
+            <div class="p-4 text-center">
+                <!-- QR Code image container -->
+                <div class="qr-container mb-3 p-3 rounded-4" style="background: #f8fafc; border: 1px dashed #cbd5e1; display: inline-block;">
+                    <img id="checkoutQrImage" src="" alt="VietQR Code" style="width: 220px; height: 220px; display: block; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);" />
+                    <div class="mt-2 small text-muted fw-bold"><i class="fas fa-mobile-alt me-1 text-warning"></i> Quét mã QR bằng App Ngân hàng (VietQR)</div>
+                </div>
+
+                <!-- Transaction Details (Copyable) -->
+                <div class="payment-details text-start bg-light p-3 rounded-4 mb-3 border" style="font-size: 0.9rem;">
+                    <div class="mb-2 d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">NGÂN HÀNG:</span>
+                        <span class="fw-bold text-dark" id="detailBankName">MB Bank</span>
+                    </div>
+                    <div class="mb-2 d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">CHỦ TÀI KHOẢN:</span>
+                        <span class="fw-bold text-dark" id="detailAccountName">TRAN TRONG QUYET</span>
+                    </div>
+                    <div class="mb-2 d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">SỐ TÀI KHOẢN:</span>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold text-dark me-2" id="detailAccountNumber">VQRQAJLQQ3566</span>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 fw-bold" onclick="copyText('detailAccountNumber')" style="font-size: 0.75rem; border-color: #780115; color: #780115;">Sao chép</button>
+                        </div>
+                    </div>
+                    <div class="mb-2 d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">SỐ TIỀN:</span>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold text-maroon me-2" id="detailAmount" style="color: #780115;">36.000₫</span>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 fw-bold" onclick="copyText('detailAmount')" style="font-size: 0.75rem; border-color: #780115; color: #780115;">Sao chép</button>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">NỘI DUNG CK:</span>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold text-dark me-2" id="detailDescription">UM360 VIP 114</span>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 fw-bold" onclick="copyText('detailDescription')" style="font-size: 0.75rem; border-color: #780115; color: #780115;">Sao chép</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning py-2 small mb-0 d-flex align-items-center justify-content-center fw-bold" style="background-color: rgba(247, 182, 56, 0.1); border-color: rgba(247, 182, 56, 0.3); color: #856404;">
+                    <i class="fas fa-spinner fa-spin me-2"></i> Hệ thống tự động duyệt sau khi nhận tiền...
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="checkoutSuccessContent" class="checkout-success-screen d-none">
+            <div class="success-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 80px; height: 80px; border-radius: 50%; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px auto;">
+                <i class="fas fa-check"></i>
+            </div>
+            <h3 class="fw-black mb-2" style="font-weight: 800; color: #1e293b;">Thanh Toán Thành Công!</h3>
+            <p class="text-muted mb-4 px-3" id="successMessage" style="font-size: 0.95rem;">
+                Cảm ơn bạn! Gói cước VIP của bạn đã được kích hoạt thành công trong 30 ngày.
+            </p>
+            <button class="btn btn-dark fw-bold px-5 py-2.5 rounded-pill" id="btnSuccessOk" style="background: #780115; border: none; font-size: 0.95rem;">
+                QUAY LẠI QUẢN LÝ
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let selectedPlanCode = "";
+    
+    document.addEventListener("DOMContentLoaded", async () => {
+        // 1. Check user authentication and role
+        const user = await checkSessionUser();
+        if (!user) {
+            document.getElementById("roleSelectionArea").classList.remove("d-none");
+            return;
+        }
+
+        const role = user.role;
+        if (role === "Student") {
+            document.getElementById("studentWarningArea").classList.remove("d-none");
+            return;
+        }
+
+        if (role !== "Host" && role !== "Employer") {
+            document.getElementById("roleSelectionArea").classList.remove("d-none");
+            return;
+        }
+
+        // Show pricing page
+        document.getElementById("plansArea").classList.remove("d-none");
+        const isVip = user.isVip === true;
+        renderPricingCards(role, isVip);
+
+        // Bind checkout overlay handlers
+        document.getElementById("btnCancelCheckout").addEventListener("click", () => {
+            document.getElementById("checkoutOverlay").classList.remove("active");
+        });
+
+        document.getElementById("btnSuccessOk").addEventListener("click", () => {
+            // Redirect back to manage dashboard
+            const urlParams = new URLSearchParams(window.location.search);
+            let returnUrl = urlParams.get("returnUrl") || "/Home/Manage";
+            // Chặn open redirect bằng cách chỉ chấp nhận internal link bắt đầu bằng / và tránh //
+            if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")) {
+                returnUrl = "/Home/Manage";
+            }
+            window.location.href = returnUrl;
+        });
+
+        // Tự động kết nối và lắng nghe sự kiện SignalR
+        bindRealtimePaymentListener();
+
+        // Kiểm tra xem trang có được trả về sau khi thanh toán thành công không (Dành cho fallback)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("status") === "success") {
+            document.getElementById("successMessage").innerHTML = `
+                Giao dịch của bạn đã được tiếp nhận và xử lý!<br>
+                Hệ thống đang đồng bộ và kích hoạt gói VIP của bạn. Vui lòng tải lại trang sau ít giây để kiểm tra.
+            `;
+            document.getElementById("checkoutSuccessContent").classList.remove("d-none");
+            document.getElementById("checkoutOverlay").classList.add("active");
+        }
+    });
+
+    async function checkSessionUser() {
+        try {
+            const res = await fetch("/api/profile");
+            if (!res.ok) return null;
+            return await res.json();
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function renderPricingCards(role, isVip) {
+        const grid = document.getElementById("pricingGrid");
+        if (role === "Host") {
+            grid.innerHTML = `
+                <!-- Host Free Plan -->
+                <div class="pricing-card">
+                    <div class="plan-name">Gói Đồng (Cơ bản)</div>
+                    <div class="plan-price">
+                        <span class="currency">0</span>
+                        <span class="period">/ tháng</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Đăng tin tìm kiếm phòng trọ</li>
+                        <li><i class="fas fa-check"></i> Quản lý lịch hẹn sinh viên</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Ghim nổi bật trên bản đồ (VIP)</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Đẩy tin ưu tiên khám phá (VIP)</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Xem thống kê lượt tương tác (VIP)</li>
+                    </ul>
+                    ${isVip ? `
+                    <button class="btn-pricing btn-free" onclick="window.location.href='/Home/Manage'">Chuyển về quản lý</button>
+                    ` : `
+                    <button class="btn-pricing btn-free" onclick="useFreePlan()">Đang sử dụng</button>
+                    `}
+                </div>
+
+                <!-- Host VIP Plan -->
+                <div class="pricing-card premium-card">
+                    <div class="badge-popular">Khuyên dùng</div>
+                    <div class="plan-name">Gói Vàng (Chủ Trọ VIP)</div>
+                    <div class="plan-price">
+                        <span class="currency">36.000₫</span>
+                        <span class="period">/ tháng</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Đăng tin tìm kiếm phòng trọ</li>
+                        <li><i class="fas fa-check"></i> Quản lý lịch hẹn nâng cao</li>
+                        <li><i class="fas fa-check"></i> Ghim nổi bật trên bản đồ <i class="fas fa-crown text-warning"></i></li>
+                        <li><i class="fas fa-check"></i> Đẩy tin lên TOP trang khám phá <i class="fas fa-crown text-warning"></i></li>
+                        <li><i class="fas fa-check"></i> Xem biểu đồ thống kê Analytics <i class="fas fa-crown text-warning"></i></li>
+                    </ul>
+                    ${isVip ? `
+                    <button class="btn-pricing btn-free" style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; cursor: default;" disabled>Đang sử dụng</button>
+                    ` : `
+                    <button class="btn-pricing btn-premium" id="btnPayHostVip" onclick="payWithPayOS('HostVIP')">THANH TOÁN NGAY</button>
+                    `}
+                </div>
+            `;
+        } else if (role === "Employer") {
+            grid.innerHTML = `
+                <!-- Recruiter Free Plan -->
+                <div class="pricing-card">
+                    <div class="plan-name">Gói Bạc (Cơ bản)</div>
+                    <div class="plan-price">
+                        <span class="currency">0</span>
+                        <span class="period">/ tháng</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Đăng tin tuyển dụng sinh viên</li>
+                        <li><i class="fas fa-check"></i> Quản lý hồ sơ ứng viên</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Đẩy tin tuyển dụng lên TOP (VIP)</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Nhãn doanh nghiệp uy tín (VIP)</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Phân tích lượt ứng tuyển (VIP)</li>
+                    </ul>
+                    ${isVip ? `
+                    <button class="btn-pricing btn-free" onclick="window.location.href='/Home/Manage'">Chuyển về quản lý</button>
+                    ` : `
+                    <button class="btn-pricing btn-free" onclick="useFreePlan()">Đang sử dụng</button>
+                    `}
+                </div>
+
+                <!-- Recruiter VIP Plan -->
+                <div class="pricing-card premium-card">
+                    <div class="badge-popular">Bán chạy</div>
+                    <div class="plan-name">Gói Kim Cương (Tuyển dụng VIP)</div>
+                    <div class="plan-price">
+                        <span class="currency">36.000₫</span>
+                        <span class="period">/ tháng</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Đăng tin tuyển dụng không giới hạn</li>
+                        <li><i class="fas fa-check"></i> Quản lý hồ sơ ứng viên nâng cao</li>
+                        <li><i class="fas fa-check"></i> Đẩy tin tuyển dụng TOP 1 <i class="fas fa-crown text-warning"></i></li>
+                        <li><i class="fas fa-check"></i> Gắn tag doanh nghiệp ĐÃ XÁC MINH <i class="fas fa-crown text-warning"></i></li>
+                        <li><i class="fas fa-check"></i> Biểu đồ phân tích lượt nộp hồ sơ <i class="fas fa-crown text-warning"></i></li>
+                    </ul>
+                    ${isVip ? `
+                    <button class="btn-pricing btn-free" style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; cursor: default;" disabled>Đang sử dụng</button>
+                    ` : `
+                    <button class="btn-pricing btn-premium" id="btnPayEmployerVip" onclick="payWithPayOS('EmployerVIP')">THANH TOÁN NGAY</button>
+                    `}
+                </div>
+            `;
+        }
+    }
+
+    function useFreePlan() {
+        alert("Bạn đã đăng ký gói cơ bản này rồi.");
+    }
+
+    async function payWithPayOS(planCode) {
+        @if (ViewBag.BillingEnforcementEnabled == false)
+        {
+            <text>
+            alert("Cổng thanh toán hiện đang tạm tắt để bảo trì. Toàn bộ tính năng VIP đang được mở miễn phí.");
+            return;
+            </text>
+        }
+        const btnId = planCode === "HostVIP" ? "btnPayHostVip" : "btnPayEmployerVip";
+        const btn = document.getElementById(btnId);
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ĐANG TẠO MÃ QR...';
+
+        try {
+            const returnUrl = window.location.origin + "/Home/Pricing?status=success";
+            const response = await fetch("/api/subscriptions/create-payment-link", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ 
+                    planCode: planCode,
+                    returnUrl: returnUrl
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || "Không thể khởi tạo cổng thanh toán PayOS.");
+            }
+
+            // Hiển thị Modal tại chỗ thay vì chuyển hướng
+            document.getElementById("checkoutPlanName").innerText = planCode === "HostVIP" ? "Gói Vàng (Chủ Trọ VIP)" : "Gói Kim Cương (Tuyển dụng VIP)";
+            document.getElementById("checkoutPlanPrice").innerText = "Giá: 36.000₫/tháng";
+            
+            // Render QR Code sử dụng QR Server API từ chuỗi qrCode bảo mật của PayOS
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.qrCode)}`;
+            document.getElementById("checkoutQrImage").src = qrImageUrl;
+            
+            // Điền chi tiết chuyển khoản
+            document.getElementById("detailBankName").innerText = "MB Bank (Ngân hàng Quân Đội)";
+            document.getElementById("detailAccountName").innerText = data.accountName;
+            document.getElementById("detailAccountNumber").innerText = data.accountNumber;
+            document.getElementById("detailAmount").innerText = "36.000₫";
+            document.getElementById("detailDescription").innerText = data.description;
+            
+            // Reset hiển thị
+            document.getElementById("checkoutFormContent").classList.remove("d-none");
+            document.getElementById("checkoutSuccessContent").classList.add("d-none");
+            
+            // Mở Modal
+            document.getElementById("checkoutOverlay").classList.add("active");
+        } catch (err) {
+            alert(err.message || "Gặp lỗi khi tạo liên kết thanh toán, vui lòng thử lại.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    function bindRealtimePaymentListener() {
+        if (!window.UniMap360RealtimeClient) {
+            console.warn("UniMap360RealtimeClient không khả dụng.");
+            return;
+        }
+
+        const connection = window.UniMap360RealtimeClient.getConnection();
+        if (connection) {
+            connection.on("ReceivePaymentSuccess", function (payload) {
+                console.log("Đã nhận được sự kiện thanh toán thành công (Realtime):", payload);
+                handleRealtimePaymentSuccess(payload);
+            });
+        } else {
+            // Đợi SignalR kết nối xong
+            window.addEventListener("unimap360:realtime:connected", () => {
+                const conn = window.UniMap360RealtimeClient.getConnection();
+                if (conn) {
+                    conn.on("ReceivePaymentSuccess", function (payload) {
+                        console.log("Đã nhận được sự kiện thanh toán thành công (Realtime - Delay):", payload);
+                        handleRealtimePaymentSuccess(payload);
+                    });
+                }
+            });
+        }
+    }
+
+    function handleRealtimePaymentSuccess(payload) {
+        // Đổi view Modal sang thành công
+        document.getElementById("checkoutFormContent").classList.add("d-none");
+        document.getElementById("checkoutSuccessContent").classList.remove("d-none");
+        
+        document.getElementById("successMessage").innerHTML = `
+            Thanh toán thành công gói <strong>${payload.planCode === 'HostVIP' ? 'Chủ trọ VIP' : 'Tuyển dụng VIP'}</strong>!<br>
+            Tài khoản của bạn đã được nâng cấp. Hệ thống tự động tải lại trang sau 3 giây...
+        `;
+        
+        document.getElementById("checkoutOverlay").classList.add("active");
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+    }
+
+    function copyText(elementId) {
+        const text = document.getElementById(elementId).innerText.trim();
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Đã sao chép: " + text);
+        }).catch(err => {
+            console.error("Lỗi sao chép: ", err);
+        });
+    }
+</script>
+}

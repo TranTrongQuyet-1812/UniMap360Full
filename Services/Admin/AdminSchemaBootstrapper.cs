@@ -46,5 +46,18 @@ public static class AdminSchemaBootstrapper
             ownerSetting.Value = expectedOwnerValue;
             await context.SaveChangesAsync(cancellationToken);
         }
+
+        var billingSetting = await context.AppSettings
+            .FirstOrDefaultAsync(x => x.Key == "Billing.EnforcementEnabled", cancellationToken);
+
+        if (billingSetting is null)
+        {
+            context.AppSettings.Add(new AppSetting
+            {
+                Key = "Billing.EnforcementEnabled",
+                Value = "true"
+            });
+            await context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

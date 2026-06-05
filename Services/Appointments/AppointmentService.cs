@@ -68,15 +68,18 @@ public sealed class AppointmentService : IAppointmentService
     private readonly UniMap360ProContext _context;
     private readonly ILogger<AppointmentService> _logger;
     private readonly UniMap360.Services.Realtime.IRealtimeNotifier _realtimeNotifier;
+    private readonly UniMap360.Services.Business.IPostAnalyticsService _analyticsService;
 
     public AppointmentService(
         UniMap360ProContext context,
         ILogger<AppointmentService> logger,
-        UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier)
+        UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier,
+        UniMap360.Services.Business.IPostAnalyticsService analyticsService)
     {
         _context = context;
         _logger = logger;
         _realtimeNotifier = realtimeNotifier;
+        _analyticsService = analyticsService;
     }
 
     public async Task<AppointmentResult> CreateAppointmentAsync(
@@ -149,6 +152,24 @@ public sealed class AppointmentService : IAppointmentService
         }
 
         await tx.CommitAsync(cancellationToken);
+
+        if (hostAccountId.HasValue)
+        {
+            try
+            {
+                await _analyticsService.TrackEventAsync(
+                    "Room",
+                    room.RoomId,
+                    hostAccountId.Value,
+                    accountId,
+                    "AppointmentCreated"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to track AppointmentCreated event for Room {RoomId}", room.RoomId);
+            }
+        }
 
         if (createdNotification != null)
         {

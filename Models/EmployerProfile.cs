@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace UniMap360.Models;
@@ -14,6 +14,8 @@ public partial class EmployerProfile
     public string? TaxCode { get; set; }
 
     public string? Website { get; set; }
+
+    public bool IsVerified { get; set; } = false;
 
     public virtual Account Account { get; set; } = null!;
 

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using UniMap360.Constants;
 using UniMap360.Models;
@@ -25,6 +26,8 @@ public class HostRoomsController : ControllerBase
     private readonly IManagePostsContextService _managePostsContextService;
     private readonly ILocationResolutionService _locationResolutionService;
     private readonly ICloudinaryAssetPurger _cloudinaryAssetPurger;
+    private readonly IMemoryCache _cache;
+    private const string MapFeedCacheKey = "GlobalMapFeed";
 
     private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -41,7 +44,8 @@ public class HostRoomsController : ControllerBase
         ILogger<HostRoomsController> logger,
         IManagePostsContextService managePostsContextService,
         ILocationResolutionService locationResolutionService,
-        ICloudinaryAssetPurger cloudinaryAssetPurger)
+        ICloudinaryAssetPurger cloudinaryAssetPurger,
+        IMemoryCache cache)
     {
         _context = context;
         _environment = environment;
@@ -50,6 +54,7 @@ public class HostRoomsController : ControllerBase
         _managePostsContextService = managePostsContextService;
         _locationResolutionService = locationResolutionService;
         _cloudinaryAssetPurger = cloudinaryAssetPurger;
+        _cache = cache;
     }
 
     [HttpGet]
@@ -114,6 +119,7 @@ public class HostRoomsController : ControllerBase
 
         _context.Rooms.Add(room);
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
 
         return Ok(new { message = "Tạo phòng thành công.", roomId = room.RoomId });
     }
@@ -160,6 +166,7 @@ public class HostRoomsController : ControllerBase
             var mediaRows = await UploadRoomImagesAsync(request.Images, host.HostId, room.RoomId);
             _context.Media.AddRange(mediaRows);
             await _context.SaveChangesAsync();
+            _cache.Remove(MapFeedCacheKey);
 
             return Ok(new
             {
@@ -482,6 +489,7 @@ public class HostRoomsController : ControllerBase
         room.RoomStatus = string.IsNullOrWhiteSpace(request.RoomStatus) ? room.RoomStatus : request.RoomStatus.Trim();
 
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
         return Ok(new { message = "Cập nhật phòng thành công.", roomId = room.RoomId });
     }
 
@@ -509,6 +517,7 @@ public class HostRoomsController : ControllerBase
 
         _context.Rooms.Remove(room);
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
         return Ok(new { message = "Xóa phòng thành công.", roomId = id });
     }
 

@@ -89,6 +89,46 @@ namespace UniMap360.Migrations.PostgreSql
                     b.ToTable("TaiKhoan", (string)null);
                 });
 
+            modelBuilder.Entity("UniMap360.Models.AccountSubscription", b =>
+                {
+                    b.Property<int>("SubscriptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SubscriptionId"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SubscriptionId");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("AccountSubscriptions");
+                });
+
             modelBuilder.Entity("UniMap360.Models.AdminAuditLog", b =>
                 {
                     b.Property<int>("AuditId")
@@ -356,6 +396,9 @@ namespace UniMap360.Migrations.PostgreSql
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("TaxCode")
                         .HasMaxLength(20)
                         .IsUnicode(false)
@@ -404,6 +447,64 @@ namespace UniMap360.Migrations.PostgreSql
                     b.HasIndex("StudentId");
 
                     b.ToTable("YeuThich", (string)null);
+                });
+
+            modelBuilder.Entity("UniMap360.Models.FeaturedListing", b =>
+                {
+                    b.Property<int>("FeaturedListingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FeaturedListingId"));
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FeatureType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("OwnerAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("TargetId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("FeaturedListingId");
+
+                    b.HasIndex("Status", "EndsAt")
+                        .HasDatabaseName("IX_FeaturedListings_Status_EndsAt");
+
+                    b.HasIndex("OwnerAccountId", "FeatureType", "Status")
+                        .HasDatabaseName("IX_FeaturedListings_Owner_Type_Status");
+
+                    b.HasIndex("TargetType", "TargetId", "FeatureType", "Status")
+                        .HasDatabaseName("IX_FeaturedListings_Target_Type_Status");
+
+                    b.ToTable("FeaturedListings");
                 });
 
             modelBuilder.Entity("UniMap360.Models.HostProfile", b =>
@@ -816,6 +917,199 @@ namespace UniMap360.Migrations.PostgreSql
                     b.ToTable("ThongBao", (string)null);
                 });
 
+            modelBuilder.Entity("UniMap360.Models.PaymentOrder", b =>
+                {
+                    b.Property<int>("PaymentOrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentOrderId"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CheckoutUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("VND");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<long>("OrderCode")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PlanCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("PayOS");
+
+                    b.Property<string>("ProviderPaymentLinkId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("QrCode")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("RawWebhookJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PaymentOrderId");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("OrderCode")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_PaymentOrders_OrderCode");
+
+                    b.ToTable("PaymentOrders", (string)null);
+                });
+
+            modelBuilder.Entity("UniMap360.Models.PostAnalyticsDaily", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApplicationCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AppointmentCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChatStartedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FavoriteCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ListingImpressionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MapImpressionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TargetId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TargetType", "TargetId", "Date")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_PostAnalyticsDaily_Target_Date");
+
+                    b.ToTable("PostAnalyticsDailies");
+                });
+
+            modelBuilder.Entity("UniMap360.Models.PostAnalyticsEvent", b =>
+                {
+                    b.Property<int>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EventId"));
+
+                    b.Property<int?>("ActorAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OwnerAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourcePage")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("TargetId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("EventId");
+
+                    b.HasIndex("ActorAccountId");
+
+                    b.HasIndex("EventType", "OccurredAt")
+                        .HasDatabaseName("IX_PostAnalyticsEvents_Type_OccurredAt");
+
+                    b.HasIndex("OwnerAccountId", "OccurredAt")
+                        .HasDatabaseName("IX_PostAnalyticsEvents_Owner_OccurredAt");
+
+                    b.HasIndex("TargetType", "TargetId", "OccurredAt")
+                        .HasDatabaseName("IX_PostAnalyticsEvents_Target_OccurredAt");
+
+                    b.ToTable("PostAnalyticsEvents");
+                });
+
             modelBuilder.Entity("UniMap360.Models.Review", b =>
                 {
                     b.Property<int>("ReviewId")
@@ -1098,6 +1392,56 @@ namespace UniMap360.Migrations.PostgreSql
                     b.ToTable("HoSoSinhVien", (string)null);
                 });
 
+            modelBuilder.Entity("UniMap360.Models.SubscriptionPlan", b =>
+                {
+                    b.Property<int>("PlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PlanId"));
+
+                    b.Property<string>("BillingCycle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("PriceVnd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("RoleScope")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PlanId");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_SubscriptionPlans_Code");
+
+                    b.ToTable("SubscriptionPlans");
+                });
+
             modelBuilder.Entity("UniMap360.Models.SystemLog", b =>
                 {
                     b.Property<int>("LogId")
@@ -1175,6 +1519,25 @@ namespace UniMap360.Migrations.PostgreSql
                     b.ToView("v_GlobalMapFeed", (string)null);
                 });
 
+            modelBuilder.Entity("UniMap360.Models.AccountSubscription", b =>
+                {
+                    b.HasOne("UniMap360.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UniMap360.Models.SubscriptionPlan", "Plan")
+                        .WithMany("AccountSubscriptions")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("UniMap360.Models.ContentReport", b =>
                 {
                     b.HasOne("UniMap360.Models.Account", "ReporterAccount")
@@ -1237,6 +1600,17 @@ namespace UniMap360.Migrations.PostgreSql
                         .HasConstraintName("FK_Fav_Student");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("UniMap360.Models.FeaturedListing", b =>
+                {
+                    b.HasOne("UniMap360.Models.Account", "OwnerAccount")
+                        .WithMany()
+                        .HasForeignKey("OwnerAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OwnerAccount");
                 });
 
             modelBuilder.Entity("UniMap360.Models.HostProfile", b =>
@@ -1328,6 +1702,35 @@ namespace UniMap360.Migrations.PostgreSql
                         .HasConstraintName("FK_Notifications_Accounts");
 
                     b.Navigation("RecipientAccount");
+                });
+
+            modelBuilder.Entity("UniMap360.Models.PaymentOrder", b =>
+                {
+                    b.HasOne("UniMap360.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("UniMap360.Models.PostAnalyticsEvent", b =>
+                {
+                    b.HasOne("UniMap360.Models.Account", "ActorAccount")
+                        .WithMany()
+                        .HasForeignKey("ActorAccountId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("UniMap360.Models.Account", "OwnerAccount")
+                        .WithMany()
+                        .HasForeignKey("OwnerAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActorAccount");
+
+                    b.Navigation("OwnerAccount");
                 });
 
             modelBuilder.Entity("UniMap360.Models.Review", b =>
@@ -1495,6 +1898,11 @@ namespace UniMap360.Migrations.PostgreSql
                     b.Navigation("Reviews");
 
                     b.Navigation("RoommatePosts");
+                });
+
+            modelBuilder.Entity("UniMap360.Models.SubscriptionPlan", b =>
+                {
+                    b.Navigation("AccountSubscriptions");
                 });
 #pragma warning restore 612, 618
         }

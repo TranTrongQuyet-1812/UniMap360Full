@@ -1070,7 +1070,7 @@
                                 window.pendingGoogleCredential = response.credential;
                                 const roleModal = new bootstrap.Modal(document.getElementById('googleRoleModal'));
                                 roleModal.show();
-                            } else if (data.accessToken) {
+                            } else if (data && data.accountId && data.email && data.role) {
                                 saveAuthSession(data, true);
                                 notifyAuthChanged(data);
                                 showToast('Đăng nhập Google thành công! Đang chuyển hướng...', 'success');
@@ -1134,7 +1134,7 @@
 
                     try {
                         const res = await postJson('/api/auth/google', { credential: window.pendingGoogleCredential, role: selectedRole });
-                        if (res && res.accessToken) {
+                        if (res && res.accountId && res.email && res.role) {
                             saveAuthSession(res, true);
                             notifyAuthChanged(res);
                             const roleModalElement = document.getElementById('googleRoleModal');

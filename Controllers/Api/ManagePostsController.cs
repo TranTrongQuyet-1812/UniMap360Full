@@ -56,6 +56,20 @@ public class ManagePostsController : ControllerBase
 
             var locationMap = await _managePostsContextService.LoadLocationMapAsync(rooms.Select(x => x.LocationId));
 
+            var now = DateTime.UtcNow;
+            var accountIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            int? currentAccountId = int.TryParse(accountIdClaim, out var accId) ? accId : null;
+
+            var activeFeatured = currentAccountId.HasValue
+                ? await _context.FeaturedListings
+                    .AsNoTracking()
+                    .Where(f => f.OwnerAccountId == currentAccountId.Value && f.Status == "Active" && f.EndsAt > now)
+                    .ToListAsync()
+                : new List<FeaturedListing>();
+
+            var mapPinnedIds = new HashSet<int>(activeFeatured.Where(f => f.TargetType == "Room" && f.FeatureType == "MapPinned").Select(f => f.TargetId));
+            var explorePriorityIds = new HashSet<int>(activeFeatured.Where(f => f.TargetType == "Room" && f.FeatureType == "ExplorePriority").Select(f => f.TargetId));
+
             var enrichedRooms = rooms.Select(r =>
             {
                 locationMap.TryGetValue(r.LocationId, out var location);
@@ -73,6 +87,8 @@ public class ManagePostsController : ControllerBase
                     r.CreatedAt,
                     r.IsExternal,
                     r.SourceUrl,
+                    isMapPinned = mapPinnedIds.Contains(r.RoomId),
+                    isExplorePriority = explorePriorityIds.Contains(r.RoomId),
                     location = location
                 };
             }).ToList();
@@ -106,6 +122,20 @@ public class ManagePostsController : ControllerBase
 
         var jobLocationMap = await _managePostsContextService.LoadLocationMapAsync(jobs.Select(x => x.LocationId));
 
+        var nowJob = DateTime.UtcNow;
+        var accountIdClaimJob = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        int? currentAccountIdJob = int.TryParse(accountIdClaimJob, out var accIdJob) ? accIdJob : null;
+
+        var activeFeaturedJob = currentAccountIdJob.HasValue
+            ? await _context.FeaturedListings
+                .AsNoTracking()
+                .Where(f => f.OwnerAccountId == currentAccountIdJob.Value && f.Status == "Active" && f.EndsAt > nowJob)
+                .ToListAsync()
+            : new List<FeaturedListing>();
+
+        var jobMapPinnedIds = new HashSet<int>(activeFeaturedJob.Where(f => f.TargetType == "Job" && f.FeatureType == "MapPinned").Select(f => f.TargetId));
+        var jobExplorePriorityIds = new HashSet<int>(activeFeaturedJob.Where(f => f.TargetType == "Job" && f.FeatureType == "ExplorePriority").Select(f => f.TargetId));
+
         var enrichedJobs = jobs.Select(j =>
         {
             jobLocationMap.TryGetValue(j.LocationId, out var location);
@@ -123,6 +153,8 @@ public class ManagePostsController : ControllerBase
                 j.CreatedAt,
                 j.IsExternal,
                 j.SourceUrl,
+                isMapPinned = jobMapPinnedIds.Contains(j.JobId),
+                isExplorePriority = jobExplorePriorityIds.Contains(j.JobId),
                 location = location
             };
         }).ToList();

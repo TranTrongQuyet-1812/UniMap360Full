@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniMap360.Models;
 using UniMap360.Models.Api;
+using UniMap360.Services.Business;
 
 namespace UniMap360.Controllers.Api;
 
@@ -11,10 +13,12 @@ namespace UniMap360.Controllers.Api;
 public class DetailsController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
+    private readonly IPostAnalyticsService _analyticsService;
 
-    public DetailsController(UniMap360ProContext context)
+    public DetailsController(UniMap360ProContext context, IPostAnalyticsService analyticsService)
     {
         _context = context;
+        _analyticsService = analyticsService;
     }
 
     [AllowAnonymous]
@@ -29,6 +33,23 @@ public class DetailsController : ControllerBase
             .FirstOrDefaultAsync(r => r.RoomId == id);
 
         if (room is null) return this.ApiNotFound("Không tìm thấy phòng.");
+
+        int? actorId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedActorId) ? parsedActorId : null;
+        try
+        {
+            await _analyticsService.TrackEventAsync(
+                "Room",
+                id,
+                room.Host.AccountId,
+                actorId,
+                "ViewDetail",
+                Request.Headers["Referer"].ToString()
+            );
+        }
+        catch (Exception)
+        {
+            // Không chặn việc trả về dữ liệu nếu log analytics lỗi
+        }
 
         var media = await _context.Media
             .AsNoTracking()
@@ -87,6 +108,23 @@ public class DetailsController : ControllerBase
             .FirstOrDefaultAsync(j => j.JobId == id);
 
         if (job is null) return this.ApiNotFound("Không tìm thấy việc làm.");
+
+        int? actorId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedActorId) ? parsedActorId : null;
+        try
+        {
+            await _analyticsService.TrackEventAsync(
+                "Job",
+                id,
+                job.Employer.AccountId,
+                actorId,
+                "ViewDetail",
+                Request.Headers["Referer"].ToString()
+            );
+        }
+        catch (Exception)
+        {
+            // Không chặn việc trả về dữ liệu nếu log analytics lỗi
+        }
 
         var media = await _context.Media
             .AsNoTracking()

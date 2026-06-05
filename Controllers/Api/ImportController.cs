@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.VisualBasic.FileIO;
 using System.Globalization;
 using System.Text;
@@ -23,15 +24,18 @@ public class ImportController : ControllerBase
     private readonly UniMap360ProContext _context;
     private readonly HttpClient _httpClient;
     private readonly ILogger<ImportController> _logger;
+    private readonly IMemoryCache _cache;
 
     public ImportController(
         UniMap360ProContext context,
         IHttpClientFactory httpClientFactory,
-        ILogger<ImportController> logger)
+        ILogger<ImportController> logger,
+        IMemoryCache cache)
     {
         _context = context;
         _httpClient = httpClientFactory.CreateClient(nameof(ImportController));
         _logger = logger;
+        _cache = cache;
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("UniMap360App/1.0");
@@ -511,6 +515,8 @@ public class ImportController : ControllerBase
                 skipped++;
             }
         }
+
+        _cache.Remove("GlobalMapFeed");
 
         return Ok(new
         {

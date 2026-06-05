@@ -52,8 +52,19 @@ public class AuthController : ControllerBase
         if (!email.EndsWith("@gmail.com"))
             return this.ApiBadRequest("Xin lỗi, hiện tại hệ thống chỉ hỗ trợ tài khoản @gmail.com.", "VALIDATION_ERROR");
 
-        // Xác thực mã OTP
-        if (!_cache.TryGetValue($"RegisterOTP_{email}", out object? savedOtpObj) || savedOtpObj?.ToString() != request.Otp)
+        // Xác thực mã OTP (Bypass in Development if Auth:AllowDevelopmentOtpBypass is enabled and OTP is 123456)
+        bool isOtpValid = false;
+        bool allowOtpBypass = _configuration.GetValue<bool>("Auth:AllowDevelopmentOtpBypass", false);
+        if (_environment.IsDevelopment() && allowOtpBypass && request.Otp == "123456")
+        {
+            isOtpValid = true;
+        }
+        else if (_cache.TryGetValue($"RegisterOTP_{email}", out object? savedOtpObj) && savedOtpObj?.ToString() == request.Otp)
+        {
+            isOtpValid = true;
+        }
+
+        if (!isOtpValid)
         {
             return this.ApiBadRequest("Mã xác thực (OTP) không hợp lệ hoặc đã hết hạn.");
         }
@@ -182,9 +193,6 @@ public class AuthController : ControllerBase
 
         return this.ApiOk(new
         {
-            // Vẫn trả về token để tương thích ngược với Frontend, 
-            // nhưng Frontend có thể bỏ qua vì Cookie đã tự động xử lý.
-            accessToken = token,
             accountId = account.AccountId,
             email = account.Email,
             role = account.UserRole,
@@ -315,7 +323,6 @@ public class AuthController : ControllerBase
 
             return this.ApiOk(new
             {
-                accessToken = token,
                 accountId = account.AccountId,
                 email = account.Email,
                 role = account.UserRole,
@@ -394,7 +401,6 @@ public class AuthController : ControllerBase
 
         return this.ApiOk(new
         {
-            accessToken = token,
             accountId = account.AccountId,
             email = account.Email,
             role = account.UserRole,

@@ -177,6 +177,9 @@ public sealed class CreateDirectConversationRequest
     [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
     [StringLength(200, ErrorMessage = "Email không được vượt quá 200 ký tự.")]
     public string? TargetEmail { get; set; }
+
+    public string? TargetType { get; set; }
+    public int? TargetId { get; set; }
 }
 
 public sealed class SendMessageRequest
@@ -280,4 +283,14 @@ public sealed class DismissReportRequest
 {
     [StringLength(1000, ErrorMessage = "Lý do không được vượt quá 1000 ký tự.")]
     public string? Reason { get; set; }
+}
+
+public sealed class ToggleFavoriteRequest
+{
+    [Required(ErrorMessage = "TargetType là bắt buộc.")]
+    [RegularExpression("^(room|job)$", ErrorMessage = "TargetType phải là 'room' hoặc 'job'.")]
+    public string TargetType { get; set; } = string.Empty;
+
+    [Range(1, int.MaxValue, ErrorMessage = "TargetId không hợp lệ.")]
+    public int TargetId { get; set; }
 }

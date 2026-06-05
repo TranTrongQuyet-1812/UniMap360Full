@@ -28,7 +28,8 @@ public class ListingsController : ControllerBase
         [FromQuery] string? district = null,
         [FromQuery] string? ward = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        [FromQuery] bool onlyFeatured = false)
     {
         page = page < 1 ? 1 : page;
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -40,6 +41,17 @@ public class ListingsController : ControllerBase
             query = query.Where(x => x.ItemType == "Room");
         else if (normalizedType == "job")
             query = query.Where(x => x.ItemType == "Job");
+
+        if (onlyFeatured)
+        {
+            var nowUtc = DateTime.UtcNow;
+            query = from item in query
+                    join fl in _context.FeaturedListings.AsNoTracking()
+                        on new { TargetType = item.ItemType, TargetId = item.Id }
+                        equals new { fl.TargetType, fl.TargetId }
+                    where fl.Status == "Active" && fl.FeatureType == "ExplorePriority" && fl.EndsAt > nowUtc
+                    select item;
+        }
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -90,11 +102,23 @@ public class ListingsController : ControllerBase
 
         var total = await query.CountAsync();
 
-        var feedItems = await query
-            .OrderByDescending(x => x.Id)
+        var now = DateTime.UtcNow;
+        var projectedQuery = from item in query
+                             join fl in _context.FeaturedListings.AsNoTracking()
+                                on new { TargetType = item.ItemType, TargetId = item.Id }
+                                equals new { fl.TargetType, fl.TargetId } into flGroup
+                             from flActive in flGroup.Where(f => f.Status == "Active" && f.FeatureType == "ExplorePriority" && f.EndsAt > now).DefaultIfEmpty()
+                             select new { Item = item, IsFeatured = flActive != null };
+
+        var feedItemsWithFeatured = await projectedQuery
+            .OrderByDescending(x => x.IsFeatured)
+            .ThenByDescending(x => x.Item.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+
+        var feedItems = feedItemsWithFeatured.Select(x => x.Item).ToList();
+        var featuredSet = feedItemsWithFeatured.ToDictionary(x => (x.Item.ItemType, x.Item.Id), x => x.IsFeatured);
 
         var roomIds = feedItems
             .Where(x => x.ItemType == "Room")
@@ -107,6 +131,18 @@ public class ListingsController : ControllerBase
             .Select(x => x.Id)
             .Distinct()
             .ToList();
+
+        var roomVerifications = await _context.Rooms
+            .AsNoTracking()
+            .Where(r => roomIds.Contains(r.RoomId))
+            .Select(r => new { r.RoomId, IsVerified = (r.Host.IsVerified == true) })
+            .ToDictionaryAsync(r => r.RoomId, r => r.IsVerified);
+
+        var jobVerifications = await _context.Jobs
+            .AsNoTracking()
+            .Where(j => jobIds.Contains(j.JobId))
+            .Select(j => new { j.JobId, IsVerified = j.Employer.IsVerified })
+            .ToDictionaryAsync(j => j.JobId, j => j.IsVerified);
 
         var mediaItems = await _context.Media
             .AsNoTracking()
@@ -139,6 +175,10 @@ public class ListingsController : ControllerBase
 
             var displayPrice = FormatPrice(item, jobSalaries);
             var isRoom = itemType == "room";
+            bool isFeatured = featuredSet.GetValueOrDefault((item.ItemType, item.Id), false);
+            bool isVerified = isRoom 
+                ? roomVerifications.GetValueOrDefault(item.Id, false)
+                : jobVerifications.GetValueOrDefault(item.Id, false);
 
             return new
             {
@@ -153,7 +193,9 @@ public class ListingsController : ControllerBase
                 category = item.CategoryName,
                 priceStr = isRoom ? item.Value : null,
                 isExternal = item.IsExternal ?? false,
-                sourceUrl = item.SourceUrl
+                sourceUrl = item.SourceUrl,
+                isFeatured = isFeatured,
+                isVerified = isVerified
             };
         }).ToList();
 

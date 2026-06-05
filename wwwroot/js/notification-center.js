@@ -91,7 +91,7 @@
                             <div class="d-flex justify-content-between align-items-start gap-3">
                                 <a class="text-decoration-none text-reset flex-grow-1" href="${buildLink(item)}" data-notification-id="${item.notificationId}" data-notification-action="open">
                                     <div class="notif-time mb-1">${window.escapeHtml(formatTime(item.createdAt))}</div>
-                                    <div class="notif-title fw-800 mb-1" style="font-size: 0.95rem; line-height: 1.3;">${window.escapeHtml(item.title || "Thông báo")}</div>
+                                    <div class="notif-title fw-600 mb-1" style="font-size: 0.95rem; line-height: 1.3;">${window.escapeHtml(item.title || "Thông báo")}</div>
                                     <div class="notif-msg small text-muted" style="line-height: 1.4;">${window.escapeHtml(item.message || "")}</div>
                                 </a>
                                 <button type="button" class="btn btn-sm btn-light text-maroon rounded-circle shadow-sm p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;" data-notification-id="${item.notificationId}" data-notification-action="delete" title="Xóa thông báo">

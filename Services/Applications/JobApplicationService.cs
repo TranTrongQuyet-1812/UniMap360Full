@@ -68,18 +68,22 @@ public sealed class JobApplicationService : IJobApplicationService
     private static readonly HashSet<string> AllowedCvExtensions = new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".doc", ".docx" };
     private const long MaxCvFileSizeBytes = 8 * 1024 * 1024;
 
+    private readonly UniMap360.Services.Business.IPostAnalyticsService _analyticsService;
+
     public JobApplicationService(
         UniMap360ProContext context,
         IOptions<CloudinarySettings> cloudinaryOptions,
         ILogger<JobApplicationService> logger,
         IHttpClientFactory httpClientFactory,
-        IRealtimeNotifier realtimeNotifier)
+        IRealtimeNotifier realtimeNotifier,
+        UniMap360.Services.Business.IPostAnalyticsService analyticsService)
     {
         _context = context;
         _cloudinarySettings = cloudinaryOptions.Value;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _realtimeNotifier = realtimeNotifier;
+        _analyticsService = analyticsService;
     }
 
     public async Task<JobAppResult> CreateApplicationAsync(int accountId, JobAppPayload request, IFormFile? cvFile, CancellationToken ct)
@@ -164,6 +168,24 @@ public sealed class JobApplicationService : IJobApplicationService
         }
 
         await tx.CommitAsync(ct);
+
+        if (employerAccountId.HasValue)
+        {
+            try
+            {
+                await _analyticsService.TrackEventAsync(
+                    "Job",
+                    job.JobId,
+                    employerAccountId.Value,
+                    accountId,
+                    "JobApplied"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to track JobApplied event for Job {JobId}", job.JobId);
+            }
+        }
 
         if (createdNotification != null)
         {

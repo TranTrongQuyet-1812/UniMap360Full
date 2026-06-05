@@ -54,4 +54,14 @@ public static class ApiResponseExtensions
         var traceId = controller.HttpContext.TraceIdentifier;
         return controller.Conflict(ApiResponse<object>.Fail(error, traceId));
     }
+
+    /// <summary>
+    /// Trả về 403 Forbidden với ApiResponse envelope chuẩn.
+    /// </summary>
+    public static ObjectResult ApiForbidden(this ControllerBase controller, string message, string code = "FORBIDDEN")
+    {
+        var error = new ApiError(message, code);
+        var traceId = controller.HttpContext.TraceIdentifier;
+        return new ObjectResult(ApiResponse<object>.Fail(error, traceId)) { StatusCode = 403 };
+    }
 }

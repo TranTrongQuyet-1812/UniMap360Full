@@ -16,11 +16,16 @@ public sealed class ChatController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
     private readonly UniMap360.Services.Realtime.IRealtimeNotifier _realtimeNotifier;
+    private readonly UniMap360.Services.Business.IPostAnalyticsService _analyticsService;
 
-    public ChatController(UniMap360ProContext context, UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier)
+    public ChatController(
+        UniMap360ProContext context, 
+        UniMap360.Services.Realtime.IRealtimeNotifier realtimeNotifier,
+        UniMap360.Services.Business.IPostAnalyticsService analyticsService)
     {
         _context = context;
         _realtimeNotifier = realtimeNotifier;
+        _analyticsService = analyticsService;
     }
 
     [HttpGet("conversations")]
@@ -257,6 +262,46 @@ public sealed class ChatController : ControllerBase
         });
         await _context.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(request.TargetType) && request.TargetId.HasValue)
+        {
+            try
+            {
+                int? resolvedOwnerId = null;
+                if (request.TargetType == "Room")
+                {
+                    resolvedOwnerId = await _context.Rooms
+                        .AsNoTracking()
+                        .Where(r => r.RoomId == request.TargetId.Value)
+                        .Select(r => (int?)r.Host.AccountId)
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+                else if (request.TargetType == "Job")
+                {
+                    resolvedOwnerId = await _context.Jobs
+                        .AsNoTracking()
+                        .Where(j => j.JobId == request.TargetId.Value)
+                        .Select(j => (int?)j.Employer.AccountId)
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+
+                if (resolvedOwnerId.HasValue)
+                {
+                    await _analyticsService.TrackEventAsync(
+                        request.TargetType,
+                        request.TargetId.Value,
+                        resolvedOwnerId.Value,
+                        accountId.Value,
+                        "ChatStarted",
+                        Request.Headers["Referer"].ToString()
+                    );
+                }
+            }
+            catch (Exception)
+            {
+                // Do not block client response if tracking fails
+            }
+        }
 
         return this.ApiOk(new { conversationId = conversation.ConversationId, created = true });
     }

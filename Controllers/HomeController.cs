@@ -86,6 +86,13 @@ namespace UniMap360.Controllers
             return View();
         }
 
+        public async Task<IActionResult> Pricing([FromServices] UniMap360.Services.Business.IBillingSettingsService billingSettings)
+        {
+            ViewData["ActivePage"] = "pricing";
+            ViewBag.BillingEnforcementEnabled = await billingSettings.IsBillingEnforcedAsync();
+            return View();
+        }
+
         public IActionResult Manage()
         {
             ViewData["ActivePage"] = "manage";

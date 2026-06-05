@@ -41,6 +41,7 @@
             const postRoomLink = document.getElementById("nav-post-room-link");
             const postJobLink = document.getElementById("nav-post-job-link");
             const roommatesLink = document.getElementById("nav-roommates-link");
+            const pricingLink = document.getElementById("nav-pricing-link");
             const notificationItems = document.querySelectorAll(".nav-notification-wrapper");
 
             if (!loginItem || !userItem || !userName || !userRole) return;
@@ -52,6 +53,7 @@
             if (postRoomLink) postRoomLink.classList.add("d-none");
             if (postJobLink) postJobLink.classList.add("d-none");
             if (roommatesLink) roommatesLink.classList.add("d-none");
+            if (pricingLink) pricingLink.classList.add("d-none");
             notificationItems.forEach(item => item.classList.add("d-none"));
 
             if (!account || !account.email) {
@@ -99,6 +101,7 @@
             if (role === "employer" && employerApplicationsLink) employerApplicationsLink.classList.remove("d-none");
             if (role === "host" && postRoomLink) postRoomLink.classList.remove("d-none");
             if (role === "employer" && postJobLink) postJobLink.classList.remove("d-none");
+            if ((role === "host" || role === "employer") && pricingLink) pricingLink.classList.remove("d-none");
         }
 
         function wireLogout() {

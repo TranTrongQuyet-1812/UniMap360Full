@@ -6,6 +6,7 @@ using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using NetTopologySuite;
 using UniMap360.Models;
 
@@ -18,11 +19,14 @@ public class RoomScrapeController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IMemoryCache _cache;
+    private const string MapFeedCacheKey = "GlobalMapFeed";
 
-    public RoomScrapeController(UniMap360ProContext context, IHttpClientFactory httpClientFactory)
+    public RoomScrapeController(UniMap360ProContext context, IHttpClientFactory httpClientFactory, IMemoryCache cache)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
+        _cache = cache;
     }
 
     /// <summary>
@@ -189,6 +193,8 @@ public class RoomScrapeController : ControllerBase
             await Task.Delay(700);
         }
 
+        _cache.Remove(MapFeedCacheKey);
+
         return Ok(new
         {
             source = "phongtro123",
@@ -238,6 +244,7 @@ public class RoomScrapeController : ControllerBase
 
         _context.Media.AddRange(rows);
         await _context.SaveChangesAsync();
+        _cache.Remove(MapFeedCacheKey);
 
         return Ok(new
         {
@@ -335,6 +342,7 @@ public class RoomScrapeController : ControllerBase
         {
             _context.Media.AddRange(newRows);
             await _context.SaveChangesAsync();
+            _cache.Remove(MapFeedCacheKey);
         }
 
         return Ok(new

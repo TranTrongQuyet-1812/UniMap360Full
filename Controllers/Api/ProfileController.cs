@@ -10,6 +10,8 @@ using UniMap360.Models;
 using UniMap360.Options;
 using UniMap360.Services.Admin;
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
+using UniMap360.Services.Business;
 
 namespace UniMap360.Controllers.Api;
 
@@ -45,7 +47,7 @@ public class ProfileController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProfile()
+    public async Task<IActionResult> GetProfile([FromServices] IBillingSettingsService billingSettingsService)
     {
         var accountIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                            ?? User.FindFirst("sub")?.Value 
@@ -101,11 +103,17 @@ public class ProfileController : ControllerBase
             }
         }
 
+        var isBillingEnabled = await billingSettingsService.IsBillingEnforcedAsync();
+        var isVip = await _context.AccountSubscriptions
+            .AnyAsync(s => s.AccountId == accountId && s.ExpiresAt > DateTime.UtcNow && s.Status == "Active");
+
         return Ok(new
         {
             Email = account.Email,
             AvatarUrl = account.AvatarUrl,
             Role = role,
+            isVip = isVip,
+            billingEnforced = isBillingEnabled,
             Profile = profileData
         });
     }

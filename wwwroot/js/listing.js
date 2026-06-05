@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var currentPage = 1;
     var pageSize = 12;
     var debounceTimer;
+    var onlyFeatured = false;
 
     initListingFilters();
     wireListingEvents();
@@ -63,7 +64,8 @@ document.addEventListener("DOMContentLoaded", function () {
             pagesize: pageSize,
             type: currentFilter,
             keyword: currentKeyword,
-            province: currentProvince
+            province: currentProvince,
+            onlyFeatured: onlyFeatured
         }).toString();
 
         fetch("/api/listings/cards?" + query)
@@ -98,20 +100,34 @@ document.addEventListener("DOMContentLoaded", function () {
         gridContainer.innerHTML = "";
 
         items.forEach(function (item, index) {
-            var itemType = item.type;
+            var itemType = window.normalizeListingType(item.type);
+            var itemId = Number(item.id);
+            if (!Number.isInteger(itemId) || itemId <= 0) return;
+
             var title = window.escapeHtml(item.title);
             var address = window.escapeHtml(item.address);
             var priceLabel = window.escapeHtml(item.price || "Thỏa thuận");
             var fallbackImg = itemType === "room" ? "/images/fallback-room.svg" : "/images/fallback-job.svg";
-            var imgUrl = window.escapeHtml(item.thumbnail || fallbackImg);
-            var itemId = window.escapeHtml(item.id);
+            var imgUrl = window.safeImageUrl(item.thumbnail, fallbackImg);
             var priceClass = itemType === "room" ? "price-room" : "price-job";
+            var isFeatured = item.isFeatured === true;
+            var isVerified = item.isVerified === true;
+            var featuredClass = isFeatured ? "featured-card" : "";
+            var verifiedBadgeHTML = isVerified ? ' <span class="verified-badge" title="Đã xác minh"><i class="fas fa-check-circle text-primary ms-1"></i></span>' : '';
+            var detailUrl = `/Home/Detail?id=${encodeURIComponent(itemId)}&type=${encodeURIComponent(itemType)}`;
 
             var cardHTML = `
-                <div class="item-card mini-card shadow-sm" data-id="${itemId}" 
-                     data-detail-url="/Home/Detail?id=${itemId}&type=${itemType}" 
+                <div class="item-card mini-card shadow-sm ${featuredClass}" data-id="${itemId}" 
+                     data-detail-url="${detailUrl}" 
                      style="animation-delay: ${index * 50}ms; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: #fff; transition: all var(--motion-base) var(--ease-cinematic);">
                     <div class="item-img-wrapper" style="aspect-ratio: 16/10; overflow: hidden; position: relative;">
+                        ${isFeatured ? `
+                        <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
+                            <span class="badge px-2.5 py-1.5 shadow-sm" style="border-radius: 8px; font-weight: 800; font-size: 10px; text-transform: uppercase; background: linear-gradient(135deg, #ffc107, #ff9800); color: #fff; border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fas fa-crown" style="font-size: 9px;"></i> Nổi Bật
+                            </span>
+                        </div>
+                        ` : ''}
                         <img src="${imgUrl}" alt="${title}" class="item-img w-100 h-100" style="object-fit: cover; transition: transform 0.6s var(--ease-cinematic);"
                              data-item-id="${itemId}" data-item-type="${itemType}" data-img-attempt="0" data-fallback="${fallbackImg}" loading="lazy">
                         <div class="position-absolute top-0 end-0 m-3">
@@ -121,13 +137,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     </div>
                     <div class="item-info p-4 d-flex flex-column" style="min-height: 160px;">
-                        <h4 class="item-title fw-800 mb-2" style="font-size: 1.15rem; color: var(--color-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3rem; line-height: 1.3;">${title}</h4>
+                        <h4 class="item-title fw-500 mb-2" style="font-size: 1.15rem; color: var(--color-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3rem; line-height: 1.3;">${title}${verifiedBadgeHTML}</h4>
                         <p class="item-address text-muted mb-3 d-flex align-items-center" style="font-size: 0.85rem; font-weight: 500;">
                             <i class="fas fa-map-marker-alt me-2 text-accent"></i>
                             <span class="text-truncate">${address}</span>
                         </p>
                         <div class="mt-auto d-flex align-items-center justify-content-between">
-                            <div class="item-price-tag ${priceClass} fw-900" style="font-size: 1.3rem;">${priceLabel}</div>
+                            <div class="item-price-tag ${priceClass} fw-600" style="font-size: 1.3rem;">${priceLabel}</div>
                             <div class="btn-view-detail" style="color: var(--color-primary); font-weight: 700; font-size: 0.9rem;">
                                 Xem <i class="fas fa-arrow-right ms-1" style="font-size: 0.8rem;"></i>
                             </div>
@@ -275,15 +291,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
         gridFilterChips.forEach(function (chip) {
             chip.addEventListener("click", function () {
-                var chipType = this.getAttribute("data-type");
-                if (this.classList.contains("chip-room")) chipType = "room";
-                else if (this.classList.contains("chip-job")) chipType = "job";
-                else chipType = "all";
+                if (this.classList.contains("chip-featured")) {
+                    this.classList.toggle("active");
+                    onlyFeatured = this.classList.contains("active");
+                    if (onlyFeatured) {
+                        this.style.background = "#ffd666";
+                        this.style.color = "#780115";
+                    } else {
+                        this.style.background = "#fffcf0";
+                        this.style.color = "#b78103";
+                    }
+                } else {
+                    var chipType = this.getAttribute("data-type");
+                    if (this.classList.contains("chip-room")) chipType = "room";
+                    else if (this.classList.contains("chip-job")) chipType = "job";
+                    else chipType = "all";
 
-                currentFilter = chipType;
+                    currentFilter = chipType;
 
-                gridFilterChips.forEach(function (c) { c.classList.remove("active"); });
-                this.classList.add("active");
+                    gridFilterChips.forEach(function (c) { 
+                        if (!c.classList.contains("chip-featured")) {
+                            c.classList.remove("active"); 
+                        }
+                    });
+                    this.classList.add("active");
+                }
 
                 currentPage = 1;
                 loadCards();

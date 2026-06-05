@@ -560,7 +560,7 @@
         }
     }
 
-    async function openDirectChat(targetAccountId, preferredName) {
+    async function openDirectChat(targetAccountId, preferredName, targetType, targetId) {
         const token = getToken();
         const account = getAccount();
         if (!token || !account) {
@@ -579,7 +579,11 @@
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ targetAccountId: normalizedTargetId })
+            body: JSON.stringify({ 
+                targetAccountId: normalizedTargetId,
+                targetType: targetType || null,
+                targetId: targetId ? Number(targetId) : null
+            })
         });
 
         if (!response.ok) {

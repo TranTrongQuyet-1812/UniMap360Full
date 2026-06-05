@@ -207,13 +207,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         items.forEach((item, index) => {
-            var itemType = item.type;
+            var itemType = window.normalizeListingType(item.type);
+            var itemId = Number(item.id);
+            if (!Number.isInteger(itemId) || itemId <= 0) return;
+
             var title = window.escapeHtml(item.title);
             var address = window.escapeHtml(item.address);
             var priceLabel = window.escapeHtml(item.price || 'Thỏa thuận');
             var fallbackImg = itemType === 'room' ? '/images/fallback-room.svg' : '/images/fallback-job.svg';
-            var imgUrl = window.escapeHtml(item.thumbnail || fallbackImg);
-            var itemId = window.escapeHtml(item.id);
+            var imgUrl = window.safeImageUrl(item.thumbnail, fallbackImg);
 
             // Icon Fa
             var iconClassFa = itemType === 'room' ? 'fa-home' : 'fa-briefcase';
@@ -228,17 +230,29 @@ document.addEventListener('DOMContentLoaded', function () {
             var priceClass = itemType === 'room' ? 'price-room' : 'price-job';
             
             var uniqueId = itemType + '_' + itemId;
+            var isFeatured = item.isFeatured === true;
+            var isVerified = item.isVerified === true;
+            var featuredCardClass = isFeatured ? 'featured-card' : '';
+            var featuredPinClass = isFeatured ? 'featured-pin-card' : '';
+            var verifiedBadgeHTML = isVerified ? ' <span class="verified-badge" title="Đã xác minh"><i class="fas fa-check-circle text-primary ms-1"></i></span>' : '';
 
             // --- TẠO CARD BÊN BẢNG ĐIỀU KHIỂN ---
             var cardHTML = `
-                <div class="item-card" data-id="${uniqueId}">
+                <div class="item-card ${featuredCardClass}" data-id="${uniqueId}">
                     <div class="item-img-wrapper">
+                        ${isFeatured ? `
+                        <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                            <span class="badge px-2 py-1 shadow-sm" style="border-radius: 6px; font-weight: 800; font-size: 9px; text-transform: uppercase; background: linear-gradient(135deg, #ffc107, #ff9800); color: #fff; border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; gap: 3px;">
+                                <i class="fas fa-crown" style="font-size: 8px;"></i> Nổi Bật
+                            </span>
+                        </div>
+                        ` : ''}
                         <img src="${imgUrl}" alt="${title}" class="item-img"
                              data-item-id="${itemId}" data-item-type="${itemType}" data-img-attempt="0" data-fallback="${fallbackImg}"
                              onerror="window.handleMapImageError(this)" loading="lazy">
                     </div>
                     <div class="item-info">
-                        <h4 class="item-title">${title}</h4>
+                        <h4 class="item-title">${title}${verifiedBadgeHTML}</h4>
                         <p class="item-address">${address}</p>
                         <div class="item-price-tag ${priceClass}">${priceLabel}</div>
                     </div>
@@ -252,7 +266,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 var customIcon = L.divIcon({
                     html: `
                         <div class="custom-marker-wrapper">
-                            <div class="marker-pin-card ${pinClass}">
+                            ${isFeatured ? `
+                            <div class="radar-container ${itemType}-radar">
+                                <div class="radar-ring"></div>
+                                <div class="radar-ring"></div>
+                                <div class="radar-ring"></div>
+                            </div>
+                            ` : ''}
+                            <div class="marker-pin-card ${pinClass} ${featuredPinClass}">
                                 <div class="pin-icon"><i class="fas ${iconClassFa}"></i></div>
                                 <div class="pin-title" title="${title}">${title}</div>
                                 <div class="pin-price">${priceLabel}</div>
@@ -300,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // --- TÍNH NĂNG MỚI: BẤM LÀ BAY ---
                 marker.on('click', function () {
-                    window.location.href = `/Home/Detail?id=${itemId}&type=${itemType}`;
+                    window.location.href = `/Home/Detail?id=${encodeURIComponent(itemId)}&type=${encodeURIComponent(itemType)}`;
                 });
 
                 markerClusterGroup.addLayer(marker);
@@ -375,12 +396,14 @@ document.addEventListener('DOMContentLoaded', function () {
         var searchInput = document.querySelector('.search-input');
         var filterChips = document.querySelectorAll('.chip');
         var currentFilter = 'all';
+        var onlyFeatured = false;
 
         function filterData() {
             var keyword = searchInput.value.toLowerCase().trim();
             var filtered = allItems.filter(item => {
-                var itemType = item.type;
+                var itemType = window.normalizeListingType(item.type);
                 var matchFilter = (currentFilter === 'all') || (currentFilter === itemType);
+                var matchFeatured = !onlyFeatured || item.isFeatured === true;
 
                 // Feed item from /api/feed is unified for both room/job:
                 // use title + address for both types (fallback to legacy fields if present).
@@ -388,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var address = (item.address || item.companyName || '');
                 var matchSearch = title.toLowerCase().includes(keyword) || address.toLowerCase().includes(keyword);
 
-                return matchFilter && matchSearch;
+                return matchFilter && matchSearch && matchFeatured;
             });
             renderItems(filtered);
         }
@@ -397,12 +420,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
         filterChips.forEach(chip => {
             chip.addEventListener('click', function () {
-                filterChips.forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
+                if (this.classList.contains('chip-featured')) {
+                    this.classList.toggle('active');
+                    onlyFeatured = this.classList.contains('active');
+                    if (onlyFeatured) {
+                        this.style.background = '#ffd666';
+                        this.style.color = '#780115';
+                    } else {
+                        this.style.background = '#fffcf0';
+                        this.style.color = '#b78103';
+                    }
+                } else {
+                    filterChips.forEach(c => {
+                        if (!c.classList.contains('chip-featured')) {
+                            c.classList.remove('active');
+                        }
+                    });
+                    this.classList.add('active');
 
-                if (this.classList.contains('chip-room')) currentFilter = 'room';
-                else if (this.classList.contains('chip-job')) currentFilter = 'job';
-                else currentFilter = 'all';
+                    if (this.classList.contains('chip-room')) currentFilter = 'room';
+                    else if (this.classList.contains('chip-job')) currentFilter = 'job';
+                    else currentFilter = 'all';
+                }
 
                 filterData();
             });

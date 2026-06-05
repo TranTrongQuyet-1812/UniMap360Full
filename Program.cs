@@ -97,6 +97,25 @@ builder.Services
         {
             OnMessageReceived = context =>
             {
+                var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+                if (env.IsProduction() || env.IsStaging())
+                {
+                    // Production/Staging only accept the HttpOnly auth cookie.
+                    if (context.Request.Cookies.TryGetValue("unimap360.accessToken", out var productionCookieToken)
+                        && !string.IsNullOrWhiteSpace(productionCookieToken))
+                    {
+                        context.Token = productionCookieToken;
+                    }
+                    else
+                    {
+                        // In deployed environments, authentication is cookie-only.
+                        // NoResult prevents JwtBearer from falling back to the Authorization header.
+                        context.NoResult();
+                    }
+
+                    return Task.CompletedTask;
+                }
+
                 if (string.IsNullOrWhiteSpace(context.Token)
                     && context.Request.Cookies.TryGetValue("unimap360.accessToken", out var cookieToken)
                     && !string.IsNullOrWhiteSpace(cookieToken))
@@ -179,7 +198,26 @@ builder.Services.AddScoped<UniMap360.Services.Reports.IContentReportService, Uni
 builder.Services.AddScoped<UniMap360.Services.Realtime.IRealtimeNotifier, UniMap360.Services.Realtime.RealtimeNotifier>();
 builder.Services.AddScoped<UniMap360.Services.Ai.IAiMapToolService, UniMap360.Services.Ai.AiMapToolService>();
 builder.Services.AddScoped<UniMap360.Services.Ai.IAiChatOrchestratorService, UniMap360.Services.Ai.AiChatOrchestratorService>();
+builder.Services.AddScoped<UniMap360.Services.Business.IPostAnalyticsService, UniMap360.Services.Business.PostAnalyticsService>();
+builder.Services.AddScoped<UniMap360.Services.Business.IEntitlementService, UniMap360.Services.Business.EntitlementService>();
+builder.Services.AddScoped<UniMap360.Services.Business.IBillingSettingsService, UniMap360.Services.Business.BillingSettingsService>();
+builder.Services.AddScoped<UniMap360.Services.Business.IFeaturedListingService, UniMap360.Services.Business.FeaturedListingService>();
+builder.Services.AddScoped<UniMap360.Services.Business.ISubscriptionService, UniMap360.Services.Business.SubscriptionService>();
+builder.Services.AddHostedService<UniMap360.Services.Business.SubscriptionCleanupHostedService>();
+
+// Đăng ký PayOS Client Service từ file secrets.ini
+var payOsSection = builder.Configuration.GetSection("PayOS");
+var payOsClient = new PayOS.PayOSClient(
+    payOsSection["ClientId"] ?? throw new InvalidOperationException("PayOS ClientId is missing in configuration."),
+    payOsSection["ApiKey"] ?? throw new InvalidOperationException("PayOS ApiKey is missing in configuration."),
+    payOsSection["ChecksumKey"] ?? throw new InvalidOperationException("PayOS ChecksumKey is missing in configuration.")
+);
+builder.Services.AddSingleton(payOsClient);
+
+
+
 builder.Services.AddProblemDetails();
+
 
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(defaultConnection))
@@ -234,7 +272,10 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error/500");
-    app.UseStatusCodePagesWithReExecute("/Home/Error/{0}");
+    app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+    {
+        appBuilder.UseStatusCodePagesWithReExecute("/Home/Error/{0}");
+    });
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
     app.UseHttpsRedirection();
@@ -243,7 +284,10 @@ else
 {
     // Cố tình bật trang lỗi ở Dev để test, có thể bỏ sau
     app.UseExceptionHandler("/Home/Error/500");
-    app.UseStatusCodePagesWithReExecute("/Home/Error/{0}");
+    app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+    {
+        appBuilder.UseStatusCodePagesWithReExecute("/Home/Error/{0}");
+    });
     
     // Kích hoạt Swagger UI chỉ ở môi trường Development
     app.UseSwagger();
@@ -260,7 +304,7 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
     context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://accounts.google.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://static.cloudflareinsights.com; frame-src 'self' https://accounts.google.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https: https://lh3.googleusercontent.com https://accounts.google.com; media-src 'self' https://res.cloudinary.com; connect-src 'self' wss: https: https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com;";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://accounts.google.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://static.cloudflareinsights.com; frame-src 'self' https://accounts.google.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https: https://lh3.googleusercontent.com https://accounts.google.com; media-src 'self' https://res.cloudinary.com; connect-src 'self' wss: https: https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com; frame-ancestors 'self';";
     await next();
 });
 

@@ -22,9 +22,15 @@
         <h3 class="fw-black mb-1">Quản lý Tài Khoản</h3>
         <p class="text-muted mb-0 small">Hệ thống quản lý người dùng và phân quyền toàn diện.</p>
     </div>
-    <button class="btn btn-dark fw-bold px-4" id="btnOpenCreateUser" style="background: var(--admin-secondary); border: none; font-size: 0.8rem; text-transform: uppercase;">
-        <i class="fas fa-plus me-2"></i>Tạo tài khoản mới
-    </button>
+    <div class="d-flex align-items-center gap-3">
+        <div class="form-check form-switch bg-white border px-3 py-2 rounded d-flex align-items-center gap-2" style="border-radius: var(--radius-sm); border-color: var(--admin-border); margin-bottom: 0;">
+            <input class="form-check-input ms-0" type="checkbox" id="sysBillingToggle" style="cursor: pointer; width: 2.4rem; height: 1.2rem;">
+            <label class="form-check-label fw-bold text-muted small text-uppercase" for="sysBillingToggle" id="sysBillingLabel" style="cursor: pointer; font-size: 0.7rem; letter-spacing: 0.5px; user-select: none;">THU PHÍ VIP: TẮT</label>
+        </div>
+        <button class="btn btn-dark fw-bold px-4" id="btnOpenCreateUser" style="background: var(--admin-secondary); border: none; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 0;">
+            <i class="fas fa-plus me-2"></i>Tạo tài khoản mới
+        </button>
+    </div>
 </div>
 
 <div class="filter-bento">
@@ -156,6 +162,9 @@
             else if (action === 'createNewUser') createNewUser();
         });
 
+        loadBillingStatus();
+        document.getElementById('sysBillingToggle').addEventListener('change', toggleGlobalBilling);
+
         loadUsers();
     });
 
@@ -194,10 +203,16 @@
                 ? '<span class="badge-status badge-active">Hoạt động</span>'
                 : '<span class="badge-status badge-locked">Đã đóng</span>';
             const lockText = x.isLocked ? (x.lockedReason || 'Đã khóa') : '-';
+            const verifiedBadge = x.isVerified
+                ? ' <span class="verified-badge text-primary ms-1" title="Đã xác minh"><i class="fas fa-check-circle"></i></span>'
+                : '';
+            const vipBadge = x.isVip
+                ? ' <span class="badge ms-1" style="background: #780115; color: #FFD700; border: 1px solid #FFD700; font-size: 0.6rem; font-weight: 800; padding: 2px 6px; letter-spacing: 0.5px; border-radius: 4px;">PRO</span>'
+                : '';
             return `
                 <tr>
                     <td class="text-muted">#${x.accountId}</td>
-                    <td class="fw-bold">${escapeHtml(x.email)}</td>
+                    <td class="fw-bold">${escapeHtml(x.email)}${verifiedBadge}${vipBadge}</td>
                     <td>${roleBadge}</td>
                     <td>${activeBadge}${x.isLocked ? ' <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">LOCKED</span>' : ''}</td>
                     <td class="small text-muted">${escapeHtml(lockText)}</td>
@@ -230,6 +245,38 @@
                 .map(r => `<option value="${r}" ${user.role === r ? 'selected' : ''}>${roleLabels[r]}</option>`)
                 .join('');
 
+            const isBusinessRole = user.role === 'Host' || user.role === 'Employer';
+            const isVerified = isBusinessRole && user.profile && user.profile.isVerified === true;
+            const isVip = user.isVip === true;
+
+            const verifiedSection = isBusinessRole ? `
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold small text-uppercase">Xác minh tài khoản (Tích xanh)</label>
+                    <div class="form-check form-switch p-0" style="margin-left: 2.5rem; display: flex; align-items: center; gap: 10px;">
+                        <input class="form-check-input ms-0" type="checkbox" id="frmIsVerified" ${isVerified ? 'checked' : ''} style="cursor: pointer; width: 2.8rem; height: 1.4rem;">
+                        <label class="form-check-label fw-bold ${isVerified ? 'text-primary' : 'text-muted'}" for="frmIsVerified" id="lblIsVerified" style="cursor: pointer; font-size: 0.85rem; user-select: none;">
+                            ${isVerified ? 'Đã xác minh <i class="fas fa-check-circle ms-1"></i>' : 'Chưa xác minh'}
+                        </label>
+                    </div>
+                </div>
+            ` : '';
+
+            const isBillingEnabled = document.getElementById('sysBillingToggle')?.checked;
+            const vipSection = isBusinessRole ? `
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold small text-uppercase">Cấp quyền VIP (Gói cước VIP)</label>
+                    <div class="form-check form-switch p-0" style="margin-left: 2.5rem; display: flex; flex-direction: column; align-items: start; gap: 5px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input class="form-check-input ms-0" type="checkbox" id="frmIsVip" ${isVip ? 'checked' : ''} ${isBillingEnabled ? '' : 'disabled'} style="cursor: ${isBillingEnabled ? 'pointer' : 'not-allowed'}; width: 2.8rem; height: 1.4rem;">
+                            <label class="form-check-label fw-bold ${isVip ? 'text-warning' : 'text-muted'}" for="frmIsVip" id="lblIsVip" style="cursor: ${isBillingEnabled ? 'pointer' : 'not-allowed'}; font-size: 0.85rem; user-select: none; color: ${isVip ? '#e6b800' : ''};">
+                                ${isVip ? 'VIP Hoạt động <i class="fas fa-crown ms-1" style="color:#FFD700;"></i>' : 'Chưa kích hoạt'}
+                            </label>
+                        </div>
+                        ${isBillingEnabled ? '' : '<span class="text-danger small fw-bold" style="font-size: 0.72rem; margin-top: 2px;"><i class="fas fa-info-circle me-1"></i>Vui lòng BẬT "THU PHÍ VIP" toàn cục trước để tùy chỉnh</span>'}
+                    </div>
+                </div>
+            ` : '';
+
             const html = `
                 <form id="drawerUserForm">
                     <div class="mb-3">
@@ -251,6 +298,8 @@
                             </select>
                         </div>
                     </div>
+                    ${verifiedSection}
+                    ${vipSection}
                     <div class="mb-3">
                         <label class="form-label text-muted fw-bold small text-uppercase">Khóa tài khoản</label>
                         <select class="form-select" id="frmIsLocked" ${user.role === 'Admin' ? 'disabled' : ''}>
@@ -269,6 +318,54 @@
             `;
 
             openDrawer('Chi tiết tài khoản #' + accountId, html, footer);
+
+            if (isBusinessRole) {
+                setTimeout(() => {
+                    const chk = document.getElementById('frmIsVerified');
+                    if (chk) {
+                        chk.addEventListener('change', function() {
+                            const lbl = document.getElementById('lblIsVerified');
+                            if (this.checked) {
+                                lbl.innerHTML = 'Đã xác minh <i class="fas fa-check-circle ms-1"></i>';
+                                lbl.classList.remove('text-muted');
+                                lbl.classList.add('text-primary');
+                            } else {
+                                lbl.innerHTML = 'Chưa xác minh';
+                                lbl.classList.remove('text-primary');
+                                lbl.classList.add('text-muted');
+                            }
+                        });
+                    }
+                    const vchk = document.getElementById('frmIsVip');
+                    if (vchk) {
+                        vchk.addEventListener('change', async function() {
+                            const lbl = document.getElementById('lblIsVip');
+                            try {
+                                const res = await adminFetchJson(`/api/admin/users/${accountId}/toggle-vip`, { method: 'POST' });
+                                const active = res.isVip;
+                                this.checked = active;
+                                if (active) {
+                                    lbl.innerHTML = 'VIP Hoạt động <i class="fas fa-crown ms-1" style="color:#FFD700;"></i>';
+                                    lbl.style.color = '#e6b800';
+                                    lbl.classList.remove('text-muted');
+                                    lbl.classList.add('text-warning');
+                                    showAdminToast('Đã cấp quyền VIP cho tài khoản.', 'success');
+                                } else {
+                                    lbl.innerHTML = 'Chưa kích hoạt';
+                                    lbl.style.color = '';
+                                    lbl.classList.remove('text-warning');
+                                    lbl.classList.add('text-muted');
+                                    showAdminToast('Đã hủy quyền VIP của tài khoản.', 'success');
+                                }
+                                await loadUsers();
+                            } catch (err) {
+                                this.checked = !this.checked;
+                                showAdminToast(err.message || 'Không thể thay đổi trạng thái VIP.', 'error');
+                            }
+                        });
+                    }
+                }, 50);
+            }
         } catch (err) {
             showAdminToast(err.message || 'Không tải được chi tiết tài khoản.', 'error');
         }
@@ -339,9 +436,15 @@
                 throw new Error('Thiếu dữ liệu phiên chỉnh sửa.');
             }
 
+            const bodyData = { email, isActive, isLocked, lockedReason, reason };
+            const chkVerified = document.getElementById('frmIsVerified');
+            if (chkVerified) {
+                bodyData.isVerified = chkVerified.checked;
+            }
+
             await adminFetchJson('/api/admin/users/' + accountId, {
                 method: 'PUT',
-                body: JSON.stringify({ email, isActive, isLocked, lockedReason, reason })
+                body: JSON.stringify(bodyData)
             });
 
             if (currentEditingUser.role !== 'Admin' && role !== currentEditingUser.role) {
@@ -432,6 +535,55 @@
             if (t) clearTimeout(t);
             t = setTimeout(() => fn.apply(this, args), wait);
         };
+    }
+
+    async function loadBillingStatus() {
+        try {
+            const res = await adminFetchJson('/api/admin/users/billing-status');
+            const toggle = document.getElementById('sysBillingToggle');
+            const lbl = document.getElementById('sysBillingLabel');
+            toggle.checked = res.enabled;
+            if (res.enabled) {
+                lbl.innerHTML = 'THU PHÍ VIP: BẬT <i class="fas fa-dollar-sign text-success ms-1"></i>';
+                lbl.classList.remove('text-muted');
+                lbl.classList.add('text-danger');
+            } else {
+                lbl.innerHTML = 'THU PHÍ VIP: TẮT';
+                lbl.classList.remove('text-danger');
+                lbl.classList.add('text-muted');
+            }
+        } catch (err) {
+            console.error('Lỗi khi tải cấu hình billing:', err);
+        }
+    }
+
+    async function toggleGlobalBilling() {
+        const toggle = this;
+        const lbl = document.getElementById('sysBillingLabel');
+        const originalState = !toggle.checked;
+        const targetState = toggle.checked;
+
+        try {
+            const res = await adminFetchJson('/api/admin/users/billing-toggle', {
+                method: 'POST',
+                body: JSON.stringify({ enabled: targetState })
+            });
+            toggle.checked = res.enabled;
+            if (res.enabled) {
+                lbl.innerHTML = 'THU PHÍ VIP: BẬT <i class="fas fa-dollar-sign text-success ms-1"></i>';
+                lbl.classList.remove('text-muted');
+                lbl.classList.add('text-danger');
+                showAdminToast('Đã BẬT cơ chế bắt buộc thanh toán VIP.', 'success');
+            } else {
+                lbl.innerHTML = 'THU PHÍ VIP: TẮT';
+                lbl.classList.remove('text-danger');
+                lbl.classList.add('text-muted');
+                showAdminToast('Đã TẮT cơ chế bắt buộc thanh toán VIP (miễn phí thử nghiệm).', 'success');
+            }
+        } catch (err) {
+            toggle.checked = originalState; // revert
+            showAdminToast(err.message || 'Không thể cập nhật cấu hình hệ thống.', 'error');
+        }
     }
 </script>
 }

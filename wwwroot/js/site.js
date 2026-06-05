@@ -12,6 +12,24 @@ window.escapeHtml = function(unsafe) {
          .replace(/'/g, "&#039;");
 };
 
+window.normalizeListingType = function(value) {
+    const raw = String(value || "").toLowerCase().trim();
+    return raw === "job" ? "job" : "room";
+};
+
+window.safeImageUrl = function(value, fallback) {
+    const raw = String(value || "").trim();
+    if (!raw) return fallback;
+
+    const allowed =
+        (raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/\\")) ||
+        raw.startsWith("https://res.cloudinary.com/") ||
+        raw.startsWith("https://api.dicebear.com/") ||
+        raw.startsWith("https://lh3.googleusercontent.com/");
+
+    return allowed ? window.escapeHtml(raw) : fallback;
+};
+
 (function () {
 	const authStore = window.UniMap360AuthStore;
 	const apiClient = window.UniMap360ApiClient;

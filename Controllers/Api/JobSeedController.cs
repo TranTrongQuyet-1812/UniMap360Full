@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using NetTopologySuite;
 using UniMap360.Models;
 
@@ -15,10 +16,13 @@ namespace UniMap360.Controllers.Api;
 public class JobSeedController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
+    private readonly IMemoryCache _cache;
+    private const string MapFeedCacheKey = "GlobalMapFeed";
 
-    public JobSeedController(UniMap360ProContext context)
+    public JobSeedController(UniMap360ProContext context, IMemoryCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     /// <summary>
@@ -121,6 +125,8 @@ public class JobSeedController : ControllerBase
 
             inserted++;
         }
+
+        _cache.Remove(MapFeedCacheKey);
 
         details.Add(new { provinceSlug, province = provinceName, inserted, skipped });
         return Ok(new

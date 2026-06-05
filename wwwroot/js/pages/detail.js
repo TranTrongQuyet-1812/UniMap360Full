@@ -741,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 setContactDisabled(contactBtn, noteEl, 'Tin đăng chưa có số điện thoại. Đăng nhập Student để đặt lịch xem phòng.');
             }
-            function configureChatAction(item, isRoom) {
+            function configureChatAction(item, isRoom, itemId) {
                 const chatBtn = document.getElementById('detail-chat-btn');
                 const chatNoteEl = document.getElementById('detail-chat-note');
                 if (!chatBtn || !chatNoteEl) return;
@@ -810,6 +810,84 @@ document.addEventListener('DOMContentLoaded', function() {
                             chatBtn.disabled = false;
                             chatBtn.classList.remove('opacity-75');
                         });
+                };
+            }
+
+            function configureFavoriteAction(item, isRoom, itemId) {
+                const favBtn = document.getElementById('detail-favorite-btn');
+                if (!favBtn) return;
+
+                const token = getAccessToken();
+                const account = getCurrentAccount();
+
+                if (!token || !account) {
+                    favBtn.style.display = 'block';
+                    favBtn.innerHTML = '<i class="far fa-heart me-2"></i> Đăng nhập để lưu';
+                    favBtn.onclick = function() {
+                        window.location.href = '/Home/Auth';
+                    };
+                    return;
+                }
+
+                if (!isStudentAccount(account)) {
+                    favBtn.style.display = 'none';
+                    return;
+                }
+
+                favBtn.style.display = 'block';
+                const targetType = isRoom ? 'room' : 'job';
+                const targetIdVal = Number(itemId);
+
+                function updateButtonUI(isFav) {
+                    if (isFav) {
+                        favBtn.classList.add('active');
+                        favBtn.innerHTML = '<i class="fas fa-heart me-2"></i> Đã lưu yêu thích';
+                    } else {
+                        favBtn.classList.remove('active');
+                        favBtn.innerHTML = '<i class="far fa-heart me-2"></i> Lưu yêu thích';
+                    }
+                }
+
+                // Check status
+                fetch(`/api/favorites/status/${targetType}/${targetIdVal}`)
+                    .then(res => {
+                        if (res.ok) return res.json();
+                        throw new Error();
+                    })
+                    .then(json => {
+                        const data = (json && json.success === true && json.data !== undefined) ? json.data : json;
+                        updateButtonUI(!!data.isFavorite);
+                    })
+                    .catch(() => {
+                        updateButtonUI(false);
+                    });
+
+                favBtn.onclick = function() {
+                    favBtn.disabled = true;
+                    fetch('/api/favorites/toggle', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            targetType: targetType,
+                            targetId: targetIdVal
+                        })
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Không thể cập nhật danh sách yêu thích.');
+                        return res.json();
+                    })
+                    .then(json => {
+                        const data = (json && json.success === true && json.data !== undefined) ? json.data : json;
+                        updateButtonUI(!!data.isFavorite);
+                    })
+                    .catch(err => {
+                        alert(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+                    })
+                    .finally(() => {
+                        favBtn.disabled = false;
+                    });
                 };
             }
 
@@ -981,7 +1059,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     configureContactAction(item, isRoom, id);
-                    configureChatAction(item, isRoom);
+                    configureChatAction(item, isRoom, id);
+                    configureFavoriteAction(item, isRoom, id);
                     loadReviews(type, id);
                     wireReviewForm(type, id);
 

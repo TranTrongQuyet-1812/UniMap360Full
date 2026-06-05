@@ -69,6 +69,28 @@ public class MapApiController : ControllerBase
             .Where(j => jobIds.Contains(j.JobId))
             .ToDictionaryAsync(j => j.JobId, j => j.SalaryRange ?? "Thỏa thuận");
 
+        var roomVerified = await _context.Rooms
+            .AsNoTracking()
+            .Where(r => roomIds.Contains(r.RoomId))
+            .Select(r => new { r.RoomId, IsVerified = (r.Host.IsVerified == true) })
+            .ToDictionaryAsync(r => r.RoomId, r => r.IsVerified);
+
+        var jobVerified = await _context.Jobs
+            .AsNoTracking()
+            .Where(j => jobIds.Contains(j.JobId))
+            .Select(j => new { j.JobId, IsVerified = j.Employer.IsVerified })
+            .ToDictionaryAsync(j => j.JobId, j => j.IsVerified);
+
+        var now = DateTime.UtcNow;
+        var activeFeatured = await _context.FeaturedListings
+            .AsNoTracking()
+            .Where(f => f.Status == "Active" && f.FeatureType == "MapPinned" && f.EndsAt > now)
+            .ToListAsync();
+
+        var featuredSet = new HashSet<(string TargetType, int TargetId)>(
+            activeFeatured.Select(f => (f.TargetType, f.TargetId))
+        );
+
         var result = feedItems.Select(item =>
         {
             var mediaForItem = mediaItems
@@ -103,6 +125,10 @@ public class MapApiController : ControllerBase
                 ? "/images/fallback-room.svg"
                 : "/images/fallback-job.svg";
             var resolvedImage = string.IsNullOrWhiteSpace(selectedImage) ? fallbackImage : selectedImage;
+            bool isFeatured = featuredSet.Contains((item.ItemType, item.Id));
+            bool isVerified = normalizedType == "room"
+                ? roomVerified.GetValueOrDefault(item.Id, false)
+                : jobVerified.GetValueOrDefault(item.Id, false);
 
             return new
             {
@@ -117,9 +143,14 @@ public class MapApiController : ControllerBase
                 thumbnail = resolvedImage,
                 priceStr = item.ItemType == "Room" ? item.Value : null,
                 isExternal = item.IsExternal ?? false,
-                sourceUrl = item.SourceUrl
+                sourceUrl = item.SourceUrl,
+                isFeatured = isFeatured,
+                isVerified = isVerified
             };
-        }).Cast<object>().ToList();
+        })
+        .OrderByDescending(x => x.isFeatured)
+        .Cast<object>()
+        .ToList();
 
         _cache.Set(MapFeedCacheKey, result, TimeSpan.FromMinutes(10));
 

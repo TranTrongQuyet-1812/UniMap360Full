@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,13 +20,16 @@ public sealed class AdminModerationController : ControllerBase
 {
     private readonly UniMap360ProContext _context;
     private readonly IContentModerationService _moderationService;
+    private readonly IMemoryCache _cache;
 
     public AdminModerationController(
         UniMap360ProContext context,
-        IContentModerationService moderationService)
+        IContentModerationService moderationService,
+        IMemoryCache cache)
     {
         _context = context;
         _moderationService = moderationService;
+        _cache = cache;
     }
 
     [HttpGet("api/admin/rooms")]
@@ -273,6 +277,7 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.ApproveAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Available" });
     }
 
@@ -283,6 +288,8 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.RejectAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        await CancelFeaturedListingAsync(ContentTargetTypes.Room, roomId, cancellationToken);
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Rejected" });
     }
 
@@ -293,6 +300,8 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.HideAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        await CancelFeaturedListingAsync(ContentTargetTypes.Room, roomId, cancellationToken);
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Hidden" });
     }
 
@@ -303,6 +312,7 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.RestoreAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái phòng thành công.", roomId, status = "Available" });
     }
 
@@ -313,6 +323,8 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.DeleteAsync(adminId.Value, ContentTargetTypes.Room, roomId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy phòng." });
+        await CancelFeaturedListingAsync(ContentTargetTypes.Room, roomId, cancellationToken);
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Đã xóa phòng.", roomId });
     }
 
@@ -323,6 +335,7 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.ApproveAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Open" });
     }
 
@@ -333,6 +346,8 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.RejectAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        await CancelFeaturedListingAsync(ContentTargetTypes.Job, jobId, cancellationToken);
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Rejected" });
     }
 
@@ -343,6 +358,8 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.HideAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        await CancelFeaturedListingAsync(ContentTargetTypes.Job, jobId, cancellationToken);
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Hidden" });
     }
 
@@ -353,6 +370,7 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.RestoreAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Cập nhật trạng thái việc làm thành công.", jobId, status = "Open" });
     }
 
@@ -363,6 +381,8 @@ public sealed class AdminModerationController : ControllerBase
         if (!adminId.HasValue) return Unauthorized(new { message = "Token không hợp lệ." });
         var success = await _moderationService.DeleteAsync(adminId.Value, ContentTargetTypes.Job, jobId, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy việc làm." });
+        await CancelFeaturedListingAsync(ContentTargetTypes.Job, jobId, cancellationToken);
+        _cache.Remove("GlobalMapFeed");
         return Ok(new { message = "Đã xóa việc làm.", jobId });
     }
 
@@ -502,6 +522,25 @@ public sealed class AdminModerationController : ControllerBase
         var success = await _moderationService.DeleteAsync(adminId.Value, "Roommate", id, request.Reason, HttpContext, cancellationToken);
         if (!success) return NotFound(new { message = "Không tìm thấy bài đăng ở ghép." });
         return Ok(new { message = "Đã xóa bài đăng ở ghép.", id });
+    }
+
+    private async Task CancelFeaturedListingAsync(string targetType, int targetId, CancellationToken cancellationToken)
+    {
+        var listings = await _context.FeaturedListings
+            .Where(f => f.TargetType == targetType && f.TargetId == targetId && f.Status == "Active")
+            .ToListAsync(cancellationToken);
+
+        if (listings.Any())
+        {
+            var now = DateTime.UtcNow;
+            foreach (var item in listings)
+            {
+                item.Status = "Cancelled";
+                item.CancelledAt = now;
+                item.UpdatedAt = now;
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private int? GetCurrentAdminAccountId()

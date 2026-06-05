@@ -439,18 +439,36 @@
                 avatarImg.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.email)}`;
             }
 
-            // Render Email
-            document.getElementById('inputEmail').value = data.email;
+            // Bind email
+            const inputEmail = document.getElementById('inputEmail');
+            if (inputEmail) {
+                inputEmail.value = data.email || '';
+            }
 
-            // Render Role Badge
+            // Inject role badge & VIP / PRO badge
             const badgeContainer = document.getElementById('roleBadgeContainer');
-            let roleClass = 'role-student';
-            let roleText = 'Sinh viên';
-            if (data.role === 'Host') { roleClass = 'role-host'; roleText = 'Chủ trọ'; }
-            if (data.role === 'Employer') { roleClass = 'role-employer'; roleText = 'Nhà tuyển dụng'; }
-            badgeContainer.innerHTML = `<span class="role-badge ${roleClass}">${roleText}</span>`;
+            if (badgeContainer) {
+                let roleClass = '';
+                let roleText = '';
+                if (data.role === 'Student') {
+                    roleClass = 'role-student';
+                    roleText = 'Sinh viên';
+                } else if (data.role === 'Host') {
+                    roleClass = 'role-host';
+                    roleText = 'Chủ trọ';
+                } else if (data.role === 'Employer') {
+                    roleClass = 'role-employer';
+                    roleText = 'Nhà tuyển dụng';
+                }
 
-            // Save initial data and Render Form
+                let vipBadge = '';
+                if (data.isVip) {
+                    vipBadge = ` <span class="badge ms-1" style="background: #780115; color: #FFD700; border: 1px solid #FFD700; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; letter-spacing: 0.5px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 5px rgba(120, 1, 21, 0.2);"><i class="fas fa-crown"></i> PRO</span>`;
+                }
+
+                badgeContainer.innerHTML = `<span class="role-badge ${roleClass}">${roleText}</span>${vipBadge}`;
+            }
+
             initialProfileData = data.profile || {};
             renderFormFields(data.role, initialProfileData);
 

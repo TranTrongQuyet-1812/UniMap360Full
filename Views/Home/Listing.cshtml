@@ -132,6 +132,18 @@
             transform: none !important;
         }
     }
+    
+    /* Premium VIP Featured Card Highlight */
+    #grid-items-list .item-card.featured-card {
+        border: 2px solid #ffd666 !important;
+        background: linear-gradient(180deg, #fffcf0 0%, #ffffff 100%) !important;
+        box-shadow: 0 10px 25px rgba(247, 182, 56, 0.15) !important;
+    }
+    #grid-items-list .item-card.featured-card:hover {
+        box-shadow: 0 15px 35px rgba(247, 182, 56, 0.25) !important;
+        border-color: #ffb800 !important;
+        transform: translateY(-6px) !important;
+    }
 
     /* Premium Pagination UI */
     .academic-pagination {
@@ -216,6 +228,9 @@
                             <span class="badge chip active" data-type="all">Tất cả</span>
                             <span class="badge chip chip-room" data-type="room">Phòng Trọ</span>
                             <span class="badge chip chip-job" data-type="job">Việc Làm</span>
+                            <span class="badge chip chip-featured" data-type="featured" style="background: #fffcf0; border-color: #ffd666; color: #b78103;">
+                                <i class="fas fa-star" style="font-size: 12px;"></i> Ghim Nổi Bật
+                            </span>
                         </div>
                     </div>
                 </div>
