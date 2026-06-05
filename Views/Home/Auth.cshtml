@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Đăng nhập Hệ thống";
 }
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2" crossorigin="anonymous"></script>
 
 <style>
     /* Styling nội bộ chuyên biệt cho Trang Auth để tránh trùng lặp */
@@ -532,6 +532,7 @@
 
                     <!-- Form đăng nhập được submit qua API bằng JavaScript -->
                     <form action="#" method="POST" id="loginForm">
+                        @Html.AntiForgeryToken()
                         <div class="auth-input-group">
                             <i class="fas fa-envelope"></i>
                             <input type="email" name="Email" class="auth-input" placeholder="Nhập địa chỉ Email" required>
@@ -574,6 +575,7 @@
 
                     <!-- Form đăng ký được submit qua API bằng JavaScript -->
                     <form action="#" method="POST" id="registerForm">
+                        @Html.AntiForgeryToken()
                         
                         <div class="mb-2 text-center" style="font-size: 0.95rem; font-weight: bold; color: var(--color-text);">Bạn là ai?</div>
                         <div class="role-selector">
@@ -801,9 +803,14 @@
         }
 
         async function postJson(url, data) {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            if (token) {
+                headers['RequestVerificationToken'] = token;
+            }
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify(data)
             });
 
@@ -1029,7 +1036,7 @@
     </script>
     
     <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Khởi tạo Google Sign-In từ cấu hình bảo mật

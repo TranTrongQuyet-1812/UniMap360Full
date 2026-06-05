@@ -43,6 +43,10 @@ try
 
 // Add services to the container.
 builder.Services.AddMemoryCache();
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+});
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddControllersWithViews(options =>
 {

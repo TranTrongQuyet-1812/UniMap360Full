@@ -42,6 +42,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("register")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
@@ -151,6 +152,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("login")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
@@ -203,6 +205,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("google")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Credential))
@@ -496,6 +499,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("send-register-otp")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendRegisterOtp([FromBody] SendRegisterOtpRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
