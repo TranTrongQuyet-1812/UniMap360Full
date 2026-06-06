@@ -398,8 +398,16 @@ document.addEventListener('DOMContentLoaded', function () {
         var currentFilter = 'all';
         var onlyFeatured = false;
 
+        function removeAccents(str) {
+            if (!str) return '';
+            return str.normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')
+                      .replace(/đ/g, 'd')
+                      .replace(/Đ/g, 'd');
+        }
+
         function filterData() {
-            var keyword = searchInput.value.toLowerCase().trim();
+            var keyword = removeAccents(searchInput.value.toLowerCase().trim());
             var filtered = allItems.filter(item => {
                 var itemType = window.normalizeListingType(item.type);
                 var matchFilter = (currentFilter === 'all') || (currentFilter === itemType);
@@ -407,9 +415,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Feed item from /api/feed is unified for both room/job:
                 // use title + address for both types (fallback to legacy fields if present).
-                var title = (item.title || item.jobTitle || '');
-                var address = (item.address || item.companyName || '');
-                var matchSearch = title.toLowerCase().includes(keyword) || address.toLowerCase().includes(keyword);
+                var title = removeAccents((item.title || item.jobTitle || '').toLowerCase());
+                var address = removeAccents((item.address || item.companyName || '').toLowerCase());
+                var matchSearch = title.includes(keyword) || address.includes(keyword);
 
                 return matchFilter && matchSearch && matchFeatured;
             });

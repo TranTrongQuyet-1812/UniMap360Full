@@ -55,10 +55,21 @@ public class ListingsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var escapedKeyword = EscapeLikePattern(keyword.Trim());
-            query = query.Where(x =>
-                EF.Functions.Like(x.Title, $"%{escapedKeyword}%", @"\")
-                || EF.Functions.Like(x.AddressText, $"%{escapedKeyword}%", @"\"));
+            if (_context.Database.IsNpgsql())
+            {
+                var normalizedKeyword = NormalizeText(keyword.Trim());
+                var escapedKeyword = EscapeLikePattern(normalizedKeyword);
+                query = query.Where(x =>
+                    EF.Functions.Like(UniMap360ProContext.Unaccent(x.Title), $"%{escapedKeyword}%", @"\")
+                    || EF.Functions.Like(UniMap360ProContext.Unaccent(x.AddressText), $"%{escapedKeyword}%", @"\"));
+            }
+            else
+            {
+                var escapedKeyword = EscapeLikePattern(keyword.Trim());
+                query = query.Where(x =>
+                    EF.Functions.Like(x.Title, $"%{escapedKeyword}%", @"\")
+                    || EF.Functions.Like(x.AddressText, $"%{escapedKeyword}%", @"\"));
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(province) && !string.Equals(province, "all", StringComparison.OrdinalIgnoreCase))
@@ -240,7 +251,7 @@ public class ListingsController : ControllerBase
                 sb.Append(ch);
         }
 
-        return sb.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant();
+        return sb.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant().Replace("đ", "d");
     }
 
     private static string EscapeLikePattern(string input)

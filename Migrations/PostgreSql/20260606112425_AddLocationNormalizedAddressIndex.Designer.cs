@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using UniMap360.Models;
 namespace UniMap360.Migrations.PostgreSql
 {
     [DbContext(typeof(UniMap360PostgresContext))]
-    partial class UniMap360PostgresContextModelSnapshot : ModelSnapshot
+    [Migration("20260606112425_AddLocationNormalizedAddressIndex")]
+    partial class AddLocationNormalizedAddressIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -627,8 +630,6 @@ namespace UniMap360.Migrations.PostgreSql
                     b.HasIndex("EmployerId");
 
                     b.HasIndex("LocationId");
-
-                    b.HasIndex(new[] { "JobStatus", "CreatedAt" }, "IX_ViecLam_JobStatus_CreatedAt");
 
                     b.HasIndex(new[] { "JobTitle" }, "IX_ViecLam_JobTitle_Trgm");
 
@@ -1247,8 +1248,6 @@ namespace UniMap360.Migrations.PostgreSql
 
                     b.HasIndex("LocationId");
 
-                    b.HasIndex(new[] { "RoomStatus", "CreatedAt" }, "IX_PhongTro_RoomStatus_CreatedAt");
-
                     b.HasIndex(new[] { "Title" }, "IX_PhongTro_Title_Trgm");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Title" }, "IX_PhongTro_Title_Trgm"), "gin");
@@ -1385,8 +1384,6 @@ namespace UniMap360.Migrations.PostgreSql
                     b.HasKey("Id");
 
                     b.HasIndex("StudentId");
-
-                    b.HasIndex(new[] { "Status", "CreatedAt" }, "IX_RoommatePost_Status_CreatedAt");
 
                     b.ToTable("RoommatePost", (string)null);
                 });

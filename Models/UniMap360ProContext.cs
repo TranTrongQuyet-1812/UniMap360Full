@@ -15,6 +15,9 @@ public partial class UniMap360ProContext : DbContext
     {
     }
 
+    [DbFunction("f_unaccent", IsBuiltIn = false, Schema = "public")]
+    public static string Unaccent(string value) => throw new NotSupportedException();
+
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<AdminAuditLog> AdminAuditLogs { get; set; }
@@ -71,6 +74,9 @@ public partial class UniMap360ProContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("postgis");
+        modelBuilder.HasPostgresExtension("pg_trgm");
+
         var isPostgres = Database.IsNpgsql();
         var currentTimestampSql = isPostgres ? "now()" : "getdate()";
         modelBuilder.Entity<Account>(entity =>
@@ -201,6 +207,10 @@ public partial class UniMap360ProContext : DbContext
             entity.ToTable("YeuThich");
             entity.HasKey(e => e.FavoriteId).HasName("PK__Favorite__CE74FAF5B7788E00");
 
+            entity.HasIndex(e => new { e.StudentId, e.TargetType, e.TargetId }, "UX_YeuThich_Student_Target").IsUnique();
+
+            entity.HasIndex(e => new { e.TargetType, e.TargetId }, "IX_YeuThich_Target");
+
             entity.Property(e => e.FavoriteId).HasColumnName("FavoriteID");
             entity.Property(e => e.StudentId).HasColumnName("StudentID");
             entity.Property(e => e.TargetId).HasColumnName("TargetID");
@@ -242,6 +252,14 @@ public partial class UniMap360ProContext : DbContext
         {
             entity.ToTable("ViecLam");
             entity.HasKey(e => e.JobId).HasName("PK__Jobs__056690E21424BEAF");
+
+            entity.HasIndex(e => e.SourceUrl, "UX_ViecLam_SourceURL").IsUnique();
+
+            entity.HasIndex(e => e.JobTitle, "IX_ViecLam_JobTitle_Trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+
+            entity.HasIndex(e => new { e.JobStatus, e.CreatedAt }, "IX_ViecLam_JobStatus_CreatedAt");
 
             entity.Property(e => e.JobId).HasColumnName("JobID");
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
@@ -312,10 +330,16 @@ public partial class UniMap360ProContext : DbContext
             entity.ToTable("DiaDiem");
             entity.HasKey(e => e.LocationId).HasName("PK__Location__E7FEA477A66ECEEE");
 
-            entity.HasIndex(e => e.Coordinates, "IX_Location_Coordinates");
+            entity.HasIndex(e => e.Coordinates, "IX_Location_Coordinates").HasMethod("gist");
             entity.HasIndex(e => e.ProvinceName, "IX_Location_ProvinceName");
             entity.HasIndex(e => new { e.ProvinceName, e.DistrictName }, "IX_Location_Province_District");
             entity.HasIndex(e => new { e.ProvinceName, e.DistrictName, e.WardName }, "IX_Location_Province_District_Ward");
+
+            entity.HasIndex(e => e.FullAddressNormalized, "IX_Location_FullAddressNormalized");
+
+            entity.HasIndex(e => e.AddressText, "IX_Location_AddressText_Trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
 
             entity.Property(e => e.LocationId).HasColumnName("LocationID");
             entity.Property(e => e.District).HasMaxLength(100);
@@ -340,6 +364,8 @@ public partial class UniMap360ProContext : DbContext
         {
             entity.ToTable("TepDaPhuongTien");
             entity.HasKey(e => e.MediaId).HasName("PK__Media__B2C2B5AF03484D12");
+
+            entity.HasIndex(e => new { e.TargetType, e.TargetId }, "IX_TepDaPhuongTien_Target");
 
             entity.Property(e => e.MediaId).HasColumnName("MediaID");
             entity.Property(e => e.IsThumbnail).HasDefaultValue(false);
@@ -410,6 +436,8 @@ public partial class UniMap360ProContext : DbContext
             entity.HasIndex(e => new { e.StudentId, e.TargetType, e.TargetId }, "UX_Review_Student_Target")
                 .IsUnique();
 
+            entity.HasIndex(e => new { e.TargetType, e.TargetId }, "IX_Review_Target");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql(currentTimestampSql);
             entity.Property(e => e.ReviewId).HasColumnName("ReviewID");
             entity.Property(e => e.StudentId).HasColumnName("StudentID");
@@ -425,6 +453,14 @@ public partial class UniMap360ProContext : DbContext
         modelBuilder.Entity<Room>(entity =>
         {
             entity.HasKey(e => e.RoomId).HasName("PK__Rooms__32863919894EE30F");
+
+            entity.HasIndex(e => e.SourceUrl, "UX_PhongTro_SourceURL").IsUnique();
+
+            entity.HasIndex(e => e.Title, "IX_PhongTro_Title_Trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+
+            entity.HasIndex(e => new { e.RoomStatus, e.CreatedAt }, "IX_PhongTro_RoomStatus_CreatedAt");
 
             entity.ToTable("PhongTro", tb => tb.HasTrigger("trg_LogPriceChange"));
 
@@ -548,6 +584,8 @@ public partial class UniMap360ProContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
+
+            entity.HasIndex(e => new { e.Status, e.CreatedAt }, "IX_RoommatePost_Status_CreatedAt");
 
             entity.HasOne(d => d.Student).WithMany(p => p.RoommatePosts)
                 .HasForeignKey(d => d.StudentId)

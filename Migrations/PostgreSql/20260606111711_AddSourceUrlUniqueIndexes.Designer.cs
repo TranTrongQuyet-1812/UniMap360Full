@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,16 +13,17 @@ using UniMap360.Models;
 namespace UniMap360.Migrations.PostgreSql
 {
     [DbContext(typeof(UniMap360PostgresContext))]
-    partial class UniMap360PostgresContextModelSnapshot : ModelSnapshot
+    [Migration("20260606111711_AddSourceUrlUniqueIndexes")]
+    partial class AddSourceUrlUniqueIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.26")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
@@ -628,13 +630,6 @@ namespace UniMap360.Migrations.PostgreSql
 
                     b.HasIndex("LocationId");
 
-                    b.HasIndex(new[] { "JobStatus", "CreatedAt" }, "IX_ViecLam_JobStatus_CreatedAt");
-
-                    b.HasIndex(new[] { "JobTitle" }, "IX_ViecLam_JobTitle_Trgm");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "JobTitle" }, "IX_ViecLam_JobTitle_Trgm"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "JobTitle" }, "IX_ViecLam_JobTitle_Trgm"), new[] { "gin_trgm_ops" });
-
                     b.HasIndex(new[] { "SourceUrl" }, "UX_ViecLam_SourceURL")
                         .IsUnique();
 
@@ -777,16 +772,9 @@ namespace UniMap360.Migrations.PostgreSql
                     b.HasKey("LocationId")
                         .HasName("PK__Location__E7FEA477A66ECEEE");
 
-                    b.HasIndex(new[] { "AddressText" }, "IX_Location_AddressText_Trgm");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "AddressText" }, "IX_Location_AddressText_Trgm"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "AddressText" }, "IX_Location_AddressText_Trgm"), new[] { "gin_trgm_ops" });
-
                     b.HasIndex(new[] { "Coordinates" }, "IX_Location_Coordinates");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Coordinates" }, "IX_Location_Coordinates"), "gist");
-
-                    b.HasIndex(new[] { "FullAddressNormalized" }, "IX_Location_FullAddressNormalized");
 
                     b.HasIndex(new[] { "ProvinceName" }, "IX_Location_ProvinceName");
 
@@ -1247,13 +1235,6 @@ namespace UniMap360.Migrations.PostgreSql
 
                     b.HasIndex("LocationId");
 
-                    b.HasIndex(new[] { "RoomStatus", "CreatedAt" }, "IX_PhongTro_RoomStatus_CreatedAt");
-
-                    b.HasIndex(new[] { "Title" }, "IX_PhongTro_Title_Trgm");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Title" }, "IX_PhongTro_Title_Trgm"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "Title" }, "IX_PhongTro_Title_Trgm"), new[] { "gin_trgm_ops" });
-
                     b.HasIndex(new[] { "SourceUrl" }, "UX_PhongTro_SourceURL")
                         .IsUnique();
 
@@ -1385,8 +1366,6 @@ namespace UniMap360.Migrations.PostgreSql
                     b.HasKey("Id");
 
                     b.HasIndex("StudentId");
-
-                    b.HasIndex(new[] { "Status", "CreatedAt" }, "IX_RoommatePost_Status_CreatedAt");
 
                     b.ToTable("RoommatePost", (string)null);
                 });
