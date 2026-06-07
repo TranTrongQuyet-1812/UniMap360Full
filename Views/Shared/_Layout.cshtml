@@ -26,7 +26,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - UniMap360</title>
-    <link class="favicon" rel="icon" type="image/png" href="https://res.cloudinary.com/dreyjycrh/image/upload/e_trim/ar_1:1,c_crop,g_north/v1776439376/LogoSQL.png?v=2" />
+    <link class="favicon" rel="icon" type="image/png" href="/img/UniMap360_Logo.png" />
 
     <!-- SEO Meta Tags -->
     <meta name="description" content="@(ViewData["MetaDescription"] ?? "Nền tảng bản đồ thông minh kết nối sinh viên, chủ trọ và nhà tuyển dụng. Tìm kiếm phòng trọ, việc làm và ở ghép tại Tp. Hồ Chí Minh.")" />
@@ -38,13 +38,13 @@
     <meta property="og:url" content="@(Context.Request.Scheme + "://" + Context.Request.Host + Context.Request.Path)" />
     <meta property="og:title" content="@(ViewData["Title"] ?? "UniMap360 - Bản đồ kết nối sinh viên")" />
     <meta property="og:description" content="@(ViewData["MetaDescription"] ?? "Nền tảng bản đồ thông minh kết nối sinh viên, chủ trọ và nhà tuyển dụng.")" />
-    <meta property="og:image" content="@(ViewData["MetaImage"] ?? "https://res.cloudinary.com/dreyjycrh/image/upload/v1776439376/LogoSQL.png")" />
+    <meta property="og:image" content="@(ViewData["MetaImage"] ?? Context.Request.Scheme + "://" + Context.Request.Host + "/img/UniMap360_Logo.png")" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:title" content="@(ViewData["Title"] ?? "UniMap360 - Bản đồ kết nối sinh viên")" />
     <meta property="twitter:description" content="@(ViewData["MetaDescription"] ?? "Nền tảng bản đồ thông minh kết nối sinh viên, chủ trọ và nhà tuyển dụng.")" />
-    <meta property="twitter:image" content="@(ViewData["MetaImage"] ?? "https://res.cloudinary.com/dreyjycrh/image/upload/v1776439376/LogoSQL.png")" />
+    <meta property="twitter:image" content="@(ViewData["MetaImage"] ?? Context.Request.Scheme + "://" + Context.Request.Host + "/img/UniMap360_Logo.png")" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
