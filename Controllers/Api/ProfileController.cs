@@ -12,6 +12,7 @@ using UniMap360.Services.Admin;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
 using UniMap360.Services.Business;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UniMap360.Controllers.Api;
 
@@ -25,6 +26,7 @@ public class ProfileController : ControllerBase
     private readonly ILogger<ProfileController> _logger;
     private readonly IWebHostEnvironment _environment;
     private readonly ICloudinaryAssetPurger _cloudinaryPurger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -37,13 +39,15 @@ public class ProfileController : ControllerBase
         IOptions<CloudinarySettings> cloudinaryOptions,
         ILogger<ProfileController> logger,
         IWebHostEnvironment environment,
-        ICloudinaryAssetPurger cloudinaryPurger)
+        ICloudinaryAssetPurger cloudinaryPurger,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _context = context;
         _cloudinarySettings = cloudinaryOptions.Value;
         _logger = logger;
         _environment = environment;
         _cloudinaryPurger = cloudinaryPurger;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     [HttpGet]
@@ -212,7 +216,7 @@ public class ProfileController : ControllerBase
                 {
                     try
                     {
-                        using var scope = HttpContext.RequestServices.CreateScope();
+                        using var scope = _serviceScopeFactory.CreateScope();
                         var purger = scope.ServiceProvider.GetRequiredService<ICloudinaryAssetPurger>();
                         await purger.TryPurgeByPublicIdAsync(oldPublicId);
                     }

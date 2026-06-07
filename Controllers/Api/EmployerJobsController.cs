@@ -6,6 +6,7 @@ using UniMap360.Constants;
 using UniMap360.Models;
 using UniMap360.Services.Admin;
 using UniMap360.Services.Posts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UniMap360.Controllers.Api;
 
@@ -20,6 +21,7 @@ public class EmployerJobsController : ControllerBase
     private readonly IManagePostsContextService _managePostsContextService;
     private readonly ILocationResolutionService _locationResolutionService;
     private readonly ICloudinaryAssetPurger _cloudinaryAssetPurger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private const string MapFeedCacheKey = "GlobalMapFeed";
 
     public EmployerJobsController(
@@ -28,7 +30,8 @@ public class EmployerJobsController : ControllerBase
         ILogger<EmployerJobsController> logger,
         IManagePostsContextService managePostsContextService,
         ILocationResolutionService locationResolutionService,
-        ICloudinaryAssetPurger cloudinaryAssetPurger)
+        ICloudinaryAssetPurger cloudinaryAssetPurger,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _context = context;
         _cache = cache;
@@ -36,6 +39,7 @@ public class EmployerJobsController : ControllerBase
         _managePostsContextService = managePostsContextService;
         _locationResolutionService = locationResolutionService;
         _cloudinaryAssetPurger = cloudinaryAssetPurger;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     [HttpGet]
@@ -101,6 +105,8 @@ public class EmployerJobsController : ControllerBase
         _context.Jobs.Add(job);
         await _context.SaveChangesAsync();
         _cache.Remove(MapFeedCacheKey);
+
+        TriggerBackgroundModeration(job.JobId, job.JobTitle, job.Description, "Job", employer.AccountId);
 
         return Ok(new { message = "Tạo việc làm thành công.", jobId = job.JobId });
     }
@@ -213,6 +219,95 @@ public class EmployerJobsController : ControllerBase
             GeocodedLongitude = request.GeocodedLongitude,
             UseProvinceCodeCanonicalization = false,
             MissingPinMessage = "Vui lòng ghim vị trí bản đồ trước khi đăng việc làm."
+        });
+    }
+
+    private void TriggerBackgroundModeration(int postId, string postTitle, string? postDescription, string contentType, int ownerAccountId)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<UniMap360ProContext>();
+                var aiService = scope.ServiceProvider.GetRequiredService<UniMap360.Services.Moderation.IAiModerationService>();
+                var telegram = scope.ServiceProvider.GetRequiredService<UniMap360.Services.Moderation.ITelegramNotificationService>();
+
+                var result = await aiService.ModerateContentAsync(postTitle, postDescription, contentType);
+
+                bool locationViolated = false;
+                double distanceMeters = 0;
+                var job = await db.Jobs
+                    .Include(j => j.Location)
+                    .FirstOrDefaultAsync(j => j.JobId == postId);
+
+                if (job?.Location != null && job.Location.LocationDistanceMeters >= 5000)
+                {
+                    locationViolated = true;
+                    distanceMeters = job.Location.LocationDistanceMeters.Value;
+                }
+
+                if ((result != null && !result.IsApproved) || locationViolated)
+                {
+                    var adminOptions = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<UniMap360.Options.AdminSecurityOptions>>().Value;
+                    int reporterAccountId = adminOptions.OwnerAccountId ?? 113;
+                    if (!await db.Accounts.AnyAsync(a => a.AccountId == reporterAccountId))
+                    {
+                        var firstAdminId = await db.Accounts
+                            .Where(a => a.UserRole == "Admin")
+                            .OrderBy(a => a.AccountId)
+                            .Select(a => a.AccountId)
+                            .FirstOrDefaultAsync();
+                        if (firstAdminId > 0)
+                        {
+                            reporterAccountId = firstAdminId;
+                        }
+                    }
+
+                    string flaggedCategory = "";
+                    string reason = "";
+
+                    if (result != null && !result.IsApproved)
+                    {
+                        flaggedCategory = result.FlaggedCategory ?? "Vulgarity";
+                        reason = result.Reason ?? "Nội dung không phù hợp";
+                    }
+
+                    if (locationViolated)
+                    {
+                        flaggedCategory = string.IsNullOrEmpty(flaggedCategory) ? "Location" : $"{flaggedCategory}, Location";
+                        var locReason = $"Lệch vị trí lớn ({(distanceMeters / 1000).ToString("0.00")} km >= 5 km)";
+                        reason = string.IsNullOrEmpty(reason) ? locReason : $"{reason}. {locReason}";
+                    }
+
+                    var report = new ContentReport
+                    {
+                        TargetType = contentType,
+                        TargetId = postId,
+                        ReporterAccountId = reporterAccountId,
+                        Reason = $"AI phat hien vi pham [{flaggedCategory}]. Ly do: {reason}",
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow,
+                        TargetTitleSnapshot = postTitle,
+                        OwnerAccountIdSnapshot = ownerAccountId
+                    };
+                    db.ContentReports.Add(report);
+                    await db.SaveChangesAsync();
+
+                    var msg = $"CANH BAO AI: PHAT HIEN TIN DANG NGHI VAN\n\n" +
+                              $"Loai tin: {contentType}\n" +
+                              $"Tieu de: {postTitle}\n" +
+                              $"Nguoi dang: Account ID {ownerAccountId}\n" +
+                              $"Phan loai: {flaggedCategory}\n" +
+                              $"Ly do: {reason}\n\n" +
+                              $"Xem tai trang quan tri Admin.";
+                    await telegram.SendAlertWithActionsAsync(msg, report.ReportId, contentType, postId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in background AI content moderation for {ContentType} {PostId}", contentType, postId);
+            }
         });
     }
 

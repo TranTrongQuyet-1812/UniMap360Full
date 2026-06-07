@@ -14,6 +14,7 @@ using UniMap360.Options;
 using UniMap360.Services.Admin;
 using UniMap360.Services.Posts;
 using UniMap360.Constants;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UniMap360.Controllers.Api;
 
@@ -30,19 +31,22 @@ public class RoommatesController : ControllerBase
     private readonly ILogger<RoommatesController> _logger;
     private readonly CloudinarySettings _cloudinarySettings;
     private readonly ICloudinaryAssetPurger _cloudinaryAssetPurger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public RoommatesController(
         UniMap360ProContext context,
         IManagePostsContextService managePostsContextService,
         ILogger<RoommatesController> logger,
         IOptions<CloudinarySettings> cloudinaryOptions,
-        ICloudinaryAssetPurger cloudinaryAssetPurger)
+        ICloudinaryAssetPurger cloudinaryAssetPurger,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _context = context;
         _managePostsContextService = managePostsContextService;
         _logger = logger;
         _cloudinaryAssetPurger = cloudinaryAssetPurger;
         _cloudinarySettings = cloudinaryOptions.Value;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     [HttpGet]
@@ -228,6 +232,8 @@ public class RoommatesController : ControllerBase
 
                 await _context.SaveChangesAsync();
             }
+
+            TriggerBackgroundModeration(post.Id, post.Title, post.Description, "Roommate", accountId);
 
             return Ok(new { post.Id, message = "Dang bai thanh cong!" });
         }
@@ -617,6 +623,66 @@ public class RoommatesController : ControllerBase
     }
 
     private static int ToStorageTargetId(int postId) => -Math.Abs(postId);
+
+    private void TriggerBackgroundModeration(int postId, string postTitle, string? postDescription, string contentType, int ownerAccountId)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<UniMap360ProContext>();
+                var aiService = scope.ServiceProvider.GetRequiredService<UniMap360.Services.Moderation.IAiModerationService>();
+                var telegram = scope.ServiceProvider.GetRequiredService<UniMap360.Services.Moderation.ITelegramNotificationService>();
+
+                var result = await aiService.ModerateContentAsync(postTitle, postDescription, contentType);
+                if (result != null && !result.IsApproved)
+                {
+                    var adminOptions = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<UniMap360.Options.AdminSecurityOptions>>().Value;
+                    int reporterAccountId = adminOptions.OwnerAccountId ?? 113;
+                    if (!await db.Accounts.AnyAsync(a => a.AccountId == reporterAccountId))
+                    {
+                        var firstAdminId = await db.Accounts
+                            .Where(a => a.UserRole == "Admin")
+                            .OrderBy(a => a.AccountId)
+                            .Select(a => a.AccountId)
+                            .FirstOrDefaultAsync();
+                        if (firstAdminId > 0)
+                        {
+                            reporterAccountId = firstAdminId;
+                        }
+                    }
+
+                    var report = new ContentReport
+                    {
+                        TargetType = contentType,
+                        TargetId = postId,
+                        ReporterAccountId = reporterAccountId,
+                        Reason = $"AI phat hien vi pham [{result.FlaggedCategory}]. Ly do: {result.Reason}",
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow,
+                        TargetTitleSnapshot = postTitle,
+                        OwnerAccountIdSnapshot = ownerAccountId
+                    };
+                    db.ContentReports.Add(report);
+                    await db.SaveChangesAsync();
+
+                    var msg = $"CANH BAO AI: PHAT HIEN TIN DANG NGHI VAN\n\n" +
+                              $"Loai tin: {contentType}\n" +
+                              $"Tieu de: {postTitle}\n" +
+                              $"Nguoi dang: Account ID {ownerAccountId}\n" +
+                              $"Phan loai: {result.FlaggedCategory}\n" +
+                              $"Ly do: {result.Reason}\n\n" +
+                              $"Xem tai trang quan tri Admin.";
+                    await telegram.SendAlertWithActionsAsync(msg, report.ReportId, contentType, postId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in background AI content moderation for {ContentType} {PostId}", contentType, postId);
+            }
+        });
+    }
 }
 
 public class CreateRoommatePostRequest

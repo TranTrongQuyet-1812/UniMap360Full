@@ -60,8 +60,8 @@ public class ListingsController : ControllerBase
                 var normalizedKeyword = NormalizeText(keyword.Trim());
                 var escapedKeyword = EscapeLikePattern(normalizedKeyword);
                 query = query.Where(x =>
-                    EF.Functions.Like(UniMap360ProContext.Unaccent(x.Title), $"%{escapedKeyword}%", @"\")
-                    || EF.Functions.Like(UniMap360ProContext.Unaccent(x.AddressText), $"%{escapedKeyword}%", @"\"));
+                    EF.Functions.Like(UniMap360ProContext.Unaccent(x.Title ?? string.Empty).ToLower(), $"%{escapedKeyword}%", @"\")
+                    || EF.Functions.Like(UniMap360ProContext.Unaccent(x.AddressText ?? string.Empty).ToLower(), $"%{escapedKeyword}%", @"\"));
             }
             else
             {
@@ -93,9 +93,17 @@ public class ListingsController : ControllerBase
             }
             else
             {
-                query = query.Where(x =>
-                    EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceRawLower}%", @"\")
-                    || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceNormalized}%", @"\"));
+                if (_context.Database.IsNpgsql())
+                {
+                    query = query.Where(x =>
+                        EF.Functions.Like(UniMap360ProContext.Unaccent(x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceNormalized}%", @"\"));
+                }
+                else
+                {
+                    query = query.Where(x =>
+                        EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceRawLower}%", @"\")
+                        || EF.Functions.Like((x.AddressText ?? string.Empty).ToLower(), $"%{escapedProvinceNormalized}%", @"\"));
+                }
             }
         }
 
