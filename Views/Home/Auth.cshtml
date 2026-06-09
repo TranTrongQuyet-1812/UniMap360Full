@@ -559,8 +559,8 @@
                         <span class="text-muted" style="font-size: 0.9rem; position: relative;">
                             &mdash; Hoặc đăng nhập nhanh bằng &mdash;
                         </span>
-                        <div class="social-login">
-                            <a href="#" class="social-circle" id="btn-google-login" title="Đăng nhập bằng Google"><i class="fab fa-google"></i></a>
+                        <div class="social-login" style="display: flex; justify-content: center; align-items: center;">
+                            <div id="btn-google-login" title="Đăng nhập bằng Google"></div>
                         </div>
                     </div>
                 </div>
@@ -1036,24 +1036,46 @@
     </script>
     
     <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer crossorigin="anonymous"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Khởi tạo Google Sign-In từ cấu hình bảo mật
             var googleClientId = '@Configuration["OAuth:GoogleClientId"]';
             
-            window.onload = function () {
-                if(googleClientId && googleClientId.length > 0) {
-                    google.accounts.id.initialize({
-                        client_id: googleClientId,
-                        callback: handleGoogleCredentialResponse,
-                        auto_select: false,
-                        cancel_on_tap_outside: true
-                    });
+            function initGoogleSignIn() {
+                if (googleClientId && googleClientId.length > 0) {
+                    if (window.google && window.google.accounts && window.google.accounts.id) {
+                        google.accounts.id.initialize({
+                            client_id: googleClientId,
+                            callback: handleGoogleCredentialResponse,
+                            auto_select: false,
+                            cancel_on_tap_outside: true
+                        });
+                        
+                        // Render official Google circular icon button
+                        const btnGoogleContainer = document.getElementById('btn-google-login');
+                        if (btnGoogleContainer) {
+                            google.accounts.id.renderButton(
+                                btnGoogleContainer,
+                                {
+                                    type: "icon",
+                                    shape: "circle",
+                                    theme: "outline",
+                                    size: "large"
+                                }
+                            );
+                        }
+                        console.log("Google Sign-In initialized successfully.");
+                    } else {
+                        // Thử lại sau 100ms nếu thư viện Google chưa tải xong
+                        setTimeout(initGoogleSignIn, 100);
+                    }
                 } else {
                     console.error("Google Client ID chưa được cấu hình trong secrets.ini");
                 }
-            };
+            }
+            
+            initGoogleSignIn();
 
             async function handleGoogleCredentialResponse(response) {
                 if (!response.credential) return;
@@ -1061,9 +1083,14 @@
                 showToast('Đang kết nối tới máy chủ...', 'info');
                 
                 try {
+                    const headers = { 'Content-Type': 'application/json' };
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    if (token) {
+                        headers['RequestVerificationToken'] = token;
+                    }
                     const res = await fetch('/api/auth/google', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: headers,
                         body: JSON.stringify({ credential: response.credential })
                     });
                     
@@ -1095,19 +1122,6 @@
                     showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
                 }
             }
-
-            document.getElementById('btn-google-login').addEventListener('click', function (e) {
-                e.preventDefault();
-                if(!googleClientId) {
-                    showToast('Tính năng đăng nhập Google chưa được cấu hình!', 'error');
-                    return;
-                }
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        showToast('Vui lòng cho phép popup đăng nhập Google', 'warning');
-                    }
-                });
-            });
 
             // Xử lý nút hoàn tất đăng ký với Google Role
             const btnCompleteGoogleLogin = document.getElementById('btnCompleteGoogleLogin');
